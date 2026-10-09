@@ -104,14 +104,15 @@ def basis_tag(basis: str | None, short: bool = False) -> str:
 
 
 def topline(as_of: str | None, fictional: bool) -> None:
-    """One quiet line under the navigation: demo notice and data date."""
+    """Data notice at the foot of each page: sources (or demo notice) and data date."""
     left = (
         '<span class="demo">'
         + marker("watch")
         + "<span><b>Demo mode.</b> All companies, bonds, figures and events are fictional."
         "</span></span>"
         if fictional
-        else "<span><b>Live data.</b> ESMA, GLEIF, Riksbank, MFN, Cision, company reports.</span>"
+        else "<span><b>Live data.</b> ESMA, GLEIF, Riksbank, Bolagsverket, MFN, Cision, "
+        "company reports.</span>"
     )
     right = f'<span class="asof">Data as of {fmt_date(as_of, "long")}</span>' if as_of else ""
     render(f'<div class="hr-topline">{left}{right}</div>')

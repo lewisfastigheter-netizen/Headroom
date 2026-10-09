@@ -12,6 +12,7 @@ import streamlit as st
 from headroom.config import resolve_mode
 from headroom.config import weights as load_weights
 from headroom.model.scoring import ScoreCard, reference_date, score_all, score_frame
+from headroom.store import private
 from headroom.store.db import TABLES, open_snapshot
 
 
@@ -44,11 +45,15 @@ class Data:
 
 
 @st.cache_data(show_spinner=False)
-def _load(mode: str, generated_at: str | None) -> tuple[dict, dict[str, pl.DataFrame]]:
+def _load(
+    mode: str, generated_at: str | None, private_mtime: float = 0.0
+) -> tuple[dict, dict[str, pl.DataFrame]]:
     snap = open_snapshot(mode)
     t = {name: snap.table(name) for name in TABLES}
     if "value_basis" not in t["financials"].columns:  # snapshots written before the field
         t["financials"] = t["financials"].with_columns(pl.lit(None, pl.Utf8).alias("value_basis"))
+    if mode == "live":  # private companies from the daily Bolagsverket job
+        t = private.merge(t)
     return snap.meta, t
 
 
@@ -67,7 +72,8 @@ def current_mode() -> str:
 def get_data() -> Data:
     mode = current_mode()
     probe = open_snapshot(mode)
-    meta, t = _load(mode, probe.meta.get("generated_at"))
+    mtime = private.PRIVATE_FOUND.stat().st_mtime if private.PRIVATE_FOUND.exists() else 0.0
+    meta, t = _load(mode, probe.meta.get("generated_at"), mtime)
     ref = reference_date(meta)
     cfg = load_weights()
     cards = _score(mode, meta.get("generated_at"), ref, json.dumps(cfg, sort_keys=True), t)

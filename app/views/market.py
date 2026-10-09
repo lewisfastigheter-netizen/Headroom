@@ -11,7 +11,7 @@ import streamlit as st
 from ui import components as ui
 from ui.data import get_data
 from ui.labels import EVENT, SEVERITY_STATE
-from ui.plotly_template import BLUE, CONFIG, INK, PAPER
+from ui.plotly_template import BLUE, CONFIG, INK, LIGHT_BLUE, PAPER
 
 d = get_data()
 ref = d.ref
@@ -136,7 +136,7 @@ with st.container(key="band_tint_wall"):
     labels = [f"Q{(q.month - 1) // 3 + 1} {q.year}" for q in quarters]
     fig = go.Figure()
     totals = [0.0] * len(quarters)
-    for grp, colour in (("Listed issuers", INK), ("Bond-only issuers", BLUE)):
+    for grp, colour in (("Listed issuers", LIGHT_BLUE), ("Bond-only issuers", BLUE)):
         vals = []
         for i, q in enumerate(quarters):
             v = wall.filter((pl.col("q") == q) & (pl.col("grp") == grp))["nominal_sek"].sum() or 0.0

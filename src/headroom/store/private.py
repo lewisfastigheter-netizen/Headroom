@@ -1,0 +1,64 @@
+"""Private property companies found at Bolagsverket, kept outside the snapshot.
+
+The daily private-company job appends to `data/private_found.jsonl` (one company per
+line: company row, financials row, events), and the app merges it into the live data
+on load. Keeping it out of the snapshot files means the daily job and the weekly
+refresh never write the same file, so their commits never conflict.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import date
+
+import polars as pl
+
+from headroom.config import DATA_DIR
+
+PRIVATE_FOUND = DATA_DIR / "private_found.jsonl"
+
+
+def load_found() -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    if PRIVATE_FOUND.exists():
+        for line in PRIVATE_FOUND.read_text("utf-8").splitlines():
+            if line.strip():
+                rec = json.loads(line)
+                out[rec["company"]["org_nr"]] = rec
+    return out
+
+
+def save_found(found: dict[str, dict]) -> None:
+    lines = [json.dumps(found[k], ensure_ascii=False, default=str) for k in sorted(found)]
+    PRIVATE_FOUND.write_text("\n".join(lines) + ("\n" if lines else ""), "utf-8")
+
+
+def _dates(d: dict, *keys: str) -> dict:
+    return {**d, **{k: date.fromisoformat(str(d[k])[:10]) for k in keys if d.get(k)}}
+
+
+def found_tables(exclude: set[str]) -> dict[str, pl.DataFrame | None]:
+    """company, financials and event rows for every kept private company."""
+    recs = [r for org, r in load_found().items() if org not in exclude]
+    companies = [_dates(r["company"], "as_of") for r in recs]
+    fins = [_dates(r["financials"], "period_end") for r in recs]
+    evs = [_dates(e, "date") for r in recs for e in r.get("events") or []]
+    return {
+        "company": pl.DataFrame(companies, infer_schema_length=None) if companies else None,
+        "financials": pl.DataFrame(fins, infer_schema_length=None) if fins else None,
+        "event": pl.DataFrame(evs, infer_schema_length=None) if evs else None,
+    }
+
+
+def merge(tables: dict[str, pl.DataFrame]) -> dict[str, pl.DataFrame]:
+    """Live tables plus the private companies, columns aligned to the snapshot's."""
+    extra = found_tables(set(tables["company"]["org_nr"].to_list()))
+    out = dict(tables)
+    for name, frame in extra.items():
+        if frame is None or not frame.height:
+            continue
+        base = out[name]
+        cols = [c for c in base.columns if c in frame.columns]
+        frame = frame.select(cols).cast({c: base.schema[c] for c in cols}, strict=False)
+        out[name] = pl.concat([base, frame], how="diagonal_relaxed").select(base.columns)
+    return out

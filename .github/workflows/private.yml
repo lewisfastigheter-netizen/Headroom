@@ -1,0 +1,62 @@
+name: Private companies
+
+# Checks the next batch of private property companies at Bolagsverket (SNI code,
+# latest digitally filed annual report) and merges every company with at least
+# SEK 20m of property into the live snapshot. No LLM is used, so this costs nothing.
+# Candidates come from data/private_candidates.parquet; results are recorded in
+# data/private_checked.csv so each run continues where the last one stopped.
+on:
+  schedule:
+    - cron: "41 1 * * *"   # daily 01:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh            # never runs at the same time as the weekly refresh
+  cancel-in-progress: false
+
+jobs:
+  private:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --frozen
+
+      - name: Cache Bolagsverket responses
+        uses: actions/cache@v4
+        with:
+          path: data/cache/bolagsverket
+          key: bolagsverket-${{ github.run_id }}
+          restore-keys: bolagsverket-
+
+      - name: Check next batch of private companies
+        env:
+          HTTP_CONTACT: ${{ secrets.HTTP_CONTACT }}
+          BOLAGSVERKET_CLIENT_ID: ${{ secrets.BOLAGSVERKET_CLIENT_ID }}
+          BOLAGSVERKET_CLIENT_SECRET: ${{ secrets.BOLAGSVERKET_CLIENT_SECRET }}
+        run: uv run headroom private
+
+      - name: Commit results
+        run: |
+          git config user.name "headroom-bot"
+          git config user.email "headroom-bot@users.noreply.github.com"
+          git add data/snapshots/live
+          for f in data/private_checked.csv data/private_found.jsonl; do
+            [ -f "$f" ] && git add "$f"
+          done
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Private companies $(date -u +%Y-%m-%d)"
+            git pull --rebase
+            git push
+          fi

@@ -17,6 +17,7 @@ MUTED = "#9B9B9B"
 RULE = "#E4E4E4"
 TINT = "#F4F4F4"
 BLUE = "#00839B"
+LIGHT_BLUE = "#8FCBD7"  # second series next to BLUE (lighter tint of the same hue)
 HIGH = "#E16E1D"
 WATCH = "#C2901A"
 

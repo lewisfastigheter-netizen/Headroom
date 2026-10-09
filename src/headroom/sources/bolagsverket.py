@@ -34,7 +34,7 @@ from typing import Any
 import httpx
 
 from headroom.config import settings
-from headroom.http import Fetcher
+from headroom.http import HOST_INTERVAL, Fetcher
 from headroom.model import valuation
 from headroom.schemas import normalise_org_nr
 
@@ -78,12 +78,31 @@ class Bolagsverket:
         self._token = Token(j["access_token"], time.time() + float(j.get("expires_in", 3000)))
         return self._token.value
 
+    def _send(self, method: str, url: str, **kw: Any) -> httpx.Response:
+        """One API call, spaced by the host interval. On 429 (rate limit) wait and retry,
+        and slow down for the rest of the run: the gateway gives no rate-limit headers."""
+        host = "gw.api.bolagsverket.se"
+        for wait in (10, 30, 60, 120, None):
+            self.f._wait(host)
+            r = self.f.client.request(
+                method, url, headers={"Authorization": f"Bearer {self.token()}"}, **kw
+            )
+            if r.status_code != 429 or wait is None:
+                return r
+            HOST_INTERVAL[host] = min(HOST_INTERVAL.get(host, 1.5) * 1.5, 6.0)
+            log.info(
+                "Bolagsverket rate limit: waiting %ss, interval now %.1fs",
+                wait,
+                HOST_INTERVAL[host],
+            )
+            time.sleep(wait)
+        return r
+
     def _post(self, path: str, org_nr: str) -> Any:
-        self.f._wait("gw.api.bolagsverket.se")
-        r = self.f.client.post(
+        r = self._send(
+            "POST",
             f"{BASE}{path}",
             json={"identitetsbeteckning": org_nr.replace("-", "")},
-            headers={"Authorization": f"Bearer {self.token()}"},
             timeout=60,
         )
         if r.status_code == 404:
@@ -99,12 +118,7 @@ class Bolagsverket:
         return list(_find_lists(j, "dokumentId"))
 
     def document(self, doc_id: str) -> bytes:
-        self.f._wait("gw.api.bolagsverket.se")
-        r = self.f.client.get(
-            f"{BASE}/dokument/{doc_id}",
-            headers={"Authorization": f"Bearer {self.token()}"},
-            timeout=120,
-        )
+        r = self._send("GET", f"{BASE}/dokument/{doc_id}", timeout=120)
         r.raise_for_status()
         return r.content
 
@@ -341,6 +355,7 @@ BULK_COLUMNS = {
     "deregistered": ("avregistreringsdatum",),
     "proceedings": ("pagandeavvecklingselleromstruktureringsforfarande", "pagaende_avveckling"),
     "description": ("verksamhetsbeskrivning",),
+    "sni": ("sni", "snikod", "snikoder", "sni_kod", "naringsgren", "naringsgrenkod"),
     "registered": ("registreringsdatum",),
 }
 
@@ -379,25 +394,78 @@ def _bulk_rows(fh: io.TextIOBase) -> Iterator[dict]:
             row["org_nr"] = normalise_org_nr((row["org_nr"] or "").split("$")[0])
         except ValueError:
             continue
+        # Coded fields look like 'Name$FORETAGSNAMN-ORGNAM$1993-03-15' or 'AB-ORGFO';
+        # several names are separated by '|'. Keep the first value of each.
+        for k in ("name", "form", "proceedings"):
+            if row.get(k):
+                row[k] = row[k].split("|")[0].split("$")[0].strip()
+        if row.get("form"):
+            row["form"] = row["form"].removesuffix("-ORGFO")
+        if row.get("proceedings"):
+            row["proceedings"] = row["proceedings"].removesuffix("-PAAVOF") or None
         yield row
 
 
-PROPERTY_TEXT = re.compile(r"fastighet|hyresfastighet|bostäder|uthyrning av lokaler|förvalt", re.I)
+# Wording in names and registered business descriptions (verksamhetsbeskrivning) of
+# companies that own property. STRONG phrases almost always mean a property owner;
+# WEAK ones also match other businesses and are checked last. Every candidate is
+# confirmed against its SNI code (68.x) through the API before anything is read.
+# Ownership wording: the company itself owns and lets property.
+OWNER_TEXT = re.compile(
+    r"(?:äga|förvärva|förvalta|inneha|avyttra)[^.;]{0,40}?(?:fastighet|fast egendom|byggnad|hyreshus)|"
+    r"uthyrning av (?:egna )?(?:lokaler|bostäder|lägenheter|fastigheter|kontor|lager|byggnader)|"
+    r"hyra ut (?:lokaler|bostäder|lägenheter|fastigheter)|hyresfastighet|hyreshus|"
+    r"bostadsfastighet|kommersiella fastigheter|fastighetsbolag|fastighetsägande|tomträtt",
+    re.I,
+)
+# Property mentioned without clear ownership (developers, mixed businesses).
+PROPERTY_TEXT = re.compile(r"fastighet|fast egendom|byggrätt|exploatering|projektutveckling", re.I)
+# Services to property owners, not owners: brokers, caretakers, cleaning, valuation.
+SERVICE_TEXT = re.compile(
+    r"förmedling|mäklar|skötsel|städ|fastighetsservice|besiktning|värdering|"
+    r"konsult|rådgivning|fastighetsautomation|teknisk förvaltning|ventilation|el-?install",
+    re.I,
+)
+WEAK_TEXT = re.compile(r"bostäder|lägenheter|real estate|properties|property", re.I)
+STRONG_TEXT = OWNER_TEXT  # name kept for callers
+
+
+def _priority(r: dict) -> int | None:
+    """0 = SNI 68 in the file, 1 = owner wording, 2 = property wording, 3 = weak wording.
+    None = skip (no property wording, or property services only)."""
+    sni = re.sub(r"\D", " ", r.get("sni") or "").split()
+    if sni:
+        return 0 if any(c.startswith("68") for c in sni) else None
+    name, desc = r.get("name") or "", r.get("description") or ""
+    text = f"{name} {desc}"
+    if OWNER_TEXT.search(text):
+        return 1
+    if SERVICE_TEXT.search(text):
+        return None
+    if re.search(r"fastighet", name, re.I) or PROPERTY_TEXT.search(desc):
+        return 2
+    if WEAK_TEXT.search(text):
+        return 3
+    return None
 
 
 def private_candidates(rows: Iterator[dict], exclude: set[str]) -> list[dict]:
-    """Active aktiebolag whose name or business description points to property."""
+    """Active aktiebolag that may own property, most likely first.
+
+    If the bulk file carries SNI codes they decide; otherwise the name and the
+    registered business description do. The API's SNI check follows either way.
+    """
     out = []
     for r in rows:
         if r["org_nr"] in exclude or r.get("deregistered"):
             continue
         form = (r.get("form") or "").upper()
-        if form and "AB" not in form and "AKTIEBOLAG" not in form:
+        if form and form not in ("AB", "AKTIEBOLAG"):
             continue
-        text = f"{r.get('name') or ''} {r.get('description') or ''}"
-        if PROPERTY_TEXT.search(text):
-            out.append(r)
-    return out
+        prio = _priority(r)
+        if prio is not None:
+            out.append({**r, "priority": prio})
+    return sorted(out, key=lambda r: r["priority"])
 
 
 def latest_annual_report(docs: list[dict]) -> dict | None:

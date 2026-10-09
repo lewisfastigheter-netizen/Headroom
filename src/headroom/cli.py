@@ -11,6 +11,9 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("demo", help="Rebuild the fictional demo snapshot in data/snapshots/demo")
     sub.add_parser("refresh", help="Refresh live snapshots from public sources")
+    sub.add_parser(
+        "private", help="Check the next batch of private companies at Bolagsverket (daily job)"
+    )
     args = parser.parse_args(argv)
 
     if args.cmd == "demo":
@@ -29,6 +32,19 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"Live snapshot: {meta['issuers_property']} property issuers "
             f"of {meta['issuers_swedish']} Swedish bond issuers"
+        )
+        return 0
+    if args.cmd == "private":
+        import logging
+
+        from headroom.pipeline import update_private
+
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+        stats = update_private()
+        print(
+            f"Private companies: {stats.get('private_new_lookups', 0)} checked this run, "
+            f"{stats.get('private_kept', 0)} kept in total of "
+            f"{stats.get('bulk_candidates', 0)} candidates"
         )
         return 0
     return 1

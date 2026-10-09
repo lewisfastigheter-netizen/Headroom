@@ -100,7 +100,13 @@ rate_shock:
 
 private_universe:
   # Private ABs from Bolagsverket's bulk file, kept if their latest annual report
-  # shows at least this much property (book value, SEK m).
-  min_property_value_sek_m: 100
-  # API lookups per refresh. Results are cached, so coverage grows run by run.
-  max_lookups_per_run: 400
+  # shows at least this much property (fair value if disclosed, else book value; SEK m).
+  min_property_value_sek_m: 20
+  # New companies checked per run of `headroom private` (runs four times a day; in practice
+  # the time limit below and Bolagsverket's rate limit decide how many).
+  # About 1-3 API calls each; checked companies are recorded in data/private_checked.csv.
+  max_lookups_per_run: 20000
+  # Stop the private scan after this long so the job ends cleanly within GitHub's limit.
+  max_minutes_per_run: 330
+  # New companies checked during the weekly refresh (0 = leave it to the daily job).
+  max_lookups_in_refresh: 0

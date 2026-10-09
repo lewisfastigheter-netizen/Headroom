@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from datetime import date, datetime, timedelta
 
 import polars as pl
 
-from headroom.config import settings
+from headroom.config import DATA_DIR, settings
+from headroom.config import weights as load_weights
 from headroom.extract import events, kpi
 from headroom.extract.documents import fetch_pdf
 from headroom.extract.llm import LLMUnavailable
@@ -23,6 +25,7 @@ from headroom.http import Fetcher
 from headroom.model.universe import classify
 from headroom.sources import firds, gleif, newsfeeds, prices, riksbank
 from headroom.store.db import snapshot_dir, write_snapshot
+from headroom.store.private import load_found, save_found
 
 log = logging.getLogger(__name__)
 
@@ -391,7 +394,15 @@ def build_live(as_of: date | None = None, with_reports: bool = True) -> dict:
             meta["reports"] = rep["meta"]
         # Bolagsverket: SNI codes for issuers and the private-AB universe (needs credentials)
         try:
-            priv = build_private(f, tables["company"], settings().bolagsverket_bulkfile, as_of)
+            priv = build_private(
+                f,
+                tables["company"],
+                settings().bolagsverket_bulkfile,
+                as_of,
+                max_new=int(
+                    (load_weights().get("private_universe") or {}).get("max_lookups_in_refresh", 0)
+                ),
+            )
         except Exception as e:  # NoCredentials, or API errors: the rest of the snapshot stands
             log.info("Bolagsverket stage skipped: %s", e)
             priv = None
@@ -408,7 +419,7 @@ def build_live(as_of: date | None = None, with_reports: bool = True) -> dict:
                 if extra is not None and extra.height:
                     base = tables.get(name)
                     tables[name] = (
-                        pl.concat([base, extra.select(base.columns)], how="vertical_relaxed")
+                        pl.concat([base, extra], how="diagonal_relaxed").select(base.columns)
                         if base is not None
                         else extra
                     )
@@ -435,8 +446,95 @@ def build_live(as_of: date | None = None, with_reports: bool = True) -> dict:
 # --------------------------------------------------------------------------- private ABs
 
 
+def update_private(as_of: date | None = None, max_new: int | None = None) -> dict:
+    """Daily job: check the next batch of private candidates. Results go to
+    data/private_checked.csv and data/private_found.jsonl; the app merges the kept
+    companies into the live data, so no snapshot file is touched."""
+    from headroom.store.db import open_snapshot
+
+    as_of = as_of or date.today()
+    listed = open_snapshot("live").table("company").filter(pl.col("tier") != "private")
+    priv = build_private(Fetcher(), listed, settings().bolagsverket_bulkfile, as_of, max_new)
+    return priv["meta"]
+
+
+PRIVATE_CANDIDATES = DATA_DIR / "private_candidates.parquet"
+PRIVATE_LEDGER = DATA_DIR / "private_checked.csv"
+# How long a negative result stands before the company is looked at again.
+RECHECK_DAYS = {
+    "not_real_estate": 365,
+    "no_digital_report": 180,
+    "no_ixbrl": 180,
+    "below_threshold": 180,
+}
+
+
+def _old_enough(r: dict, months: int = 15) -> bool:
+    """Companies registered in the last ~15 months have not filed an annual report yet."""
+    reg = str(r.get("registered") or "")[:10]
+    try:
+        return (date.today() - date.fromisoformat(reg)).days > months * 30.5
+    except ValueError:
+        return True
+
+
+def _private_candidates(bv, bulkfile: str | None, exclude: set[str]) -> list[dict]:
+    """Candidates from a freshly downloaded bulk file, saved as a small CSV that is
+    committed; without a bulk file the saved CSV is used (as on GitHub)."""
+    from pathlib import Path
+
+    if bulkfile and Path(bulkfile).exists():
+        rows = [
+            r
+            for r in bv.private_candidates(bv.read_bulkfile(Path(bulkfile)), exclude)
+            if _old_enough(r)
+        ]
+        keep = ("org_nr", "name", "registered", "proceedings", "priority")
+        pl.DataFrame(
+            [{k: r.get(k) for k in keep} for r in rows],
+            schema={k: pl.Int64 if k == "priority" else pl.Utf8 for k in keep},
+        ).write_parquet(PRIVATE_CANDIDATES, compression="zstd")
+        return rows
+    if PRIVATE_CANDIDATES.exists():
+        df = pl.read_parquet(PRIVATE_CANDIDATES)
+        return [r for r in df.to_dicts() if r["org_nr"] not in exclude and _old_enough(r)]
+    return []
+
+
+class _Ledger:
+    """Which private companies have been checked, when, and with what result.
+    Committed with the snapshot so coverage grows run by run on GitHub."""
+
+    def __init__(self, today: date):
+        self.today = today
+        self.rows: dict[str, dict] = {}
+        if PRIVATE_LEDGER.exists():
+            for r in pl.read_csv(PRIVATE_LEDGER, infer_schema_length=0).to_dicts():
+                self.rows[r["org_nr"]] = r
+
+    def kept(self, org: str) -> bool:
+        return (self.rows.get(org) or {}).get("status") == "kept"
+
+    def skip(self, org: str) -> bool:
+        r = self.rows.get(org)
+        if not r or r["status"] not in RECHECK_DAYS:
+            return False
+        return (self.today - date.fromisoformat(r["checked"])).days < RECHECK_DAYS[r["status"]]
+
+    def mark(self, org: str, status: str) -> None:
+        self.rows[org] = {"org_nr": org, "checked": self.today.isoformat(), "status": status}
+
+    def save(self) -> None:
+        if self.rows:
+            pl.DataFrame(list(self.rows.values())).sort("org_nr").write_csv(PRIVATE_LEDGER)
+
+
 def build_private(
-    f: Fetcher, company: pl.DataFrame, bulkfile: str | None, as_of: date
+    f: Fetcher,
+    company: pl.DataFrame,
+    bulkfile: str | None,
+    as_of: date,
+    max_new: int | None = None,
 ) -> dict[str, pl.DataFrame | dict | None]:
     """SNI codes for known issuers, and the private-AB universe from Bolagsverket.
 
@@ -444,7 +542,6 @@ def build_private(
     check for bond issuers runs.
     """
     import json as _json
-    from pathlib import Path
 
     from headroom.config import CACHE_DIR
     from headroom.config import weights as load_weights
@@ -463,7 +560,8 @@ def build_private(
         p.write_text(_json.dumps(val, ensure_ascii=False, default=str))
         return val
 
-    sni_rows = []
+    sni_rows: list[dict] = []
+    evs: list[dict] = []
     for org in company["org_nr"].to_list():
         try:
             rec = cached("org", org, api.organisation)
@@ -471,6 +569,20 @@ def build_private(
             log.warning("bolagsverket %s: %s", org, e)
             continue
         codes = bv.sni_codes(rec)
+        proc = bv.proceedings(rec)
+        for word, typ in bv.PROCEEDING_TYPES if proc else ():
+            if word in proc:
+                evs.append(
+                    {
+                        "org_nr": org,
+                        "date": as_of,
+                        "type": typ,
+                        "severity": 3,
+                        "title": f"Registered proceeding at Bolagsverket: {word}",
+                        "source_url": f"{bv.BASE}/organisationer",
+                        "source_name": "Bolagsverket",
+                    }
+                )
         sni_rows.append(
             {
                 "org_nr": org,
@@ -479,84 +591,103 @@ def build_private(
             }
         )
 
-    companies, fins, evs = [], [], []
+    companies, fins = [], []
     stats = {"sni_checked": len(sni_rows), "bulk_candidates": 0, "private_kept": 0}
-    if bulkfile and Path(bulkfile).exists():
-        rows = bv.private_candidates(bv.read_bulkfile(Path(bulkfile)), set(company["org_nr"]))
-        stats["bulk_candidates"] = len(rows)
-        for r in rows[: int(cfg.get("max_lookups_per_run", 400))]:
-            org = r["org_nr"]
-            try:
-                rec = cached("org", org, api.organisation)
-                codes = bv.sni_codes(rec)
-                if codes and not bv.is_real_estate(codes):
-                    continue
-                docs = cached("docs", org, api.documents)
-                doc = bv.latest_annual_report(docs)
-                if not doc:
-                    continue
-                zpath = cache / f"doc_{doc['dokumentId']}.zip"
-                if not zpath.exists():
-                    zpath.write_bytes(api.document(doc["dokumentId"]))
-                xhtml = bv.ixbrl_from_zip(zpath.read_bytes())
-                if not xhtml:
-                    continue
-                a = bv.annual_figures(bv.parse_ixbrl(xhtml))
-            except Exception as e:
-                log.warning("private %s: %s", org, e)
+    rows = _private_candidates(bv, bulkfile, set(company["org_nr"]))
+    found = load_found()
+    stats["bulk_candidates"] = len(rows)
+    ledger = _Ledger(as_of)
+    fresh = 0
+    limit = int(cfg.get("max_lookups_per_run", 400)) if max_new is None else max_new
+    deadline = time.monotonic() + 60 * float(cfg.get("max_minutes_per_run", 240))
+    for r in rows:
+        if fresh >= limit or time.monotonic() > deadline:
+            break
+        org = r["org_nr"]
+        if ledger.skip(org) or (ledger.kept(org) and org in found):
+            continue
+        fresh += 1
+        try:
+            rec = cached("org", org, api.organisation)
+            codes = bv.sni_codes(rec)
+            if codes and not bv.is_real_estate(codes):
+                ledger.mark(org, "not_real_estate")
                 continue
-            pv = a.get("property_value")
-            if not pv or pv < float(cfg.get("min_property_value_sek_m", 100)):
+            docs = cached("docs", org, api.documents)
+            doc = bv.latest_annual_report(docs)
+            if not doc:
+                ledger.mark(org, "no_digital_report")
                 continue
-            src = f"{bv.BASE}/dokument/{doc['dokumentId']}"
-            fins.append(bv.to_financials(org, a, src))
-            companies.append(
+            zpath = cache / f"doc_{doc['dokumentId']}.zip"
+            if not zpath.exists():
+                zpath.write_bytes(api.document(doc["dokumentId"]))
+            xhtml = bv.ixbrl_from_zip(zpath.read_bytes())
+            if not xhtml:
+                ledger.mark(org, "no_ixbrl")
+                continue
+            a = bv.annual_figures(bv.parse_ixbrl(xhtml))
+        except bv.NoCredentials:
+            raise
+        except Exception as e:
+            log.warning("private %s: %s", org, e)
+            continue
+        pv = a.get("property_value")
+        if not pv or pv < float(cfg.get("min_property_value_sek_m", 20)):
+            ledger.mark(org, "below_threshold")
+            continue
+        ledger.mark(org, "kept")
+        src = f"{bv.BASE}/dokument/{doc['dokumentId']}"
+        ev: list[dict] = []
+        if bv.is_late(a.get("period_end"), as_of):
+            ev.append(
                 {
                     "org_nr": org,
-                    "lei": None,
-                    "name": r["name"],
-                    "tier": "private",
-                    "listed_ticker": None,
-                    "sni": ", ".join(codes) or None,
-                    "segment_mix": None,
-                    "region_mix": None,
-                    "size": pv,
-                    "universe_rule": "bolagsverket SNI 68",
-                    "source_url": f"{bv.BASE}/organisationer",
-                    "as_of": as_of,
+                    "date": as_of,
+                    "type": "late_annual_report",
+                    "severity": 2,
+                    "title": f"No annual report filed for the year after {a['period_end']}",
+                    "source_url": f"{bv.BASE}/dokumentlista",
+                    "source_name": "Bolagsverket",
                 }
             )
-            if bv.is_late(a.get("period_end"), as_of):
-                evs.append(
+        proc = bv.proceedings(rec) or (r.get("proceedings") or "").lower()
+        for word, typ in bv.PROCEEDING_TYPES:
+            if word in proc:
+                ev.append(
                     {
                         "org_nr": org,
                         "date": as_of,
-                        "type": "late_annual_report",
-                        "severity": 2,
-                        "title": f"No annual report filed for the year after {a['period_end']}",
-                        "source_url": f"{bv.BASE}/dokumentlista",
+                        "type": typ,
+                        "severity": 3,
+                        "title": f"Registered proceeding at Bolagsverket: {word}",
+                        "source_url": f"{bv.BASE}/organisationer",
                         "source_name": "Bolagsverket",
                     }
                 )
-            proc = (r.get("proceedings") or "").lower()
-            for word, typ in (
-                ("konkurs", "bankruptcy_in_group"),
-                ("rekonstruktion", "reconstruction"),
-                ("likvidation", "liquidation"),
-            ):
-                if word in proc:
-                    evs.append(
-                        {
-                            "org_nr": org,
-                            "date": as_of,
-                            "type": typ,
-                            "severity": 3,
-                            "title": f"Registered proceeding: {r['proceedings']}",
-                            "source_url": "Bolagsverket bulk file",
-                            "source_name": "Bolagsverket",
-                        }
-                    )
-        stats["private_kept"] = len(companies)
+        found[org] = {
+            "company": {
+                "org_nr": org,
+                "lei": None,
+                "name": r["name"],
+                "tier": "private",
+                "listed_ticker": None,
+                "sni": ", ".join(codes) or None,
+                "segment_mix": None,
+                "region_mix": None,
+                "size": pv,
+                "universe_rule": "bolagsverket SNI 68",
+                "source_url": f"{bv.BASE}/organisationer",
+                "as_of": as_of,
+            },
+            "financials": bv.to_financials(org, a, src),
+            "events": ev,
+        }
+    if fresh:
+        ledger.save()
+        save_found(found)
+    # Kept private companies live in data/private_found.jsonl and are merged by the app.
+    stats["private_kept"] = len(found)
+    stats["private_new_lookups"] = fresh
     return {
         "sni": pl.DataFrame(sni_rows) if sni_rows else None,
         "company": pl.DataFrame(companies) if companies else None,

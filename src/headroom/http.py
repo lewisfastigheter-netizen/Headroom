@@ -34,6 +34,7 @@ log = logging.getLogger(__name__)
 HOST_INTERVAL: dict[str, float] = {
     "api.gleif.org": 1.1,  # documented limit: 60 requests per minute
     "api.riksbank.se": 2.0,  # anonymous access is rate-limited
+    "gw.api.bolagsverket.se": 1.5,  # slowed further automatically on 429
     "registers.esma.europa.eu": 1.0,
     "firds.esma.europa.eu": 1.0,
     "mfn.se": 3.0,

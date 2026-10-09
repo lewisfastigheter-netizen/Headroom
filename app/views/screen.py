@@ -183,7 +183,6 @@ cols = (
         ui.Col("rank", "", "dim"),
         ui.Col("score", "Score", "big", raw_html=True),
         ui.Col("name", "Company", "name", raw_html=True),
-        ui.Col("opp", "Opportunity type"),
         *key_figures,
     ]
     if n_scored

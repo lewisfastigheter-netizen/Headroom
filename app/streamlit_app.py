@@ -17,13 +17,10 @@ st.set_page_config(
 
 import ui.plotly_template  # noqa: E402,F401  registers the Plotly template
 from ui.components import inject_css, topline  # noqa: E402
-from ui.data import available_modes, current_mode, get_data  # noqa: E402
+from ui.data import get_data  # noqa: E402
 
 inject_css()
 st.logo(str(Path(__file__).parent / "static" / "wordmark.svg"), size="large")
-
-with st.container(key="byline"):
-    st.markdown('<span class="byline">av William Lewis</span>', unsafe_allow_html=True)
 
 data = get_data()
 
@@ -36,22 +33,9 @@ pages = [
 ]
 nav = st.navigation(pages, position="top")
 
-# One quiet line under the navigation: data notice on the left, live/demo switch on the right.
-as_of = max((data.meta.get("as_of") or {}).values(), default=None)
-left, right = st.columns([8, 2], vertical_alignment="center")
-with left:
-    topline(as_of, data.fictional)
-if len(available_modes()) > 1:
-    with right, st.container(key="mode_switch"):
-        choice = st.segmented_control(
-            "Data",
-            ["Live", "Demo"],
-            default=current_mode().capitalize(),
-            label_visibility="collapsed",
-        )
-    if choice and choice.lower() != current_mode():
-        st.session_state["mode"] = choice.lower()
-        st.query_params["data"] = choice.lower()
-        st.rerun()
-
 nav.run()
+
+# Data notice at the foot of every page.
+as_of = max((data.meta.get("as_of") or {}).values(), default=None)
+st.write("")
+topline(as_of, data.fictional)

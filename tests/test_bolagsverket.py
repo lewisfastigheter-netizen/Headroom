@@ -72,3 +72,44 @@ def test_sni_ignores_legal_form_and_blank_codes():
         },
     }
     assert bv.sni_codes(rec) == ["68.320", "69.201"]
+
+
+def test_private_candidates_wording_and_priority():
+    rows = [
+        {
+            "org_nr": "1",
+            "name": "Lindqvist Holding AB",
+            "form": "AB",
+            "description": "Bolaget ska äga och förvalta fast egendom samt bedriva uthyrning av lokaler",
+        },
+        {
+            "org_nr": "2",
+            "name": "Nordic Invest AB",
+            "form": "AB",
+            "description": "Förvaltning av värdepapper",
+        },
+        {"org_nr": "3", "name": "Bageri AB", "form": "AB", "description": "Bageriverksamhet"},
+        {"org_nr": "4", "name": "X AB", "form": "AB", "description": "", "sni": "68203"},
+        {
+            "org_nr": "5",
+            "name": "Y Fastigheter AB",
+            "form": "AB",
+            "description": "",
+            "sni": "47110",
+        },
+    ]
+    got = bv.private_candidates(iter(rows), exclude=set())
+    assert [r["org_nr"] for r in got] == ["4", "1"]  # SNI first, then ownership wording
+
+
+def test_private_ledger_skips_recent_negatives(tmp_path, monkeypatch):
+    from headroom import pipeline
+
+    monkeypatch.setattr(pipeline, "PRIVATE_LEDGER", tmp_path / "checked.csv")
+    led = pipeline._Ledger(date(2026, 10, 1))
+    led.mark("1", "not_real_estate")
+    led.mark("2", "kept")
+    led.save()
+    led = pipeline._Ledger(date(2026, 12, 1))
+    assert led.skip("1") and not led.skip("2") and led.kept("2") and not led.skip("3")
+    assert not pipeline._Ledger(date(2027, 12, 1)).skip("1")  # re-checked after a year

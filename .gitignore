@@ -8,13 +8,18 @@ dist/
 .ruff_cache/
 .pytest_cache/
 
-# Secrets
-.env
+# Secrets: any .env variant (.env, .env.txt, ...) except the empty template
+.env*
+!.env.example
 .streamlit/secrets.toml
 
 # Data: everything is generated, except the committed snapshots
 data/*
 !data/snapshots/
+# Private-company candidates (from the bulk file) and the record of which were checked
+!data/private_candidates.parquet
+!data/private_checked.csv
+!data/private_found.jsonl
 data/snapshots/*
 !data/snapshots/demo/
 !data/snapshots/live/
@@ -24,3 +29,6 @@ data/cache/*
 !data/cache/llm.jsonl
 *.duckdb
 *.duckdb.wal
+
+# Local scratch folder for files delivered by the assistant
+Claude outputs/

@@ -18,7 +18,7 @@ html, body, .stApp, [class*="st-"] { font-variant-numeric: tabular-nums lining-n
 [data-testid="stAppDeployButton"], [data-testid="stMainMenu"], [data-testid="stDecoration"],
 [data-testid="stStatusWidget"], footer, #MainMenu { display: none !important; }
 header[data-testid="stHeader"] { background: var(--paper); border-bottom: 1px solid var(--rule); height: 4.25rem; }
-[data-testid="stHeaderLogo"], [data-testid="stLogo"] { height: 26px !important; max-width: 220px; margin: 0 2.25rem 0 .5rem; }
+[data-testid="stHeaderLogo"], [data-testid="stLogo"] { height: 42px !important; max-width: 240px; margin: 0 2.25rem 0 .5rem; }
 header [data-testid="stTopNavLink"] { border-radius: 0 !important; padding: 0 .9rem !important; background: transparent !important; }
 header [data-testid="stTopNavLink"] span, header [data-testid="stTopNavLink"] p {
   font-family: var(--sans) !important; font-size: 15px !important; font-weight: 400 !important; color: rgba(33,33,33,.72) !important; }
@@ -174,8 +174,8 @@ table.hr-table { width: 100%; border-collapse: collapse; font-size: 15px; color:
 .st-key-mode_switch button[aria-checked="true"], .st-key-mode_switch button[kind*="Active"] { border-color: var(--ink) !important; }
 .st-key-mode_switch button[aria-checked="true"] p, .st-key-mode_switch button[kind*="Active"] p { color: var(--ink) !important; }
 
-/* Byline under the wordmark */
-[data-testid="stHeaderLogo"], [data-testid="stLogo"] { overflow: visible; }
-[data-testid="stLogoLink"], a:has(> [data-testid="stHeaderLogo"]) { position: relative; }
-.st-key-byline { position: fixed; top: 2.75rem; left: 1.55rem; z-index: 999991; }
-.byline { font: 400 11px/1 Roboto, sans-serif; color: var(--graphite); letter-spacing: .02em; }
+
+/* In tables the "unverified" label sits under the number, not beside it */
+.hr-table .hr-unverified, table .hr-unverified { border-bottom: none; }
+.hr-table .hr-unverified::after, table .hr-unverified::after { display: block; margin: .15rem 0 0; }
+.hr-table .hr-unverified, table .hr-unverified { display: inline-block; text-decoration: underline dotted var(--watch); }
