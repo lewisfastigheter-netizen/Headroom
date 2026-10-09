@@ -75,9 +75,9 @@ nav = st.navigation(pages, position="top")
 
 # Search in the top-right corner, over companies and places. A company opens its page.
 # A county or municipality gives two suggestions: the place on Locations, and the
-# Companies list filtered to it (when companies are there). Cities and RegSO areas open
-# Locations. Companies, counties and municipalities rank before cities, cities before
-# areas, at most eight suggestions; close matches only, allowing a typo or two
+# Companies list filtered to it (when companies are there). RegSO areas open Locations.
+# Companies, counties and municipalities rank before postal towns, towns before areas,
+# at most eight suggestions; close matches only, allowing a typo or two
 # (see headroom.model.search).
 sc = data.scores
 company_items = tuple((n, o) for o, n in zip(sc["org_nr"], sc["name"], strict=True))
@@ -105,8 +105,6 @@ def header_entries(companies: tuple, places: tuple, counties: tuple, places_vers
             for city, county in places:
                 if city == name:
                     items.append((f"Companies in {name}", f"city:{county}|{city}", 1.1, [name]))
-        elif kind == "tatort":
-            items.append((f"{name} · city", f"loc:{p['value']}", 2, p["keys"]))
         else:
             kommun = p["sub"].split(" · ", 1)[-1].removesuffix(" municipality")
             items.append((f"{name} · area, {kommun}", f"loc:{p['value']}", 3, p["keys"]))

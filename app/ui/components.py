@@ -160,6 +160,7 @@ class Stat:
     caption: str = ""  # may contain <b>
     ink: bool = False
     state: str | None = None  # optional status marker
+    tip: str = ""  # optional text shown on hover (the figure's source)
 
 
 def stats_html(items: Sequence[Stat]) -> str:
@@ -168,8 +169,9 @@ def stats_html(items: Sequence[Stat]) -> str:
         unit = f"<small>{esc(s.unit)}</small>" if s.unit else ""
         mk = marker(s.state) if s.state else ""
         cls = "v ink" if s.ink else "v"
+        tip = f' data-src="{esc(s.tip)}"' if s.tip else ""
         out.append(
-            f'<div class="hr-stat"><div class="{cls}">{mk}{esc(s.value)}{unit}</div>'
+            f'<div class="hr-stat"><div class="{cls}"{tip}>{mk}{esc(s.value)}{unit}</div>'
             f'<div class="c">{s.caption}</div></div>'
         )
     return f'<div class="hr-stats">{"".join(out)}</div>'

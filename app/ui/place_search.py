@@ -2,9 +2,9 @@
 
 A small Streamlit component (components v2, no iframe), so the rows can carry two type
 styles: the name large and the level and parent in --muted, styled from theme.css.
-Matching runs in the browser over the place index (counties, municipalities, cities and
-RegSO areas) with the same rules as headroom.model.search: a word prefix, a substring,
-or one or two typos; counties and municipalities rank before cities, cities before areas.
+Matching runs in the browser over the place index (counties, municipalities and RegSO
+areas) with the same rules as headroom.model.search: a word prefix, a substring, or one or
+two typos; counties and municipalities rank before areas.
 
 The index is sent once per session and kept in the page (window) after that.
 """
@@ -151,7 +151,7 @@ def place_search(
     sent = st.session_state.setdefault("_hr_places_sent", set())
     data = {
         "version": version,
-        "placeholder": placeholder or "Search a county, municipality, city or area",
+        "placeholder": placeholder or "Search län, kommun or area",
     }
     if version not in sent:
         data["items"] = payload

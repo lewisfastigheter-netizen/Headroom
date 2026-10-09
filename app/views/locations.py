@@ -1,7 +1,9 @@
-"""Locations: how counties, municipalities, cities and areas (RegSO) develop, read for a
-value-add investor in rental housing and logistics / light industrial property.
+"""Locations: how counties (län), municipalities (kommuner) and areas (RegSO) develop, read
+for a value-add investor in rental housing and logistics / light industrial property.
 
-No place selected: a statement, the place search, a ranking of municipalities and a map.
+No place selected: the place search and the filters on the left (level, the places of
+that level, county, municipality, group, population), a map on the right that lights up
+the chosen places, and a table of them below.
 A place selected (?level=kommun&code=0380): what is happening there, how it compares with
 its neighbours, similar municipalities and Sweden, what that means for housing and for
 logistics, the areas inside it, and the property companies that hold most of their
@@ -13,6 +15,7 @@ demo mode). Missing values show as –; nothing is interpolated.
 
 from __future__ import annotations
 
+import functools
 import io
 import json
 import math
@@ -29,6 +32,7 @@ from ui.data import get_data
 from ui.locdata import geojson, get_locations, index_for_session
 from ui.place_search import place_search
 from ui.plotly_template import BLUE, CONFIG, GRAPHITE, HIGH, INK, LIGHT_BLUE, MUTED, RULE
+from ui.source_tips import source_tips
 
 D = get_locations()
 BLUE_RAMP = [
@@ -40,7 +44,7 @@ BLUE_RAMP = [
 ]
 BME = {0: "Shortage", 1: "Balance", 2: "Surplus"}
 NO_PERCENTILE = {"bme"}  # categorical
-LEVEL_NOUN = {"lan": "county", "kommun": "municipality", "tatort": "city", "regso": "area"}
+LEVEL_NOUN = {"lan": "county", "kommun": "municipality", "regso": "area"}
 
 
 def nav(level: str, code: str) -> str:
@@ -78,11 +82,11 @@ def period_txt(p: str | None) -> str:
     return f'<br><span style="color:var(--muted)">{ui.esc(str(p))}</span>' if p else ""
 
 
-def src_line(indicators: list[str], extra: str = "") -> None:
+def src_line(indicators: list[str], extra: str = "", level: str | None = None) -> None:
     """'Source: SCB TAB6574 (2025), Kolada U30446 (2026)…' from the indicators used."""
     seen, parts = set(), []
     for name in indicators:
-        s = D.source(name)
+        s = D.source(name, level)
         if not s or s["source_table"] in seen:
             continue
         seen.add(s["source_table"])
@@ -117,6 +121,127 @@ def score_state(v: float | None) -> str | None:
     return "ok" if v >= b["high"] else None
 
 
+# ---------------------------------------------------------------------------- source on hover
+
+# feature -> (indicators it is computed from, how; "" when the figure is the indicator)
+FEAT_SRC: dict[str, tuple[tuple[str, ...], str]] = {
+    "population": (("pop",), ""),
+    "growth": (("pop",), "Change in population per year"),
+    "growth_1y": (("pop",), "Change in population over the last year"),
+    "growth_5y": (("pop",), "Change in population per year over five years"),
+    "growth_10y": (("pop",), "Change in population per year over ten years"),
+    "housing_pressure": (
+        ("pop", "completions_q"),
+        "Population change over three years ÷ homes completed in the same years",
+    ),
+    "household_pressure": (
+        ("households", "completions_q"),
+        "Change in households over three years ÷ homes completed in the same years",
+    ),
+    "pipeline": (("starts_q", "pop"), "Homes started over four quarters per 1,000 residents"),
+    "young_inflow": (
+        ("dom_net_20_34", "pop"),
+        "Net domestic migration of 20–34-year-olds per 1,000 residents, mean of three years",
+    ),
+    "int_net_per_1000": (("int_net", "pop"), "Net immigration per 1,000 residents"),
+    "share_20_34": (("pop_20_34", "pop"), "Residents aged 20–34 ÷ all residents"),
+    "bme": (("bme",), "The municipality's own assessment of its housing market"),
+    "rental_share": (("dwellings_rental", "dwellings"), "Rental dwellings ÷ all dwellings"),
+    "condo_share": (("dwellings_condo", "dwellings"), "Tenant-owned dwellings ÷ all dwellings"),
+    "rental_share_new": (
+        ("completions_rental", "completions"),
+        "Rental flats ÷ all homes completed over five years",
+    ),
+    "rent_sqm": (("rent_sqm",), ""),
+    "transit_500m": (("transit_500m",), ""),
+    "income_median": (("income_median",), ""),
+    "education": (("edu_post3", "pop_25_65"), "Residents 25–65 with 3+ years' higher education"),
+    "unemployment": (("unemployment",), ""),
+    "tax_base_pct": (("tax_base_pct",), ""),
+    "catchment_50km": (("catchment_50km",), "Residents of 1 km squares within 50 km"),
+    "catchment_100km": (("catchment_100km",), "Residents of 1 km squares within 100 km"),
+    "catchment_200km": (("catchment_200km",), "Residents of 1 km squares within 200 km"),
+    "dist_port": (("dist_port",), "Straight line from the population-weighted centre"),
+    "dist_terminal": (("dist_terminal",), "Straight line from the population-weighted centre"),
+    "dist_airport": (("dist_airport",), "Straight line from the population-weighted centre"),
+    "logistics_jobs": (("emp_work_H",), "Jobs at workplaces here in transport and storage"),
+    "logistics_share": (("emp_work_H", "emp_work_total"), "Jobs in SNI H ÷ all jobs here"),
+    "logistics_lq": (
+        ("emp_work_H", "emp_work_total"),
+        "Share of jobs in SNI H here ÷ the same share for Sweden",
+    ),
+    "logistics_growth": (("emp_work_H",), "Change in SNI H jobs per year"),
+    "industrial_share": (
+        ("emp_work_BC", "emp_work_F", "emp_work_total"),
+        "Jobs in manufacturing, mining and construction ÷ all jobs",
+    ),
+    "job_hub": (("commuters_in", "commuters_out"), "In-commuters ÷ out-commuters"),
+    "jobs_ratio": (("emp_work_total", "emp_res_total"), "Jobs here ÷ employed residents"),
+    "grp_growth_5y": (("grp",), "Change in GRP per year over five years, current prices"),
+    "industrial_cluster": (
+        ("business_area_employees", "pop"),
+        "Employees in SCB's business areas per 1,000 residents",
+    ),
+    "industrial_land": (("industrial_land",), ""),
+    "industrial_assessed_per_unit": (("industrial_assessed_per_unit",), ""),
+    "industrial_kt": (("industrial_kt",), "Purchase price ÷ assessed value, county"),
+    "warehouse_kt": (("warehouse_kt",), "Purchase price ÷ assessed value, county"),
+    "net_income_mean": (("net_income_mean",), ""),
+    "income_rel": (("income_median",), "Median income ÷ Sweden's"),
+    "income_rel_kommun": (("net_income_mean",), "Mean net income ÷ the municipality's"),
+    "low_econ_std": (("low_econ_std",), ""),
+    "emp_rate": (("emp_rate",), ""),
+    "sei": (("sei",), "SCB's socio-economic index; higher means more challenges"),
+    "sei_improvement": (("sei",), "Index ten years ago minus the index now"),
+    "area_type": (("area_type",), "SCB's area type, 1 (most challenges) to 5"),
+    "dom_net_pct": (("dom_net_pct",), ""),
+}
+SCORE_TIP = (
+    "Headroom location score, 0–100, computed from the public statistics on this page.\n"
+    "Weights: config/weights.yaml. Method: the Method page."
+)
+
+
+@functools.lru_cache(maxsize=4096)
+def tip(key: str, level: str, period: str | None = None, note: str = "") -> str:
+    """Text for the hover box: where the figure comes from."""
+    spec = FEAT_SRC.get(key)
+    if not spec:
+        return note
+    inds, how = spec
+    lines, seen, as_of = [], set(), ""
+    for name in inds:
+        s = D.source(name, level)
+        if not s or s["source_table"] in seen:
+            continue
+        seen.add(s["source_table"])
+        lines.append(f"{s['source']}, {s['source_table']} (latest {s['period']})")
+        as_of = max(as_of, str(s.get("as_of") or "")[:10])
+    if not lines:
+        return note
+    out = ["Source: " + lines[0], *("        " + x for x in lines[1:])]
+    if period:
+        out.append(f"Figure: {period}")
+    if how:
+        out.append(how)
+    if note:
+        out.append(note)
+    if as_of:
+        out.append(f"Retrieved {as_of}")
+    return "\n".join(out)
+
+
+def sv(html: str, key: str, level: str, period=None, note: str = "") -> str:
+    """Wrap a formatted figure so hovering it shows its source."""
+    t = tip(key, level, str(period) if period else None, note)
+    return f'<span data-src="{ui.esc(t)}">{html}</span>' if t and html not in ("", "–") else html
+
+
+def score_cell(v: float | None) -> str:
+    txt = score_txt(v)
+    return f'<span data-src="{ui.esc(SCORE_TIP)}">{txt}</span>' if v is not None else txt
+
+
 if not D.available:
     ui.hero("Locations", "Location statistics have not been built yet.")
     ui.note("Run <code>uv run headroom locations</code> to fetch them from SCB and Kolada.")
@@ -125,208 +250,442 @@ if not D.available:
 NAT = D.feat("00")
 qp_level, qp_code = st.query_params.get("level"), st.query_params.get("code")
 place = D.place(qp_code) if qp_code else None
-if place is not None and qp_level and place["level"] != qp_level:
+if place is not None and (
+    (qp_level and place["level"] != qp_level) or place["level"] not in ("lan", "kommun", "regso")
+):
     place = None
 
 
 # ============================================================================ start
 
-
-def start_page() -> None:
-    k = level_feats("kommun")
-    lc = D.cfg["location"]
-    shortage = lc.get("pressure_shortage", 2.0)
-    g_nat = NAT.get("growth_5y")
-    both = (
-        k.filter((pl.col("growth_5y") > g_nat) & (pl.col("housing_pressure") > shortage))
-        if g_nat is not None
-        else k.head(0)
-    )
-    n = both.height
-    period = k["housing_pressure_period"].drop_nulls().mode().to_list()
-    period = period[0] if period else ""
-    improving = (
-        D.feats.filter(
-            (pl.col("level") == "regso")
-            & (pl.col("area_type_then") <= 2)
-            & (pl.col("sei_improvement") >= 1.0)
-        ).height
-        if "area_type_then" in D.feats.columns
-        else 0
-    )
-    n_short = k.filter(pl.col("bme") == 0).height
-    bme_year = k["bme_period"].drop_nulls().max() if "bme_period" in k.columns else ""
-    ui.hero(
-        "Locations",
-        f"{n} of {k.height} municipalities grew faster than Sweden and built less than they grew.",
-        "Population growth over five years above Sweden's, and more than "
-        f"{shortage:.0f} new residents for every home completed in {period}. "
-        "Where housing is scarce, rental demand holds; where land is scarce near people and roads, "
-        "last-mile logistics does.",
-        [
-            ui.Stat(
-                f"{n_short}",
-                "",
-                f"Municipalities that report a <b>housing shortage</b>, {ui.esc(bme_year)}",
-            ),
-            ui.Stat(
-                f"{NAT.get('housing_pressure', 0):.1f}",
-                "",
-                f"New residents per completed home in <b>Sweden</b>, {ui.esc(NAT.get('housing_pressure_period') or '')}",
-                ink=True,
-            ),
-            ui.Stat(
-                f"{improving:,}",
-                "",
-                "Areas in SCB's two weakest socio-economic types that <b>improved</b> over ten years",
-                ink=True,
-            ),
-        ],
-    )
-    go_to(place_search(index_for_session()))
-    ranking_section()
-    map_section()
-
-
-def ranking_section() -> None:
-    ui.section(
-        None, "Ranking", "Every municipality on the two location scores. Click a name to open it."
-    )
-    loc = D.loc.filter(pl.col("level") == "kommun").select(
-        "code", "name", "parent_lan", "kommungrupp"
-    )
-    lan_names = dict(
-        zip(
-            D.loc.filter(pl.col("level") == "lan")["code"],
-            D.loc.filter(pl.col("level") == "lan")["name"],
-            strict=True,
-        )
-    )
-    df = (
-        loc.join(
-            D.feats.select(
-                "code",
-                "population",
-                "growth_5y",
-                "housing_pressure",
-                "bme",
-                "logistics_share",
-                "catchment_100km",
-                "young_inflow",
-            ),
-            on="code",
-            how="left",
-        )
-        .join(D.scores.select("code", "residential", "logistics"), on="code", how="left")
-        .with_columns(pl.col("parent_lan").replace_strict(lan_names, default=None).alias("county"))
-    )
-    counties = [lan_names[c] for c in sorted(lan_names)]
-    groups = sorted(df["kommungrupp"].drop_nulls().unique().to_list())
-    sizes = {
+LEVELS = {"Län": "lan", "Kommun": "kommun", "RegSO": "regso"}
+LEVEL_PLURAL = {"lan": "län", "kommun": "kommuner", "regso": "RegSO areas"}
+SIZES = {
+    "lan": {"Any size": 0, "250,000+": 250_000, "500,000+": 500_000, "1,000,000+": 1_000_000},
+    "kommun": {
         "Any size": 0,
         "10,000+": 10_000,
         "25,000+": 25_000,
         "50,000+": 50_000,
         "100,000+": 100_000,
-    }
-    state = st.session_state
-    county = state.get("loc_county", "All counties")
-    group = state.get("loc_group", "All groups")
-    size = state.get("loc_size", "Any size")
-    sort = state.get("loc_sort", "Residential")
+    },
+    "regso": {"Any size": 0, "1,000+": 1_000, "2,000+": 2_000, "3,000+": 3_000, "5,000+": 5_000},
+}
+ALL_COUNTIES, ALL_KOMMUNER, ALL_GROUPS = "All län", "All kommuner", "All groups"
+SELECTED = HIGH  # selected areas light up in the theme's orange
+SELECTED_LINE = "#8A3A07"
 
-    def apply(frame: pl.DataFrame, skip: str = "") -> pl.DataFrame:
-        if county != "All counties" and skip != "county":
-            frame = frame.filter(pl.col("county") == county)
-        if group != "All groups" and skip != "group":
-            frame = frame.filter(pl.col("kommungrupp") == group)
-        if sizes.get(size) and skip != "size":
-            frame = frame.filter(pl.col("population") >= sizes[size])
-        return frame
 
-    styles: list[str] = []
+_FRAMES: dict[str, pl.DataFrame] = {}  # this run's frames; the page script reruns from the top
 
-    def grey(key: str, options: list, have: set, offset: int = 1) -> None:
-        for i, o in enumerate(options):
-            if o not in have:
-                styles.append(
-                    f'body:has(.st-key-{key} input:focus) [role="option"][data-key="{i + offset}"] {{ color: var(--muted) !important; }}'
-                )
 
-    c1, c2, c3, c4 = st.columns(4, gap="large")
-    c1.selectbox("County", ["All counties", *counties], key="loc_county")
-    grey("loc_county", counties, set(apply(df, "county")["county"].drop_nulls()))
-    c2.selectbox("Municipality group (SKR)", ["All groups", *groups], key="loc_group")
-    grey("loc_group", groups, set(apply(df, "group")["kommungrupp"].drop_nulls()))
-    c3.selectbox("Population", list(sizes), key="loc_size")
-    have_sizes = {
-        s for s, v in sizes.items() if apply(df, "size").filter(pl.col("population") >= v).height
-    }
-    grey("loc_size", list(sizes), have_sizes, 0)
-    c4.selectbox("Sort by", ["Residential", "Logistics"], key="loc_sort")
-    if styles:
-        ui.render("<style>" + "\n".join(styles) + "</style>")
-
-    f = apply(df).sort(sort.lower(), descending=True, nulls_last=True)
-    rows = []
-    for i, r in enumerate(f.to_dicts(), start=1):
-        rows.append(
-            {
-                "rank": i,
-                "res": score_txt(r["residential"]),
-                "log": score_txt(r["logistics"]),
-                "name": link("kommun", r["code"], r["name"])
-                + f'<span class="sub">{ui.esc(r["county"] or "")}</span>',
-                "pop": ui.fmt_num(r["population"]),
-                "g5": ui.fmt_delta(r["growth_5y"]),
-                "hp": ui.fmt_num(num(r["housing_pressure"]), 1),
-                "bme": bme_text(r["bme"]),
-                "lq": ui.fmt_pct(r["logistics_share"], 1),
-                "c100": ui.fmt_people(r["catchment_100km"]),
-            }
+def level_frame(level: str) -> pl.DataFrame:
+    """One row per place at a level, with its names, features and scores."""
+    if level not in _FRAMES:
+        names = dict(zip(D.loc["code"], D.loc["name"], strict=True))
+        _FRAMES[level] = (
+            D.loc.filter(pl.col("level") == level)
+            .select("code", "name", "parent_lan", "parent_kommun", "kommungrupp")
+            .join(D.feats.drop("level"), on="code", how="left")
+            .join(D.scores.select("code", "residential", "logistics"), on="code", how="left")
+            .with_columns(
+                pl.col("parent_lan").replace_strict(names, default=None).alias("county"),
+                pl.col("parent_kommun").replace_strict(names, default=None).alias("kommun"),
+            )
         )
-    ui.table(
-        rows,
-        [
+    return _FRAMES[level]
+
+
+def area_label(level: str, r: dict) -> str:
+    return f"{r['name']} · {r['kommun']}" if level == "regso" and r.get("kommun") else r["name"]
+
+
+def start_page() -> None:
+    state = st.session_state
+    # a click on a municipality in the RegSO map: becomes the Kommun filter before it is drawn
+    if "_loc_pick_kommun" in state:
+        state["loc_kommun"] = state.pop("_loc_pick_kommun")
+
+    left, right = st.columns([1, 2], gap="large")
+    with left:
+        go_to(place_search(index_for_session(), placeholder="Search län, kommun or area"))
+        level = LEVELS[st.selectbox("Level", list(LEVELS), index=1, key="loc_level")]
+        df = level_frame(level)
+        lans = level_frame("lan").sort("code")
+        kommuner = level_frame("kommun")
+        counties = lans["name"].to_list()
+        sizes = SIZES[level]
+        county = state.get("loc_county", ALL_COUNTIES)
+        if county not in (ALL_COUNTIES, *counties):
+            county = state["loc_county"] = ALL_COUNTIES
+        in_county = (
+            kommuner if county == ALL_COUNTIES else kommuner.filter(pl.col("county") == county)
+        )
+        knames = sorted(in_county["name"].to_list())
+        kommun = state.get("loc_kommun", ALL_KOMMUNER)
+        if kommun not in (ALL_KOMMUNER, *knames):
+            kommun = state["loc_kommun"] = ALL_KOMMUNER
+        kommun_code = dict(zip(kommuner["name"], kommuner["code"], strict=True)).get(kommun)
+        group = state.get("loc_group", ALL_GROUPS)
+        size = state.get(f"loc_size_{level}", "Any size")
+
+        def apply(frame: pl.DataFrame, skip: str = "") -> pl.DataFrame:
+            if level != "lan" and county != ALL_COUNTIES and skip != "county":
+                frame = frame.filter(pl.col("county") == county)
+            if level == "regso" and kommun_code and skip != "kommun":
+                frame = frame.filter(pl.col("parent_kommun") == kommun_code)
+            if level == "kommun" and group != ALL_GROUPS and skip != "group":
+                frame = frame.filter(pl.col("kommungrupp") == group)
+            if sizes.get(size) and skip != "size":
+                frame = frame.filter(pl.col("population") >= sizes[size])
+            return frame
+
+        passing = apply(df)
+        options = passing.sort("name")
+        labels = {r["code"]: area_label(level, r) for r in options.to_dicts()}
+        key = f"loc_areas_{level}"
+        if key in state:  # keep picks that the other filters still allow
+            state[key] = [c for c in state[key] if c in labels]
+        selected = st.multiselect(
+            {"lan": "Län", "kommun": "Kommun", "regso": "RegSO"}[level],
+            list(labels),
+            format_func=lambda c: labels.get(c, c),
+            key=key,
+            placeholder=f"Choose {LEVEL_PLURAL[level]}",
+        )
+
+        styles: list[str] = []
+
+        def grey(key: str, options: list, have: set, offset: int = 1) -> None:
+            for i, o in enumerate(options):
+                if o not in have:
+                    styles.append(
+                        f'body:has(.st-key-{key} input:focus) [role="option"][data-key="{i + offset}"] {{ color: var(--muted) !important; }}'
+                    )
+
+        if level != "lan":
+            st.selectbox("Län", [ALL_COUNTIES, *counties], key="loc_county")
+            grey("loc_county", counties, set(apply(df, "county")["county"].drop_nulls()))
+        if level == "regso":
+            st.selectbox("Kommun", [ALL_KOMMUNER, *knames], key="loc_kommun")
+        if level == "kommun":
+            groups = sorted(df["kommungrupp"].drop_nulls().unique().to_list())
+            st.selectbox("Municipality group (SKR)", [ALL_GROUPS, *groups], key="loc_group")
+            grey("loc_group", groups, set(apply(df, "group")["kommungrupp"].drop_nulls()))
+        st.selectbox("Population", list(sizes), key=f"loc_size_{level}")
+        have = {
+            s
+            for s, v in sizes.items()
+            if apply(df, "size").filter(pl.col("population") >= v).height
+        }
+        grey(f"loc_size_{level}", list(sizes), have, 0)
+        if styles:
+            ui.render("<style>" + "\n".join(styles) + "</style>")
+        if selected:
+            links = "".join(f"<li>{link(level, c, labels.get(c, c))}</li>" for c in selected[:12])
+            more = (
+                f'<li class="more">and {len(selected) - 12} more in the table below</li>'
+                if len(selected) > 12
+                else ""
+            )
+            ui.render(
+                f'<div class="hr-loc-open"><div class="hr-eyebrow">Open</div><ul>{links}{more}</ul></div>'
+            )
+
+    with right:
+        start_map(level, df, passing, selected, county, kommun_code)
+
+    shown = passing.filter(pl.col("code").is_in(selected)) if selected else passing
+    ranking_table(level, shown)
+
+
+def _bbox_of(features: list[dict]) -> tuple[list[float], list[float]]:
+    lats, lons = [], []
+    for ft in features:
+        _bbox(ft["geometry"]["coordinates"], lats, lons)
+    return lats, lons
+
+
+def fit_view(lats: list[float], lons: list[float], height: int, width: int = 780):
+    """Centre and zoom that fit a bounding box in a web-mercator map of this size."""
+    if not lats:
+        return dict(lat=62.6, lon=16.8), 4.4
+    y = lambda lat: math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))  # noqa: E731
+    y0, y1 = y(min(lats)), y(max(lats))
+    dy = max(y1 - y0, 1e-4)
+    dx = max(math.radians(max(lons) - min(lons)), 1e-4)
+    zh = math.log2(height * 0.85 * 2 * math.pi / (512 * dy))  # MapLibre: 512 px tiles
+    zw = math.log2(width * 0.85 * 2 * math.pi / (512 * dx))
+    zoom = max(2.8, min(12.5, min(zh, zw)))
+    lat = math.degrees(2 * math.atan(math.exp((y0 + y1) / 2)) - math.pi / 2)
+    return dict(lat=lat, lon=(min(lons) + max(lons)) / 2), zoom
+
+
+def _hover(r: dict) -> str:
+    parts = [f"<b>{ui.esc(r['name'])}</b>"]
+    if r.get("residential") is not None:
+        parts.append(f"Residential {r['residential']:.0f}")
+    if r.get("logistics") is not None:
+        parts.append(f"Logistics {r['logistics']:.0f}")
+    if r.get("population") is not None:
+        parts.append(f"{r['population']:,.0f} residents")
+    return "<br>".join(parts)
+
+
+def start_map(
+    level: str,
+    df: pl.DataFrame,
+    passing: pl.DataFrame,
+    selected: list[str],
+    county: str,
+    kommun_code: str | None,
+) -> None:
+    """Sweden, a county or a municipality's RegSO; the places that pass the filters in light
+    blue, the chosen ones lit up in orange. A click opens the place."""
+    height = 720
+    pick_kommun = False
+    if level == "regso":
+        if kommun_code:
+            kommuner = [kommun_code]
+        elif selected:
+            kommuner = sorted({c[:4] for c in selected})
+        elif county != ALL_COUNTIES:
+            kommuner = sorted(passing["parent_kommun"].drop_nulls().unique().to_list())
+        else:
+            kommuner = []
+        feats = []
+        for k in kommuner:
+            gj_k = geojson(f"regso/{k}")
+            feats += gj_k["features"] if gj_k else []
+        if not feats:  # no municipality chosen yet: pick one on the map of Sweden
+            pick_kommun = True
+            level_geo, frame = "kommun", level_frame("kommun")
+            gj = geojson("kommun")
+            passing_codes, selected = set(frame["code"]), []
+        else:
+            level_geo, frame = "regso", df.filter(pl.col("parent_kommun").is_in(kommuner))
+            gj = {"type": "FeatureCollection", "features": feats}
+            passing_codes = set(passing["code"])
+    else:
+        level_geo, frame, gj = level, df, geojson(level)
+        passing_codes = set(passing["code"])
+    if gj is None:
+        ui.note("Map geometry is missing from the snapshot.")
+        return
+
+    rows = frame.select("code", "name", "residential", "logistics", "population").to_dicts()
+    base = [r for r in rows if r["code"] not in selected]
+    lit = [r for r in rows if r["code"] in selected]
+    fig = go.Figure()
+    fig.add_trace(
+        go.Choroplethmap(
+            geojson=gj,
+            featureidkey="properties.code",
+            locations=[r["code"] for r in base],
+            z=[1 if r["code"] in passing_codes else 0 for r in base],
+            zmin=0,
+            zmax=1,
+            colorscale=[[0, "#ECECEC"], [0.5, "#ECECEC"], [0.5, "#BFDDE4"], [1, "#BFDDE4"]],
+            showscale=False,
+            marker_line_color="#FFFFFF",
+            marker_line_width=0.7 if level_geo != "regso" else 0.9,
+            marker_opacity=0.9,
+            customdata=[_hover(r) for r in base],
+            hovertemplate="%{customdata}<extra></extra>",
+        )
+    )
+    if lit:
+        fig.add_trace(
+            go.Choroplethmap(
+                geojson=gj,
+                featureidkey="properties.code",
+                locations=[r["code"] for r in lit],
+                z=[1] * len(lit),
+                colorscale=[[0, SELECTED], [1, SELECTED]],
+                showscale=False,
+                marker_line_color=SELECTED_LINE,
+                marker_line_width=2.2,
+                marker_opacity=0.8,
+                customdata=[_hover(r) for r in lit],
+                hovertemplate="%{customdata}<extra></extra>",
+            )
+        )
+    by_code = {ft["properties"]["code"]: ft for ft in gj["features"]}
+    if selected:
+        focus = [by_code[c] for c in selected if c in by_code]
+    elif len(passing_codes & set(by_code)) < len(by_code):
+        focus = [by_code[c] for c in passing_codes if c in by_code]
+    else:
+        focus = list(by_code.values())
+    center, zoom = fit_view(*_bbox_of(focus), height=height)
+    fig.update_layout(
+        map=dict(style="carto-positron", zoom=zoom, center=center),
+        height=height,
+        margin=dict(l=0, r=0, t=0, b=0),
+        hovermode="closest",
+    )
+    ev = st.plotly_chart(
+        fig,
+        config=CONFIG,  # the page scrolls; the filters zoom
+        width="stretch",
+        on_select="rerun",
+        selection_mode="points",
+        key=f"map_start_{level}_{level_geo}_{kommun_code}",
+    )
+    pts = (
+        (ev or {}).get("selection", {}).get("points", [])
+        if isinstance(ev, dict)
+        else getattr(getattr(ev, "selection", None), "points", [])
+    )
+    code = pts[0].get("location") if pts else None
+    if code and pick_kommun:
+        st.session_state["_loc_pick_kommun"] = D.name(code)
+        st.rerun()
+    elif code:
+        go_to(f"{level_geo}:{code}")
+    hint = (
+        "Choose a kommun (or click one) to draw its RegSO areas. "
+        if pick_kommun
+        else "Orange: your choice. Light blue: matches the filters. Click a place to open it. "
+    )
+    ui.source_line(
+        hint
+        + "Borders: SCB öppna geodata (RegSO 2025, joined to kommuner and län). Basemap © OpenStreetMap contributors, © CARTO."
+    )
+
+
+def ranking_table(level: str, f: pl.DataFrame) -> None:
+    noun = LEVEL_PLURAL[level]
+    ui.section(
+        None,
+        noun[0].upper() + noun[1:],
+        "Highest residential score first. Hover a figure for its source; click a name to open it.",
+    )
+    f = f.sort("residential", descending=True, nulls_last=True)
+    cap = 400
+    rows = []
+    for i, r in enumerate(f.head(cap).to_dicts(), start=1):
+        row = {"rank": i, "res": score_cell(r["residential"])}
+        pop = sv(ui.fmt_num(r["population"]), "population", level, r.get("population_year"))
+        if level == "regso":
+            flags = ""
+            if r.get("utsatt"):
+                lab = "Särskilt utsatt" if r["utsatt"] == "sarskilt_utsatt" else "Utsatt"
+                flags = ui.flag(
+                    lab,
+                    f"Polisen, Lägesbild över utsatta områden 2025: {r['utsatt_name']}. The police's borders do not follow RegSO; this link is approximate.",
+                    "high",
+                )
+            row |= {
+                "name": link("regso", r["code"], r["name"])
+                + f'<span class="sub">{ui.esc(r.get("kommun") or "")}</span>',
+                "pop": pop,
+                "g": sv(ui.fmt_delta(r["growth"]), "growth", level, r.get("growth_basis")),
+                "y": sv(ui.fmt_pct(r["share_20_34"], 0), "share_20_34", level),
+                "rent": sv(
+                    ui.fmt_pct(r["rental_share"], 0),
+                    "rental_share",
+                    level,
+                    r.get("rental_share_period"),
+                ),
+                "inc": sv(ui.fmt_x(r["income_rel_kommun"], 2), "income_rel_kommun", level),
+                "sei": sv(
+                    ui.fmt_num(num(r.get("sei_improvement")), 1),
+                    "sei_improvement",
+                    level,
+                    r.get("sei_improvement_period"),
+                ),
+                "flags": flags,
+            }
+        else:
+            row |= {
+                "log": score_cell(r["logistics"]),
+                "name": link(level, r["code"], r["name"])
+                + (
+                    f'<span class="sub">{ui.esc(r["county"] or "")}</span>'
+                    if level == "kommun"
+                    else ""
+                ),
+                "pop": pop,
+                "g5": sv(ui.fmt_delta(r["growth_5y"]), "growth_5y", level),
+                "hp": sv(
+                    ui.fmt_num(num(r["housing_pressure"]), 1),
+                    "housing_pressure",
+                    level,
+                    r.get("housing_pressure_period"),
+                ),
+                "bme": sv(bme_text(r["bme"], level == "kommun"), "bme", level, r.get("bme_period")),
+                "lq": sv(ui.fmt_pct(r["logistics_share"], 1), "logistics_share", level),
+                "c100": sv(ui.fmt_people(r["catchment_100km"]), "catchment_100km", level),
+            }
+        rows.append(row)
+    if level == "regso":
+        cols = [
             ui.Col("rank", "", "dim"),
-            ui.Col("res", "Residential", "big"),
-            ui.Col("log", "Logistics", "big"),
-            ui.Col("name", "Municipality", "name", raw_html=True),
-            ui.Col("pop", "Population", "num"),
-            ui.Col("g5", "Growth / yr, 5y", "num"),
-            ui.Col("hp", "Residents / new home", "num"),
-            ui.Col("bme", "Housing market"),
-            ui.Col("lq", "Logistics jobs", "num"),
-            ui.Col("c100", "Within 100 km", "num"),
-        ],
-        max_height=620,
-    )
+            ui.Col("res", "Residential", "big", raw_html=True),
+            ui.Col("name", "Area", "name", raw_html=True),
+            ui.Col("pop", "Population", "num", raw_html=True),
+            ui.Col("g", "Growth / yr", "num", raw_html=True),
+            ui.Col("y", "Aged 20–34", "num", raw_html=True),
+            ui.Col("rent", "Rental share", "num", raw_html=True),
+            ui.Col("inc", "Income vs kommun", "num", raw_html=True),
+            ui.Col("sei", "SEI improvement, 10y", "num", raw_html=True),
+            ui.Col("flags", "", "html"),
+        ]
+    else:
+        cols = [
+            ui.Col("rank", "", "dim"),
+            ui.Col("res", "Residential", "big", raw_html=True),
+            ui.Col("log", "Logistics", "big", raw_html=True),
+            ui.Col("name", "Län" if level == "lan" else "Kommun", "name", raw_html=True),
+            ui.Col("pop", "Population", "num", raw_html=True),
+            ui.Col("g5", "Growth / yr, 5y", "num", raw_html=True),
+            ui.Col("hp", "Residents / new home", "num", raw_html=True),
+            ui.Col("bme", "Housing market", raw_html=True),
+            ui.Col("lq", "Logistics jobs", "num", raw_html=True),
+            ui.Col("c100", "Within 100 km", "num", raw_html=True),
+        ]
+    ui.table(rows, cols, max_height=620)
+    shown = f"{min(f.height, cap):,} of {f.height:,}" if f.height > cap else f"{f.height:,}"
     src_line(
-        ["pop", "completions_q", "bme", "emp_work_H", "catchment_100km"],
-        f"{f.height} municipalities. Scores 0–100, method on the Method page. Residents per new home: population change over "
-        "three years divided by homes completed in the same years.",
+        ["pop", "completions_q", "bme", "emp_work_H", "catchment_100km"]
+        if level != "regso"
+        else ["pop", "dwellings_rental", "net_income_mean", "sei"],
+        f"{shown} {noun}. Scores 0–100, method on the Method page."
+        + (" Narrow with the filters, or export all of them." if f.height > cap else ""),
+        level=level,
     )
-    export = f.select(
+    keep = [
         "code",
         "name",
-        "county",
-        "kommungrupp",
+        *(["kommun"] if level == "regso" else []),
+        *(["county"] if level != "lan" else []),
+        *(["kommungrupp"] if level == "kommun" else []),
         "population",
         "residential",
-        "logistics",
-        "growth_5y",
-        "housing_pressure",
-        "young_inflow",
-        "bme",
-        "logistics_share",
-        "catchment_100km",
-    ).with_columns(pl.lit(D.meta.get("as_of", {}).get("generated", "")).alias("as_of"))
+        *(["logistics"] if level != "regso" else []),
+        *(
+            ["growth", "share_20_34", "rental_share", "income_rel_kommun", "sei_improvement"]
+            if level == "regso"
+            else [
+                "growth_5y",
+                "housing_pressure",
+                "young_inflow",
+                "bme",
+                "logistics_share",
+                "catchment_100km",
+            ]
+        ),
+    ]
+    export = f.select(keep).with_columns(
+        pl.lit(D.meta.get("as_of", {}).get("generated", "")).alias("as_of")
+    )
     st.write("")
     b1, b2, _ = st.columns([1.2, 1.2, 8])
     b1.download_button(
         "Export CSV",
         export.write_csv().encode("utf-8"),
-        file_name="headroom_locations.csv",
+        file_name=f"headroom_locations_{level}.csv",
         mime="text/csv",
     )
     buf = io.BytesIO()
@@ -334,74 +693,8 @@ def ranking_section() -> None:
     b2.download_button(
         "Export Excel",
         buf.getvalue(),
-        file_name="headroom_locations.xlsx",
+        file_name=f"headroom_locations_{level}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-
-
-def map_section() -> None:
-    ui.section(None, "Map", "Municipalities by score. Click one to open it.")
-    kind = st.segmented_control(
-        "Score", ["Residential", "Logistics"], default="Residential", key="loc_map_kind"
-    )
-    kind = (kind or "Residential").lower()
-    gj = geojson("kommun")
-    if gj is None:
-        ui.note("Map geometry is missing from the snapshot.")
-        return
-    k = (
-        D.loc.filter(pl.col("level") == "kommun")
-        .select("code", "name")
-        .join(D.scores.select("code", kind), on="code", how="left")
-    )
-    fig = go.Figure(
-        go.Choropleth(
-            geojson=gj,
-            featureidkey="properties.code",
-            locations=k["code"].to_list(),
-            z=k[kind].to_list(),
-            zmin=0,
-            zmax=100,
-            colorscale=BLUE_RAMP,
-            marker_line_color="#FFFFFF",
-            marker_line_width=0.4,
-            customdata=k["name"].to_list(),
-            hovertemplate="%{customdata}: %{z:.0f}<extra></extra>",
-            colorbar=dict(
-                thickness=8,
-                len=0.5,
-                x=0.02,
-                xanchor="left",
-                outlinewidth=0,
-                tickfont=dict(size=11, color=GRAPHITE),
-                title=dict(text=kind.capitalize(), font=dict(size=11, color=GRAPHITE)),
-            ),
-        )
-    )
-    fig.update_geos(fitbounds="locations", visible=False, projection_type="mercator")
-    fig.update_layout(
-        height=760, margin=dict(l=0, r=0, t=0, b=0), hovermode="closest", dragmode=False
-    )
-    ev = st.plotly_chart(
-        fig,
-        config=CONFIG,
-        width="stretch",
-        on_select="rerun",
-        selection_mode="points",
-        key=f"map_k_{kind}",
-    )
-    pts = (
-        (ev or {}).get("selection", {}).get("points", [])
-        if isinstance(ev, dict)
-        else getattr(getattr(ev, "selection", None), "points", [])
-    )
-    if pts:
-        code = pts[0].get("location")
-        if code:
-            go_to(f"kommun:{code}")
-    src_line(
-        ["pop", "bme", "catchment_100km"],
-        "Borders: SCB öppna geodata, RegSO 2025 joined to municipalities.",
     )
 
 
@@ -413,30 +706,33 @@ def compare_rows(
 ) -> list[dict]:
     """Indicator | place | county | Sweden | similar (mean) | percentile."""
     f = D.feat(code)
-    lan = D.feat(code[:2]) if level in ("kommun", "tatort") else {}
+    lan = D.feat(code[:2]) if level == "kommun" else {}
     peer_f = [D.feat(p) for p in peers]
+    n_level = {"lan": "counties", "kommun": "municipalities", "regso": "areas"}.get(level, "")
+    pct_tip = ui.esc("Share of Sweden's " + n_level + " with a lower value")
     rows = []
     for key, label, fmt, per_key in items:
         x = f.get(key)
         pv = [p.get(key) for p in peer_f if p.get(key) is not None]
-        pr = (
-            None
-            if key in NO_PERCENTILE
-            else pct_rank(level if level != "tatort" else "kommun", key, x)
-        )
+        pr = None if key in NO_PERCENTILE else pct_rank(level, key, x)
+        per = f.get(per_key) if per_key else None
         rows.append(
             {
-                "k": label
-                + (
-                    f'<span class="sub">{ui.esc(str(f.get(per_key) or ""))}</span>'
-                    if per_key and f.get(per_key)
-                    else ""
-                ),
-                "v": fmt(x),
-                "lan": fmt(lan.get(key)) if lan else "",
-                "nat": fmt(NAT.get(key)),
-                "peer": fmt(sum(pv) / len(pv)) if pv else "–",
-                "pct": "–" if pr is None else f"{pr:.0f}",
+                "k": label + (f'<span class="sub">{ui.esc(str(per))}</span>' if per else ""),
+                "v": sv(fmt(x), key, level, per),
+                "lan": sv(fmt(lan.get(key)), key, "lan", lan.get(per_key) if per_key else None)
+                if lan
+                else "",
+                "nat": sv(fmt(NAT.get(key)), key, "riket", NAT.get(per_key) if per_key else None),
+                "peer": sv(
+                    fmt(sum(pv) / len(pv)),
+                    key,
+                    "kommun",
+                    note=f"Mean of {len(pv)} similar municipalities (Kolada's peer group)",
+                )
+                if pv
+                else "–",
+                "pct": "–" if pr is None else f'<span data-src="{pct_tip}">{pr:.0f}</span>',
             }
         )
     return rows
@@ -445,13 +741,13 @@ def compare_rows(
 def compare_table(
     rows: list[dict], level: str, place_label: str, with_lan: bool = True, with_peer: bool = True
 ) -> None:
-    cols = [ui.Col("k", "Indicator", "html"), ui.Col("v", place_label, "num")]
+    cols = [ui.Col("k", "Indicator", "html"), ui.Col("v", place_label, "num", raw_html=True)]
     if with_lan:
-        cols.append(ui.Col("lan", "County", "num"))
-    cols.append(ui.Col("nat", "Sweden", "num"))
+        cols.append(ui.Col("lan", "County", "num", raw_html=True))
+    cols.append(ui.Col("nat", "Sweden", "num", raw_html=True))
     if with_peer:
-        cols.append(ui.Col("peer", "Similar municipalities", "num"))
-    cols.append(ui.Col("pct", "Percentile", "num"))
+        cols.append(ui.Col("peer", "Similar municipalities", "num", raw_html=True))
+    cols.append(ui.Col("pct", "Percentile", "num", raw_html=True))
     ui.table(rows, cols)
 
 
@@ -683,7 +979,9 @@ def residential_section(level: str, code: str, name: str) -> None:
                 "unemployment",
                 "tax_base_pct",
             ],
-            "Percentile: share of Sweden's municipalities (counties, for a county) with a lower value. Similar municipalities: mean of Kolada's peer group.",
+            "Percentile: share of Sweden's municipalities (counties, for a county) with a lower value. Similar municipalities: mean of Kolada's peer group. "
+            "Hover a figure for its source.",
+            level=level,
         )
         if f.get("rent_sqm") is None and level == "kommun":
             ui.note(
@@ -698,14 +996,14 @@ def residential_section(level: str, code: str, name: str) -> None:
         with c2:
             ui.render(ui.eyebrow("Homes started and completed vs population change"))
             construction_chart(code)
-        src_line(["pop", "starts_q", "completions_q"])
+        src_line(["pop", "starts_q", "completions_q"], level=level)
 
 
 def presumption_note(level: str, code: str) -> None:
     """New-build rent premium: SCB publishes it for the three metro regions and two size
     groups only."""
     p = D.place(code)
-    if not p or level not in ("kommun", "tatort"):
+    if not p or level != "kommun":
         return
     reg = p.get("storstad")
     if not reg:
@@ -733,7 +1031,7 @@ def presumption_note(level: str, code: str) -> None:
 
 def pop_index_chart(level: str, code: str, name: str) -> None:
     lines = [(code, name, INK, 2.2)]
-    if level in ("kommun", "tatort", "regso"):
+    if level in ("kommun", "regso"):
         k = code[:4]
         if level == "regso":
             lines.append((k, D.name(k), BLUE, 1.6))
@@ -932,6 +1230,7 @@ def logistics_section(level: str, code: str, name: str) -> None:
         ],
         "Distances and catchments are straight lines from the population-weighted centre, an approximation of drive time. "
         "Ports, terminals and airports: config/geo/logistics_nodes.yaml (Wikidata, OpenStreetMap); the terminal list is not complete.",
+        level=level,
     )
     if f.get("dist_motorway") is None:
         ui.note(
@@ -946,9 +1245,7 @@ def logistics_section(level: str, code: str, name: str) -> None:
         ui.note(f"Logistics rankings: {txt}. Shown for context; not part of the score.")
 
 
-def areas_section(
-    level: str, code: str, name: str, highlight: str | None = None, members: list[str] | None = None
-) -> None:
+def areas_section(level: str, code: str, name: str, highlight: str | None = None) -> None:
     """RegSO within a municipality (or the municipalities within a county): table and map."""
     if level == "lan":
         sub = D.loc.filter((pl.col("level") == "kommun") & (pl.col("parent_lan") == code))
@@ -961,29 +1258,36 @@ def areas_section(
         )
         rows = [
             {
-                "res": score_txt(r["residential"]),
-                "log": score_txt(r["logistics"]),
+                "res": score_cell(r["residential"]),
+                "log": score_cell(r["logistics"]),
                 "name": link("kommun", r["code"], r["name"]),
-                "pop": ui.fmt_num(r["population"]),
-                "g5": ui.fmt_delta(r["growth_5y"]),
-                "hp": ui.fmt_num(num(r["housing_pressure"]), 1),
-                "bme": bme_text(r["bme"]),
+                "pop": sv(
+                    ui.fmt_num(r["population"]), "population", "kommun", r.get("population_year")
+                ),
+                "g5": sv(ui.fmt_delta(r["growth_5y"]), "growth_5y", "kommun"),
+                "hp": sv(
+                    ui.fmt_num(num(r["housing_pressure"]), 1),
+                    "housing_pressure",
+                    "kommun",
+                    r.get("housing_pressure_period"),
+                ),
+                "bme": sv(bme_text(r["bme"]), "bme", "kommun", r.get("bme_period")),
             }
             for r in df.to_dicts()
         ]
         ui.table(
             rows,
             [
-                ui.Col("res", "Residential", "big"),
-                ui.Col("log", "Logistics", "big"),
+                ui.Col("res", "Residential", "big", raw_html=True),
+                ui.Col("log", "Logistics", "big", raw_html=True),
                 ui.Col("name", "Municipality", "name", raw_html=True),
-                ui.Col("pop", "Population", "num"),
-                ui.Col("g5", "Growth / yr, 5y", "num"),
-                ui.Col("hp", "Residents per new home", "num"),
-                ui.Col("bme", "Housing market"),
+                ui.Col("pop", "Population", "num", raw_html=True),
+                ui.Col("g5", "Growth / yr, 5y", "num", raw_html=True),
+                ui.Col("hp", "Residents per new home", "num", raw_html=True),
+                ui.Col("bme", "Housing market", raw_html=True),
             ],
         )
-        src_line(["pop", "completions_q", "bme"])
+        src_line(["pop", "completions_q", "bme"], level="kommun")
         county_map(code)
         return
     kommun = code[:4]
@@ -992,20 +1296,16 @@ def areas_section(
     desc = (
         f"SCB's regional statistical areas (RegSO) in {name}."
         if level == "kommun"
-        else f"The RegSO that make up {name} are marked; the rest of {D.name(kommun)} is shown for context."
-        if level == "tatort"
         else f"Where {name} sits among the areas of {D.name(kommun)}."
     ) + " Click an area to open it."
     ui.section(None, title, desc)
     df = (
-        sub.select("code", "name", "tatort_codes")
+        sub.select("code", "name")
         .join(D.feats, on="code", how="left")
         .join(D.scores.select("code", "residential"), on="code", how="left")
     )
-    if members is not None:
-        df = df.with_columns(pl.col("code").is_in(members).alias("_member"))
     df = df.sort("residential", descending=True, nulls_last=True)
-    region_map(kommun, df, highlight, members)
+    region_map(kommun, df, highlight)
     rows = []
     for r in df.to_dicts():
         flags = ""
@@ -1034,38 +1334,50 @@ def areas_section(
             )
         at = r.get("area_type")
         sub_txt = f"Area type {int(at)}" if at is not None else ""
-        cls = "me" if r["code"] == highlight or (members is not None and r.get("_member")) else None
+        cls = "me" if r["code"] == highlight else None
         rows.append(
             {
                 "_class": cls,
-                "res": score_txt(r["residential"]),
+                "res": score_cell(r["residential"]),
                 "name": link("regso", r["code"], r["name"])
                 + f'<span class="sub">{ui.esc(sub_txt)}</span>',
-                "pop": ui.fmt_num(r["population"]),
-                "g": ui.fmt_delta(r["growth"])
+                "pop": sv(
+                    ui.fmt_num(r["population"]), "population", "regso", r.get("population_year")
+                ),
+                "g": sv(ui.fmt_delta(r["growth"]), "growth", "regso", r.get("growth_basis"))
                 + (
                     f'<span class="sub">{ui.esc(r.get("growth_basis") or "")}</span>'
                     if r.get("growth_basis")
                     else ""
                 ),
-                "y": ui.fmt_pct(r["share_20_34"], 0),
-                "rent": ui.fmt_pct(r["rental_share"], 0),
-                "inc": ui.fmt_x(r["income_rel_kommun"], 2),
-                "sei": ui.fmt_num(num(r.get("sei_improvement")), 1),
+                "y": sv(ui.fmt_pct(r["share_20_34"], 0), "share_20_34", "regso"),
+                "rent": sv(
+                    ui.fmt_pct(r["rental_share"], 0),
+                    "rental_share",
+                    "regso",
+                    r.get("rental_share_period"),
+                ),
+                "inc": sv(ui.fmt_x(r["income_rel_kommun"], 2), "income_rel_kommun", "regso"),
+                "sei": sv(
+                    ui.fmt_num(num(r.get("sei_improvement")), 1),
+                    "sei_improvement",
+                    "regso",
+                    r.get("sei_improvement_period"),
+                ),
                 "flags": flags,
             }
         )
     ui.table(
         rows,
         [
-            ui.Col("res", "Residential", "big"),
+            ui.Col("res", "Residential", "big", raw_html=True),
             ui.Col("name", "Area", "name", raw_html=True),
-            ui.Col("pop", "Population", "num"),
+            ui.Col("pop", "Population", "num", raw_html=True),
             ui.Col("g", "Growth / yr", "num", raw_html=True),
-            ui.Col("y", "Aged 20–34", "num"),
-            ui.Col("rent", "Rental share", "num"),
-            ui.Col("inc", "Income vs municipality", "num"),
-            ui.Col("sei", "SEI improvement, 10y", "num"),
+            ui.Col("y", "Aged 20–34", "num", raw_html=True),
+            ui.Col("rent", "Rental share", "num", raw_html=True),
+            ui.Col("inc", "Income vs municipality", "num", raw_html=True),
+            ui.Col("sei", "SEI improvement, 10y", "num", raw_html=True),
             ui.Col("flags", "", "html"),
         ],
         max_height=640,
@@ -1074,58 +1386,36 @@ def areas_section(
         ["pop", "dwellings_rental", "net_income_mean", "sei"],
         "Growth per year since 2020 where the area kept its borders, otherwise last year. SEI improvement: fall in SCB's socio-economic "
         "index (higher index = more challenges), percentage points. Flags: Polisen, Lägesbild över utsatta områden 2025.",
+        level="regso",
     )
 
 
-def region_map(
-    kommun: str, df: pl.DataFrame, highlight: str | None, members: list[str] | None
-) -> None:
+def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
+    """A municipality's RegSO by residential score. The open area is filled orange with a
+    dark outline; police-listed vulnerable areas get a thick orange outline and a light
+    orange fill."""
     gj = geojson(f"regso/{kommun}")
     if gj is None:
         ui.note("Area geometry is missing for this municipality.")
         return
-    lats, lons = [], []
-    focus = set(members or []) | ({highlight} if highlight else set())
-    for ft in gj["features"]:
-        if not members or ft["properties"]["code"] in focus:
-            _bbox(ft["geometry"]["coordinates"], lats, lons)
-    codes = df["code"].to_list()
-    z = df["residential"].to_list()
-    names = df["name"].to_list()
+    lats, lons = _bbox_of(gj["features"])
+    # police-listed and open areas are drawn in orange only, so the blue does not muddy it
+    lit = {r["code"] for r in df.to_dicts() if r.get("utsatt")} | {highlight}
+    base = df.filter(~pl.col("code").is_in(list(lit - {None})))
     fig = go.Figure()
-    if members is not None:
-        mem = df.filter(pl.col("_member"))
-        rest = df.filter(~pl.col("_member"))
-        if rest.height:
-            fig.add_trace(
-                go.Choroplethmap(
-                    geojson=gj,
-                    featureidkey="properties.code",
-                    locations=rest["code"].to_list(),
-                    z=[0] * rest.height,
-                    colorscale=[[0, "#ECECEC"], [1, "#ECECEC"]],
-                    showscale=False,
-                    marker_line_color="#FFFFFF",
-                    marker_line_width=0.8,
-                    customdata=rest["name"].to_list(),
-                    hovertemplate="%{customdata}<extra></extra>",
-                    marker_opacity=0.85,
-                )
-            )
-        codes, z, names = mem["code"].to_list(), mem["residential"].to_list(), mem["name"].to_list()
     fig.add_trace(
         go.Choroplethmap(
             geojson=gj,
             featureidkey="properties.code",
-            locations=codes,
-            z=z,
+            locations=base["code"].to_list(),
+            z=base["residential"].to_list(),
             zmin=0,
             zmax=100,
             colorscale=BLUE_RAMP,
             marker_line_color="#FFFFFF",
             marker_line_width=0.8,
             marker_opacity=0.82,
-            customdata=names,
+            customdata=base["name"].to_list(),
             hovertemplate="%{customdata}: %{z:.0f}<extra></extra>",
             colorbar=dict(
                 thickness=8,
@@ -1138,21 +1428,7 @@ def region_map(
             ),
         )
     )
-    if highlight:
-        fig.add_trace(
-            go.Choroplethmap(
-                geojson=gj,
-                featureidkey="properties.code",
-                locations=[highlight],
-                z=[1],
-                colorscale=[[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
-                showscale=False,
-                marker_line_color=INK,
-                marker_line_width=2.5,
-                hoverinfo="skip",
-            )
-        )
-    ut = [r for r in df.to_dicts() if r.get("utsatt")]
+    ut = [r for r in df.to_dicts() if r.get("utsatt") and r["code"] != highlight]
     if ut:
         fig.add_trace(
             go.Choroplethmap(
@@ -1160,22 +1436,41 @@ def region_map(
                 featureidkey="properties.code",
                 locations=[r["code"] for r in ut],
                 z=[1] * len(ut),
-                colorscale=[[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
+                colorscale=[[0, "rgba(225,110,29,0.42)"], [1, "rgba(225,110,29,0.42)"]],
                 showscale=False,
                 marker_line_color=HIGH,
-                marker_line_width=1.8,
-                hoverinfo="skip",
+                marker_line_width=3.5,
+                customdata=[
+                    f"{ui.esc(r['name'])}: {score_txt(r['residential'])}"
+                    f"<br>Police-listed: {ui.esc(r.get('utsatt_name') or '')}"
+                    for r in ut
+                ],
+                hovertemplate="%{customdata}<extra></extra>",
             )
         )
-    if lats:
-        span = max(max(lats) - min(lats), (max(lons) - min(lons)) * 0.5)
-        zoom = max(5.0, min(13.0, math.log2(360 / max(span * 1.6, 1e-3)) - 0.2))
-        center = dict(lat=(max(lats) + min(lats)) / 2, lon=(max(lons) + min(lons)) / 2)
-    else:
-        zoom, center = 8, dict(lat=59.3, lon=18.0)
+    if highlight:
+        fig.add_trace(
+            go.Choroplethmap(
+                geojson=gj,
+                featureidkey="properties.code",
+                locations=[highlight],
+                z=[1],
+                colorscale=[[0, HIGH], [1, HIGH]],
+                showscale=False,
+                marker_opacity=0.88,
+                marker_line_color=INK,
+                marker_line_width=3.5,
+                customdata=[
+                    f"{ui.esc(D.name(highlight))}: {score_txt(D.score(highlight, 'residential'))}"
+                ],
+                hovertemplate="%{customdata}<extra></extra>",
+            )
+        )
+    center, zoom = fit_view(lats, lons, height=600, width=1150)
+    zoom += 0.5  # RegSO run out over the sea; the land deserves the room
     fig.update_layout(
         map=dict(style="carto-positron", zoom=zoom, center=center),
-        height=560,
+        height=600,
         margin=dict(l=0, r=0, t=0, b=0),
         hovermode="closest",
     )
@@ -1197,7 +1492,9 @@ def region_map(
         if loc_code and loc_code != highlight:
             go_to(f"regso:{loc_code}")
     ui.source_line(
-        "Borders: SCB öppna geodata, RegSO 2025 (simplified). Orange outline: police-listed vulnerable area (approximate). Basemap © OpenStreetMap contributors, © CARTO."
+        ("Solid orange: this area. " if highlight else "")
+        + "Orange outline: police-listed vulnerable area (approximate). "
+        "Borders: SCB öppna geodata, RegSO 2025 (simplified). Basemap © OpenStreetMap contributors, © CARTO."
     )
 
 
@@ -1311,13 +1608,19 @@ def peers_section(level: str, code: str, name: str) -> None:
         out.append(
             {
                 "_class": "me" if c == code else None,
-                "res": score_txt(D.score(c, "residential")) if lvl != "riket" else "",
-                "log": (score_txt(D.score(c, "logistics")) if lvl != "riket" else "")
+                "res": score_cell(D.score(c, "residential")) if lvl != "riket" else "",
+                "log": (score_cell(D.score(c, "logistics")) if lvl != "riket" else "")
                 if level != "regso"
                 else "",
                 "name": name_html + f'<span class="sub">{ui.esc(sub)}</span>',
-                "pop": ui.fmt_num(f.get("population")),
-                "g": ui.fmt_delta(f.get(res_key) if lvl == "regso" else f.get("growth_5y")),
+                "pop": sv(
+                    ui.fmt_num(f.get("population")), "population", lvl, f.get("population_year")
+                ),
+                "g": sv(
+                    ui.fmt_delta(f.get(res_key) if lvl == "regso" else f.get("growth_5y")),
+                    "growth" if lvl == "regso" else "growth_5y",
+                    lvl,
+                ),
                 "hp": ui.fmt_num(num(f.get("housing_pressure")), 1)
                 if level != "regso"
                 else ui.fmt_pct(f.get("rental_share"), 0),
@@ -1331,11 +1634,11 @@ def peers_section(level: str, code: str, name: str) -> None:
             }
         )
     cols = [
-        ui.Col("res", "Residential", "big"),
-        *([ui.Col("log", "Logistics", "big")] if level != "regso" else []),
+        ui.Col("res", "Residential", "big", raw_html=True),
+        *([ui.Col("log", "Logistics", "big", raw_html=True)] if level != "regso" else []),
         ui.Col("name", "Place", "name", raw_html=True),
-        ui.Col("pop", "Population", "num"),
-        ui.Col("g", "Growth / yr, 5y", "num"),
+        ui.Col("pop", "Population", "num", raw_html=True),
+        ui.Col("g", "Growth / yr, 5y", "num", raw_html=True),
         ui.Col("hp", "Residents per new home" if level != "regso" else "Rental share", "num"),
         ui.Col("y", "Aged 20–34", "num"),
         ui.Col("inc", "Income vs Sweden" if level != "regso" else "Income vs municipality", "num"),
@@ -1362,7 +1665,7 @@ def companies_section(level: str, code: str, name: str) -> None:
     )
     kcode = dict(zip(k["kommun"], k["kommun_code"], strict=True))
     lan_name = dict(zip(k["county_code"], k["county"], strict=True))
-    kommun = code[:4] if level in ("kommun", "tatort", "regso") else None
+    kommun = code[:4] if level in ("kommun", "regso") else None
     lan = code[:2]
     rows = []
     for r in d.scores.to_dicts():
@@ -1431,21 +1734,11 @@ def companies_section(level: str, code: str, name: str) -> None:
 def place_page(p: dict) -> None:
     level, code = p["level"], p["code"]
     name = p["name"]
-    members = None
-    if level == "tatort":
-        members = [c for c in (p.get("tatort_codes") or "").split(",") if c]
-        stats_code = p["parent_kommun"]
-    else:
-        stats_code = code
-    f = D.feat(stats_code)
-    fc = D.feat(code)
-    lan_name = D.name(code[:2]) if level != "lan" else ""
+    f = D.feat(code)
     if level == "lan":
         kicker = "County"
     elif level == "kommun":
-        kicker = f"Municipality · {lan_name}"
-    elif level == "tatort":
-        kicker = f"City · {D.name(stats_code)} municipality"
+        kicker = f"Municipality · {D.name(code[:2])}"
     else:
         kicker = f"Area · {D.name(code[:4])} municipality"
     nat = dict(NAT)
@@ -1454,107 +1747,128 @@ def place_page(p: dict) -> None:
             vals = level_feats("kommun")[key].drop_nulls()
             nat[f"_sd_{key}"] = float(vals.std()) if vals.len() > 1 else None
     if level == "regso":
-        headline = regso_headline(name, fc, D.feat(code[:4]))
+        headline = regso_headline(name, f, D.feat(code[:4]))
     else:
-        headline = L.headline(name if level != "tatort" else D.name(stats_code), f, nat)
-    pop = fc.get("population") if level == "tatort" else f.get("population")
-    pop_year = fc.get("population_year") if level == "tatort" else f.get("population_year")
+        headline = L.headline(name, f, nat)
+    res = D.score(code, "residential")
     stats = [
         ui.Stat(
-            score_txt(D.score(code if level == "regso" else stats_code, "residential")),
-            "/100"
-            if D.score(code if level == "regso" else stats_code, "residential") is not None
-            else "",
+            score_txt(res),
+            "/100" if res is not None else "",
             "Residential score",
-        ),
+            tip=SCORE_TIP if res is not None else "",
+        )
     ]
     if level != "regso":
+        lg = D.score(code, "logistics")
         stats.append(
             ui.Stat(
-                score_txt(D.score(stats_code, "logistics")),
-                "/100" if D.score(stats_code, "logistics") is not None else "",
+                score_txt(lg),
+                "/100" if lg is not None else "",
                 "Logistics score",
                 ink=True,
+                tip=SCORE_TIP if lg is not None else "",
             )
         )
     stats.append(
         ui.Stat(
-            ui.fmt_num(pop),
+            ui.fmt_num(f.get("population")),
             "",
-            f"Residents, {ui.esc(str(pop_year or ''))}"
-            + (" (SCB tätort statistics)" if level == "tatort" else ""),
+            f"Residents, {ui.esc(str(f.get('population_year') or ''))}",
             ink=True,
+            tip=tip("population", level, str(f.get("population_year") or "") or None),
         )
     )
-    intro = ""
-    if level == "tatort":
-        intro = f"Figures below are for {ui.esc(D.name(stats_code))} municipality; the areas that make up the city are marked under Areas."
-    ui.hero(kicker, ui.esc(headline), intro, stats)
+    ui.hero(kicker, ui.esc(headline), "", stats)
     go_to(place_search(index_for_session(), key="place_search_top"))
     if level == "regso":
         ui.facts(
             [
                 (
                     "Population",
-                    ui.fmt_num(fc.get("population")) + period_txt(fc.get("population_year")),
+                    sv(
+                        ui.fmt_num(f.get("population")),
+                        "population",
+                        level,
+                        f.get("population_year"),
+                    )
+                    + period_txt(f.get("population_year")),
                 ),
                 (
                     "Growth per year",
-                    ui.fmt_delta(fc.get("growth")) + period_txt(fc.get("growth_basis")),
+                    sv(ui.fmt_delta(f.get("growth")), "growth", level, f.get("growth_basis"))
+                    + period_txt(f.get("growth_basis")),
                 ),
                 (
                     "Rental share",
-                    ui.fmt_pct(fc.get("rental_share"), 0)
-                    + period_txt(fc.get("rental_share_period")),
+                    sv(
+                        ui.fmt_pct(f.get("rental_share"), 0),
+                        "rental_share",
+                        level,
+                        f.get("rental_share_period"),
+                    )
+                    + period_txt(f.get("rental_share_period")),
                 ),
                 (
                     "Area type (1–5)",
-                    (ui.fmt_num(fc.get("area_type")) if fc.get("area_type") is not None else "–")
-                    + period_txt(fc.get("area_type_period")),
+                    sv(
+                        ui.fmt_num(f.get("area_type")) if f.get("area_type") is not None else "–",
+                        "area_type",
+                        level,
+                        f.get("area_type_period"),
+                    )
+                    + period_txt(f.get("area_type_period")),
                 ),
             ]
         )
-        regso_section(code, name, fc)
+        regso_section(code, name, f)
         areas_section("regso", code, name, highlight=code)
         logistics_section("regso", code, name)
         peers_section("regso", code, name)
         companies_section("regso", code, name)
         return
+    py = f.get("population_year")
+    g_per = f"{int(py) - 5}–{py}" if py else None
     ui.facts(
         [
-            ("Population", ui.fmt_num(f.get("population")) + period_txt(f.get("population_year"))),
+            (
+                "Population",
+                sv(ui.fmt_num(f.get("population")), "population", level, py) + period_txt(py),
+            ),
             (
                 "Growth per year, 5 years",
-                ui.fmt_delta(f.get("growth_5y"))
-                + period_txt(
-                    f"{int(f['population_year']) - 5}–{f['population_year']}"
-                    if f.get("population_year")
-                    else None
-                ),
+                sv(ui.fmt_delta(f.get("growth_5y")), "growth_5y", level, g_per) + period_txt(g_per),
             ),
             (
                 "Housing market",
-                bme_text(f.get("bme"), level in ("kommun", "tatort"))
+                sv(
+                    bme_text(f.get("bme"), level == "kommun"),
+                    "bme",
+                    level,
+                    f.get("bme_period"),
+                    "" if level == "kommun" else "Mean of the county's municipalities",
+                )
                 + period_txt(f.get("bme_period")),
             ),
             (
                 "Median income",
-                (f"SEK {f['income_median']:,.0f}k" if f.get("income_median") is not None else "–")
+                sv(
+                    f"SEK {f['income_median']:,.0f}k"
+                    if f.get("income_median") is not None
+                    else "–",
+                    "income_median",
+                    level,
+                    f.get("income_median_period"),
+                )
                 + period_txt(f.get("income_median_period")),
             ),
         ]
     )
-    sl = "kommun" if level == "tatort" else level
-    residential_section(sl, stats_code, D.name(stats_code))
-    logistics_section(sl, stats_code, D.name(stats_code))
-    areas_section(
-        level if level != "tatort" else "tatort",
-        stats_code if level != "tatort" else code,
-        name,
-        members=members,
-    )
-    peers_section(sl, stats_code, D.name(stats_code))
-    companies_section(level, stats_code, name)
+    residential_section(level, code, name)
+    logistics_section(level, code, name)
+    areas_section(level, code, name)
+    peers_section(level, code, name)
+    companies_section(level, code, name)
 
 
 def regso_headline(name: str, f: dict, k: dict) -> str:
@@ -1609,6 +1923,9 @@ def regso_headline(name: str, f: dict, k: dict) -> str:
     if not cands:
         return f"{name} has {ui.fmt_num(f.get('population'))} residents."
     return max(cands)[1]
+
+
+REGSO_PCT_TIP = ui.esc("Share of Sweden's RegSO areas with a lower value")
 
 
 def regso_section(code: str, name: str, f: dict) -> None:
@@ -1667,17 +1984,13 @@ def regso_section(code: str, name: str, f: dict) -> None:
         def r(key, label, fmt, per=None):
             x = f.get(key)
             pr = pct_rank("regso", key, x)
+            p = f.get(per) if per else None
             return {
-                "k": label
-                + (
-                    f'<span class="sub">{ui.esc(str(f.get(per)))}</span>'
-                    if per and f.get(per)
-                    else ""
-                ),
-                "v": fmt(x),
-                "lan": fmt(kf.get(key)),
-                "nat": fmt(NAT.get(key)),
-                "pct": "–" if pr is None else f"{pr:.0f}",
+                "k": label + (f'<span class="sub">{ui.esc(str(p))}</span>' if p else ""),
+                "v": sv(fmt(x), key, "regso", p),
+                "lan": sv(fmt(kf.get(key)), key, "kommun", kf.get(per) if per else None),
+                "nat": sv(fmt(NAT.get(key)), key, "riket", NAT.get(per) if per else None),
+                "pct": "–" if pr is None else f'<span data-src="{REGSO_PCT_TIP}">{pr:.0f}</span>',
             }
 
         rows = [
@@ -1737,10 +2050,10 @@ def regso_section(code: str, name: str, f: dict) -> None:
             rows,
             [
                 ui.Col("k", "Indicator", "html"),
-                ui.Col("v", name, "num"),
-                ui.Col("lan", D.name(k), "num"),
-                ui.Col("nat", "Sweden", "num"),
-                ui.Col("pct", "Percentile", "num"),
+                ui.Col("v", name, "num", raw_html=True),
+                ui.Col("lan", D.name(k), "num", raw_html=True),
+                ui.Col("nat", "Sweden", "num", raw_html=True),
+                ui.Col("pct", "Percentile", "num", raw_html=True),
             ],
         )
         src_line(
@@ -1754,7 +2067,8 @@ def regso_section(code: str, name: str, f: dict) -> None:
                 "sei",
                 "dom_net_pct",
             ],
-            "– means SCB suppresses the figure for a small area or does not publish it at this level.",
+            "– means SCB suppresses the figure for a small area or does not publish it at this level. Hover a figure for its source.",
+            level="regso",
         )
         comps = D.components(code, "residential")
         if comps:
@@ -1787,7 +2101,7 @@ def regso_section(code: str, name: str, f: dict) -> None:
         with c2:
             ui.render(ui.eyebrow("Socio-economic index (lower is better)"))
             sei_chart(code, k)
-        src_line(["pop", "sei"])
+        src_line(["pop", "sei"], level="regso")
 
 
 def sei_chart(code: str, kommun: str) -> None:
@@ -1831,3 +2145,4 @@ ui.source_line(
     f"Location statistics: SCB, Kolada, Polisen, OpenStreetMap, Wikidata; built {ui.fmt_date(gen, 'long') if gen else '–'}. "
     "Public data, the same in live and demo mode."
 )
+source_tips()

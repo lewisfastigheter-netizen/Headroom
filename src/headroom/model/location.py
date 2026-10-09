@@ -815,8 +815,9 @@ def headline(name: str, f: dict, nat: dict) -> str:
 
 
 def place_index(loc: pl.DataFrame) -> list[dict]:
-    """Places for search, best tier first: counties and municipalities (tier 1), cities
-    (tier 2), areas (tier 3). Each item: label, sub, value, tier, keys (strings to match)."""
+    """Places for search, best tier first: counties and municipalities (tier 1), areas
+    (RegSO, tier 3). Cities (tätorter) are not pages of their own. Each item: label, sub,
+    value, tier, keys (strings to match)."""
     kname = dict(
         zip(
             loc.filter(pl.col("level") == "kommun")["code"],
@@ -853,19 +854,6 @@ def place_index(loc: pl.DataFrame) -> list[dict]:
                     "sub": f"Municipality · {lname.get(code[:2], '')}",
                     "value": f"kommun:{code}",
                     "tier": 1,
-                    "keys": [name],
-                }
-            )
-        elif lvl == "tatort":
-            k = kname.get(r["parent_kommun"] or "", "")
-            if name == k:  # the city that shares its municipality's name: one entry is enough
-                continue
-            out.append(
-                {
-                    "label": name,
-                    "sub": f"City · {k} municipality",
-                    "value": f"tatort:{code}",
-                    "tier": 2,
                     "keys": [name],
                 }
             )

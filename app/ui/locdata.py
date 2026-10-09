@@ -8,7 +8,7 @@ the weights shows on the next rerun, as for the company scores.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
@@ -32,6 +32,7 @@ class Locations:
     scores: pl.DataFrame  # wide: code, residential, logistics (+ components json)
     peers: pl.DataFrame
     cfg: dict
+    sources: dict = field(default_factory=dict)  # (indicator, level) -> source of the latest value
 
     @property
     def available(self) -> bool:
@@ -61,15 +62,19 @@ class Locations:
             & pl.col("value").is_not_null()
         ).sort("period")
 
-    def source(self, name: str) -> dict:
-        """Source table, URL, latest period and as-of for one indicator."""
-        r = self.ind.filter((pl.col("indicator") == name) & pl.col("value").is_not_null())
-        if r.is_empty():
-            return {}
-        top = r.sort("period").tail(1).row(0, named=True)
-        return {
-            k: top[k] for k in ("source", "source_table", "source_url", "as_of", "unit", "period")
-        }
+    def source(self, name: str, level: str | None = None) -> dict:
+        """Source, table, URL, latest period and as-of for one indicator at one level.
+
+        The same indicator can come from different tables at different levels (population
+        of a city is from SCB's geodata, of a municipality from TAB6574), so the level
+        matters. Without one, the municipality's source is used, then the others."""
+        order = [level] if level else []
+        order += [lv for lv in ("kommun", "regso", "lan", "riket", "tatort") if lv not in order]
+        for lv in order:
+            s = self.sources.get((name, lv))
+            if s:
+                return s
+        return {}
 
     def name(self, code: str) -> str:
         p = self.place(code)
@@ -87,6 +92,19 @@ def _load(generated_at: str | None) -> tuple[dict, dict[str, pl.DataFrame]]:
     snap = open_snapshot("locations")
     t = {n: snap.table(n) for n in ("location", "location_indicator", "location_peer")}
     return snap.meta, t
+
+
+@st.cache_resource(show_spinner=False)
+def _sources(generated_at: str | None, _ind: pl.DataFrame) -> dict:
+    """(indicator, level) -> source, table, URL, as-of, unit and latest period."""
+    cols = ("source", "source_table", "source_url", "as_of", "unit", "period")
+    last = (
+        _ind.filter(pl.col("value").is_not_null())
+        .sort("period")
+        .group_by("indicator", "level")
+        .agg(pl.col(c).last() for c in cols)
+    )
+    return {(r["indicator"], r["level"]): {c: r[c] for c in cols} for r in last.to_dicts()}
 
 
 @st.cache_data(show_spinner="Reading location statistics…")
@@ -119,7 +137,14 @@ def get_locations() -> Locations:
         gen, json.dumps(cfg, sort_keys=True), t["location"], t["location_indicator"]
     )
     return Locations(
-        meta, t["location"], t["location_indicator"], feats, scores, t["location_peer"], cfg
+        meta,
+        t["location"],
+        t["location_indicator"],
+        feats,
+        scores,
+        t["location_peer"],
+        cfg,
+        _sources(gen, t["location_indicator"]),
     )
 
 
