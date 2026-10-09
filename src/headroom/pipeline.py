@@ -52,6 +52,20 @@ def build_bond_universe(
     shares, eq_meta = firds.listed_shares(f, as_of=as_of)
     listed_leis = set(shares["issuer_lei"].drop_nulls().to_list()) if shares.height else set()
 
+    # Listed property companies without listed bonds (bank-financed) are in the
+    # universe too: classify every Swedish issuer of shares on a Swedish venue.
+    new_leis = sorted(listed_leis - set(issuers["lei"].to_list()))
+    if new_leis:
+        eq_issuers = gleif.lookup_leis(f, new_leis).filter(pl.col("country") == "SE")
+        eq_audit = eq_issuers.with_columns(
+            pl.struct("legal_name", "lei")
+            .map_elements(lambda r: classify(r["legal_name"], r["lei"]), return_dtype=pl.Utf8)
+            .alias("universe_rule")
+        )
+        audit = pl.concat([audit, eq_audit], how="diagonal_relaxed")
+        prop = audit.filter(pl.col("universe_rule").is_not_null() & pl.col("org_nr").is_not_null())
+        log.info("GLEIF: %d property companies incl. share-only issuers", prop.height)
+
     bonds = bonds.join(
         prop.select("lei", "org_nr"), left_on="issuer_lei", right_on="lei", how="inner"
     )
@@ -107,7 +121,9 @@ def build_bond_universe(
         "universe_rule",
         "source_url",
         pl.lit(as_of).alias("as_of"),
-    ).filter(pl.col("org_nr").is_in(bond_out["org_nr"].unique().to_list()))
+    ).filter(
+        pl.col("org_nr").is_in(bond_out["org_nr"].unique().to_list()) | (pl.col("tier") == "listed")
+    )
     # One row per org number (an entity can hold several LEIs only in error, but be safe).
     company = company.unique("org_nr", keep="first")
 

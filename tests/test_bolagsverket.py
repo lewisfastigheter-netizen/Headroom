@@ -62,3 +62,13 @@ def test_bulkfile_rows(tmp_path):
 def test_late_annual_report():
     assert bv.is_late(date(2024, 12, 31), date(2026, 8, 15))  # FY2025 report overdue
     assert not bv.is_late(date(2025, 12, 31), date(2026, 6, 1))
+
+
+def test_sni_ignores_legal_form_and_blank_codes():
+    rec = {
+        "juridiskForm": {"kod": "49"},
+        "naringsgrenOrganisation": {
+            "sni": [{"kod": "68320"}, {"kod": "     "}, {"kod": "00000"}, {"kod": "69201"}]
+        },
+    }
+    assert bv.sni_codes(rec) == ["68.320", "69.201"]

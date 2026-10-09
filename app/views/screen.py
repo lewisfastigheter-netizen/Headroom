@@ -31,7 +31,20 @@ conf = (
     .rename({"ltv": "conf_ltv", "icr": "conf_icr"}, strict=False)
 )
 df = d.scores.join(
-    latest.select("org_nr", "ltv", "icr", "property_value"), on="org_nr", how="left"
+    latest.select(
+        "org_nr",
+        "ltv",
+        "icr",
+        "property_value",
+        "net_debt",
+        "ebitda",
+        "avg_rate",
+        "debt_due_12m",
+        "gross_debt",
+        "period_end",
+    ),
+    on="org_nr",
+    how="left",
 ).join(conf, on="org_nr", how="left")
 for c in ("conf_ltv", "conf_icr"):
     if c not in df.columns:
@@ -92,7 +105,7 @@ if reg_sel:
 f = f.filter(pl.col("score").fill_null(0) >= min_score)
 nb = (
     d.t["bond"]
-    .filter(pl.col("maturity") > d.ref)
+    .filter((pl.col("maturity") > d.ref) & (pl.col("maturity").dt.year() < 2100))  # skip perpetuals
     .group_by("org_nr")
     .agg(
         pl.col("maturity").min().alias("next_maturity"),
@@ -108,7 +121,7 @@ else:
 
 # --------------------------------------------------------------------------- table
 
-show_comp = st.toggle("Show details", value=False)
+show_comp = st.toggle("Show score components", value=False)
 
 
 def comp(v: float | None) -> str:
@@ -132,21 +145,44 @@ for i, r in enumerate(f.to_dicts(), start=1):
             "s_events": comp(r["s_events"]),
             "s_market": comp(r["s_market"]),
             "hr": ui.fmt_pct(r["min_headroom_stressed"], signed=True),
-            "ltv": ui.unverified(ui.fmt_pct(r["ltv"]), r["conf_ltv"], min_conf),
+            # an LTV outside 0-100% is almost always a mis-read figure: flag it as unverified
+            "ltv": ui.unverified(
+                ui.fmt_pct(r["ltv"]),
+                0.0 if r["ltv"] is not None and not 0 <= r["ltv"] <= 1 else r["conf_ltv"],
+                min_conf,
+            ),
             "icr": ui.unverified(ui.fmt_x(r["icr"], 1), r["conf_icr"], min_conf),
             "flags": str(r["n_flags"]) if r["n_flags"] else "",
+            "nd_ebitda": ui.fmt_x(r["net_debt"] / r["ebitda"], 1)
+            if r["net_debt"] is not None and r["ebitda"]
+            else "–",
+            "rate": ui.fmt_pct(r["avg_rate"], 1),
+            "pv": ui.fmt_sek_m(r["property_value"], unit=False),
+            "due12": ui.fmt_pct(r["debt_due_12m"] / r["gross_debt"])
+            if r["debt_due_12m"] is not None and r["gross_debt"]
+            else "–",
+            "pe": ui.fmt_date(r["period_end"]),
             "next": r["next_maturity"],
             "bonds": ui.fmt_num(r["bonds_sek"]) if r["bonds_sek"] is not None else "–",
             "nb": str(r["n_bonds"] or 0),
         }
     )
+key_figures = [
+    ui.Col("ltv", "LTV", "num", raw_html=True),
+    ui.Col("icr", "ICR", "num", raw_html=True),
+    ui.Col("nd_ebitda", "Net debt / EBITDA", "num"),
+    ui.Col("rate", "Avg. rate", "num"),
+    ui.Col("due12", "Debt due 12m", "num"),
+    ui.Col("pv", "Property value, SEK m", "num"),
+    ui.Col("next", "Next bond", "date", ui.fmt_date),
+]
 cols = (
     [
         ui.Col("rank", "", "dim"),
         ui.Col("score", "Score", "big", raw_html=True),
         ui.Col("name", "Company", "name", raw_html=True),
         ui.Col("opp", "Opportunity type"),
-        ui.Col("fit", "Fit", "num"),
+        *key_figures,
     ]
     if n_scored
     else [
@@ -159,18 +195,21 @@ cols = (
 )
 if show_comp and n_scored:
     cols += [
+        ui.Col("fit", "Fit", "num"),
         ui.Col("s_refinancing", "Refi", "num"),
         ui.Col("s_covenant", "Cov.", "num"),
         ui.Col("s_leverage", "Lev.", "num"),
         ui.Col("s_events", "Events", "num"),
         ui.Col("s_market", "Mkt", "num"),
         ui.Col("hr", "Headroom +100bp", "num"),
-        ui.Col("ltv", "LTV", "num", raw_html=True),
-        ui.Col("icr", "ICR", "num", raw_html=True),
+        ui.Col("pe", "Figures as of", "date"),
         ui.Col("flags", "Gaps", "num"),
     ]
 ui.table(rows, cols)
 note = (
+    "LTV is net debt over property value; ICR is EBIT over net interest, as reported; "
+    "figures marked unverified were extracted with low confidence. "
+) + (
     "Refi to Mkt are 0–100 component scores. Headroom +100bp is the tightest maintenance covenant "
     "with ICR re-tested 100bp higher. Gaps counts components without data. "
     if show_comp
@@ -199,6 +238,12 @@ export = f.select(
     "ltv",
     "icr",
     "property_value",
+    "net_debt",
+    "ebitda",
+    "avg_rate",
+    "debt_due_12m",
+    "next_maturity",
+    "period_end",
     "coverage",
     "n_flags",
 ).with_columns(pl.lit(d.mode).alias("data_mode"), pl.lit(str(d.ref)).alias("as_of"))
