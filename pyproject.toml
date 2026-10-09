@@ -22,6 +22,7 @@ dependencies = [
     "python-dotenv>=1.2.4",
     "pyyaml>=6.0.3",
     "streamlit>=1.65.0",
+    "streamlit-searchbox>=0.1.24",
     "tenacity>=9.2.1",
     "xlsxwriter>=3.2.9",
     "yfinance>=1.7.0",

@@ -18,7 +18,7 @@ In July 2026 Holmström Fastigheter Holding AB (publ) started a written procedur
 
 ![Company page](docs/screenshots/live_issuer.png)
 
-The app has four pages: **Market** (maturity wall, latest credit events), **Companies** (the ranked list with key figures, filtered by company type, accounting standard, segment, county and city), **Locations** (reserved for a future map view) and **Method**. Each company has its own page, opened from the tables or from the search box in the top-right corner, which also finds counties and cities and opens the Companies list filtered to them.
+The app has four pages: **Market Overview** (maturity wall, latest credit events), **Companies** (the ranked list with key figures, filtered by company type, accounting standard, segment, county and city), **Locations** (reserved for a future map view) and **Method**. Each company has its own page, opened from the tables or from the search box in the top-right corner, which also finds counties and cities and opens the Companies list filtered to them.
 
 ## Why this matters for a value-add investor
 
