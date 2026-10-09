@@ -14,6 +14,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser(
         "private", help="Check the next batch of private companies at Bolagsverket (daily job)"
     )
+    sub.add_parser("private-status", help="Print the private-company scan progress (Markdown)")
     args = parser.parse_args(argv)
 
     if args.cmd == "demo":
@@ -33,6 +34,11 @@ def main(argv: list[str] | None = None) -> int:
             f"Live snapshot: {meta['issuers_property']} property issuers "
             f"of {meta['issuers_swedish']} Swedish bond issuers"
         )
+        return 0
+    if args.cmd == "private-status":
+        from headroom.store.private import progress_markdown
+
+        print(progress_markdown())
         return 0
     if args.cmd == "private":
         import logging

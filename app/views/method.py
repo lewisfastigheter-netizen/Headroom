@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from headroom.store import private
 from ui import components as ui
 from ui.data import get_data
 
@@ -191,7 +192,26 @@ disclosed in the notes when the annual report has one, otherwise the book value,
 
 # --------------------------------------------------------------------------- as-of
 
-ui.section(7, "Data as of")
+ui.section(7, "Private companies")
+_pp = private.progress()
+_pct = _pp["checked"] / _pp["candidates"] * 100 if _pp["candidates"] else 0
+ui.render(
+    f"""<div class="hr-prose"><p>Candidates come from Bolagsverket's bulk file (active
+aktiebolag whose name or registered business description points to owning property). Each is
+checked at Bolagsverket: SNI code, then the latest digitally filed annual report. Companies with
+at least SEK 20m of property join the screen. The scan runs four times a day.</p>
+<p><b>{_pp["checked"]:,}</b> of <b>{_pp["candidates"]:,}</b> candidates checked
+({_pct:.1f}%), last on {ui.fmt_date(_pp["last_checked"], "long")}.</p></div>"""
+)
+ui.table(
+    [
+        {"r": label, "n": ui.fmt_num(_pp["by_status"].get(k, 0))}
+        for k, label in private.STATUS_LABEL.items()
+    ],
+    [ui.Col("r", "Result"), ui.Col("n", "Companies", "num")],
+)
+
+ui.section(8, "Data as of")
 meta = d.meta
 rows = [{"t": t, "a": a} for t, a in (meta.get("as_of") or {}).items()]
 ui.table(rows, [ui.Col("t", "Table", "mono"), ui.Col("a", "As of", "date")])

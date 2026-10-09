@@ -16,6 +16,51 @@ import polars as pl
 from headroom.config import DATA_DIR
 
 PRIVATE_FOUND = DATA_DIR / "private_found.jsonl"
+PRIVATE_CANDIDATES = DATA_DIR / "private_candidates.parquet"
+PRIVATE_LEDGER = DATA_DIR / "private_checked.csv"
+
+STATUS_LABEL = {
+    "kept": "In Headroom (SEK 20m+ of property)",
+    "below_threshold": "Property company, under SEK 20m",
+    "not_real_estate": "Not a property company (SNI code)",
+    "no_digital_report": "No digitally filed annual report",
+    "no_ixbrl": "Annual report not machine-readable",
+}
+
+
+def progress() -> dict:
+    """How far the private-company scan has come: candidates, checked, per result."""
+    total = (
+        pl.scan_parquet(PRIVATE_CANDIDATES).select(pl.len()).collect().item()
+        if (PRIVATE_CANDIDATES.exists())
+        else 0
+    )
+    if not PRIVATE_LEDGER.exists():
+        return {"candidates": total, "checked": 0, "by_status": {}, "last_checked": None}
+    led = pl.read_csv(PRIVATE_LEDGER, infer_schema_length=0)
+    by = {r["status"]: r["count"] for r in led["status"].value_counts().to_dicts()}
+    return {
+        "candidates": total,
+        "checked": led.height,
+        "by_status": by,
+        "last_checked": led["checked"].max(),
+    }
+
+
+def progress_markdown() -> str:
+    p = progress()
+    pct = p["checked"] / p["candidates"] * 100 if p["candidates"] else 0
+    lines = [
+        "### Private-company scan",
+        f"Checked **{p['checked']:,}** of **{p['candidates']:,}** candidates ({pct:.1f}%). "
+        f"Last checked {p['last_checked'] or '–'}.",
+        "",
+        "| Result | Companies |",
+        "|---|---:|",
+    ]
+    for k, label in STATUS_LABEL.items():
+        lines.append(f"| {label} | {p['by_status'].get(k, 0):,} |")
+    return "\n".join(lines)
 
 
 def load_found() -> dict[str, dict]:

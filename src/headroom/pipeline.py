@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta
 
 import polars as pl
 
-from headroom.config import DATA_DIR, settings
+from headroom.config import settings
 from headroom.config import weights as load_weights
 from headroom.extract import events, kpi
 from headroom.extract.documents import fetch_pdf
@@ -25,7 +25,7 @@ from headroom.http import Fetcher
 from headroom.model.universe import classify
 from headroom.sources import firds, gleif, newsfeeds, prices, riksbank
 from headroom.store.db import snapshot_dir, write_snapshot
-from headroom.store.private import load_found, save_found
+from headroom.store.private import PRIVATE_CANDIDATES, PRIVATE_LEDGER, load_found, save_found
 
 log = logging.getLogger(__name__)
 
@@ -458,8 +458,6 @@ def update_private(as_of: date | None = None, max_new: int | None = None) -> dic
     return priv["meta"]
 
 
-PRIVATE_CANDIDATES = DATA_DIR / "private_candidates.parquet"
-PRIVATE_LEDGER = DATA_DIR / "private_checked.csv"
 # How long a negative result stands before the company is looked at again.
 RECHECK_DAYS = {
     "not_real_estate": 365,
@@ -607,6 +605,10 @@ def build_private(
         if ledger.skip(org) or (ledger.kept(org) and org in found):
             continue
         fresh += 1
+        if fresh % 500 == 0:  # keep progress if the run is stopped early
+            ledger.save()
+            save_found(found)
+            log.info("private scan: %d checked this run", fresh)
         try:
             rec = cached("org", org, api.organisation)
             codes = bv.sni_codes(rec)
