@@ -6,7 +6,9 @@ name: Private companies
 # used, so this costs nothing. Runs four times a day, each run for up to 5.5 hours,
 # so the scan runs almost around the clock at Bolagsverket's rate limit.
 # Candidates come from data/private_candidates.parquet; results are recorded in
-# data/private_checked.csv so each run continues where the last one stopped.
+# data/private_checked.csv so each run continues where the last one stopped. A run that
+# succeeds starts the next one itself until every candidate has been checked, so the scan
+# does not depend on GitHub's scheduler (which can delay or skip scheduled runs).
 on:
   schedule:
     - cron: "41 */6 * * *"   # 00:41, 06:41, 12:41, 18:41 UTC
@@ -14,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  actions: write        # lets a finished run start the next batch
 
 concurrency:
   group: private            # one scan at a time; writes only data/private_*
@@ -64,4 +67,15 @@ jobs:
             git commit -m "Private companies $(date -u +%Y-%m-%d)"
             git pull --rebase
             git push
+          fi
+
+      - name: Start the next batch
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          remaining=$(uv run python -c "from headroom.store.private import progress as p; x = p(); print(x['candidates'] - x['checked'])")
+          echo "Candidates left: $remaining"
+          if [ "$remaining" -gt 0 ]; then
+            gh workflow run private.yml --ref "${{ github.ref_name }}"
           fi

@@ -16,14 +16,14 @@ from datetime import date, datetime, timedelta
 
 import polars as pl
 
-from headroom.config import settings
+from headroom.config import DATA_DIR, settings
 from headroom.config import weights as load_weights
 from headroom.extract import events, kpi
 from headroom.extract.documents import fetch_pdf
 from headroom.extract.llm import LLMUnavailable
 from headroom.http import Fetcher
 from headroom.model import geo
-from headroom.model.universe import classify
+from headroom.model.universe import classify, seed
 from headroom.sources import firds, gleif, newsfeeds, prices, riksbank
 from headroom.store.db import snapshot_dir, write_snapshot
 from headroom.store.private import PRIVATE_CANDIDATES, PRIVATE_LEDGER, load_found, save_found
@@ -31,6 +31,66 @@ from headroom.store.private import PRIVATE_CANDIDATES, PRIVATE_LEDGER, load_foun
 log = logging.getLogger(__name__)
 
 FIRDS_FILE_URL = "https://firds.esma.europa.eu/firds/{}"
+
+
+ISSUER_SNI = DATA_DIR / "issuer_sni.csv"
+
+
+def _sni_rule(f: Fetcher, audit: pl.DataFrame) -> pl.DataFrame:
+    """Admit Swedish issuers by SNI 68.1/68.2 when no name rule applies."""
+    from headroom.sources import bolagsverket as bv
+
+    todo = audit.filter(pl.col("universe_rule").is_null() & pl.col("org_nr").is_not_null())
+    if not todo.height:
+        return audit
+    known: dict[str, dict] = {}
+    if ISSUER_SNI.exists():
+        for r in pl.read_csv(ISSUER_SNI, infer_schema_length=0).to_dicts():
+            known[r["org_nr"]] = r
+    today = date.today()
+
+    def stale(org: str) -> bool:
+        r = known.get(org)
+        return r is None or (today - date.fromisoformat(r["checked"])).days > 180
+
+    try:
+        api = bv.Bolagsverket(f)
+    except bv.NoCredentials:
+        api = None
+    if api is not None:
+        for org in todo["org_nr"].to_list():
+            if not stale(org):
+                continue
+            try:
+                codes = bv.sni_codes(api.organisation(org))
+            except Exception as e:
+                log.warning("SNI %s: %s", org, e)
+                continue
+            known[org] = {"org_nr": org, "sni": ",".join(codes), "checked": today.isoformat()}
+        if known:
+            pl.DataFrame(list(known.values())).sort("org_nr").write_csv(ISSUER_SNI)
+
+    def owns_property(org: str | None) -> bool:
+        # Only the main (first) SNI code counts: many industrial companies list 68.2 as a
+        # secondary code because they let out their own premises.
+        main = ((known.get(org) or {}).get("sni") or "").split(",")[0]
+        return main.startswith(("68.1", "68.2"))
+
+    excluded = [w.lower() for w in (seed().get("exclude_words") or [])]
+
+    def admit(r: dict) -> bool:
+        name = (r["legal_name"] or "").lower()
+        return owns_property(r["org_nr"]) and not any(w in name for w in excluded)
+
+    return audit.with_columns(
+        pl.when(
+            pl.col("universe_rule").is_null()
+            & pl.struct("org_nr", "legal_name").map_elements(admit, return_dtype=pl.Boolean)
+        )
+        .then(pl.lit("bolagsverket SNI 68"))
+        .otherwise(pl.col("universe_rule"))
+        .alias("universe_rule")
+    )
 
 
 def build_bond_universe(
@@ -67,8 +127,14 @@ def build_bond_universe(
             .alias("universe_rule")
         )
         audit = pl.concat([audit, eq_audit], how="diagonal_relaxed")
-        prop = audit.filter(pl.col("universe_rule").is_not_null() & pl.col("org_nr").is_not_null())
-        log.info("GLEIF: %d property companies incl. share-only issuers", prop.height)
+
+    # Issuers whose name has no property word are checked against their main SNI code at
+    # Bolagsverket (68.1/68.2: owning, trading and letting real estate). This catches
+    # property companies such as Arlandastad Group. Needs API credentials; results are
+    # kept in data/issuer_sni.csv so only new issuers are looked up.
+    audit = _sni_rule(f, audit)
+    prop = audit.filter(pl.col("universe_rule").is_not_null() & pl.col("org_nr").is_not_null())
+    log.info("Property companies: %d (bond issuers and listed shares)", prop.height)
 
     bonds = bonds.join(
         prop.select("lei", "org_nr"), left_on="issuer_lei", right_on="lei", how="inner"
@@ -624,7 +690,7 @@ def build_private(
     found = load_found()
     stats["bulk_candidates"] = len(rows)
     ledger = _Ledger(as_of)
-    fresh = 0
+    fresh = failures = 0
     limit = int(cfg.get("max_lookups_per_run", 400)) if max_new is None else max_new
     deadline = time.monotonic() + 60 * float(cfg.get("max_minutes_per_run", 240))
     for r in rows:
@@ -661,6 +727,11 @@ def build_private(
             raise
         except Exception as e:
             log.warning("private %s: %s", org, e)
+            failures += 1
+            # Every lookup failing means something systematic (API down, blocked, wrong
+            # keys): stop and fail the run instead of spending hours recording nothing.
+            if failures >= 25 and failures == fresh:
+                raise RuntimeError(f"First {failures} Bolagsverket lookups all failed: {e}") from e
             continue
         pv = a.get("property_value")
         if not pv or pv < float(cfg.get("min_property_value_sek_m", 20)):
@@ -721,6 +792,7 @@ def build_private(
         save_found(found)
     # Kept private companies live in data/private_found.jsonl and are merged by the app.
     stats["private_kept"] = len(found)
+    stats["private_failures"] = failures
     stats["private_new_lookups"] = fresh
     return {
         "sni": pl.DataFrame(sni_rows) if sni_rows else None,
