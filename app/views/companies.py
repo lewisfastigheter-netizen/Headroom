@@ -104,7 +104,15 @@ if any(t in ("listed", "bond") for t in type_sel):
         "Segment", segments, format_func=lambda s: SEGMENT.get(s, s), placeholder="All segments"
     )
 counties = sorted(set(df["county"].drop_nulls()))
-county = c4.selectbox("County", ["All counties", *counties])
+# A county or city picked in the header search arrives as ?county=...&city=...
+qp_county, qp_city = st.query_params.get("county"), st.query_params.get("city")
+if qp_county or qp_city:
+    st.session_state["f_county"] = qp_county if qp_county in counties else "All counties"
+    if qp_city and qp_county in counties:
+        st.session_state[f"city_{qp_county}"] = qp_city
+    for k in ("county", "city"):
+        st.query_params.pop(k, None)
+county = c4.selectbox("County", ["All counties", *counties], key="f_county")
 cities = (
     sorted(set(df.filter(pl.col("county") == county)["city"].drop_nulls()))
     if county != "All counties"
