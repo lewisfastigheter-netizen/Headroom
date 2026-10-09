@@ -106,13 +106,17 @@ def structured(
         import anthropic
 
         client = anthropic.Anthropic(api_key=s.anthropic_api_key)
-        resp = client.messages.parse(
-            model=model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-            output_format=output,
-        )
+        try:
+            resp = client.messages.parse(
+                model=model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+                output_format=output,
+            )
+        except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as e:
+            # A rejected key will not start working mid-run: stop calling the API.
+            raise LLMUnavailable(f"Anthropic rejected the API key: {e}") from e
         if resp.stop_reason not in ("end_turn", "stop_sequence") or resp.parsed_output is None:
             raise RuntimeError(f"LLM stopped with {resp.stop_reason}")
         parsed = resp.parsed_output

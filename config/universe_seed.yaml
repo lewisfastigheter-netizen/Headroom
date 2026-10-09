@@ -62,6 +62,7 @@ property_names:
   - Klarabo
   - Fortinova
   - Bonnier Fastigheter
+  - Mofast
   - K-Fast
   - Offentliga Hus
   - Tagehus
@@ -74,7 +75,9 @@ property_names:
 # Legal-name words that rule an issuer out even if a keyword matches
 # (mortgage lenders, banks and property-debt funds that finance property rather than own it).
 exclude_words: [hypotek, bank, kredit, försäkring, pension, kommuninvest, finance company,
-                räntefond, fastighetsfinansiering]
+                räntefond, fastighetsfinansiering,
+                # main SNI code is 68.2 at Bolagsverket, but the business is not property
+                landscaping, acarix]
 
 # Force-include or exclude by LEI after review. Each entry needs a reason.
 include_leis: []

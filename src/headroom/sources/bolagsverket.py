@@ -49,6 +49,10 @@ class NoCredentials(RuntimeError):
     pass
 
 
+class BadCredentials(NoCredentials):
+    """The token endpoint rejected the client id and secret (wrong or test-environment keys)."""
+
+
 @dataclass
 class Token:
     value: str
@@ -73,6 +77,12 @@ class Bolagsverket:
             auth=(self.cid, self.secret),
             timeout=30,
         )
+        if r.status_code in (400, 401, 403):
+            raise BadCredentials(
+                f"Bolagsverket rejected the API credentials ({r.status_code}). Check that "
+                "BOLAGSVERKET_CLIENT_ID and BOLAGSVERKET_CLIENT_SECRET are the production keys "
+                "(token endpoint portal.api.bolagsverket.se), not the test-environment ones."
+            )
         r.raise_for_status()
         j = r.json()
         self._token = Token(j["access_token"], time.time() + float(j.get("expires_in", 3000)))

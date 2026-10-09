@@ -12,7 +12,7 @@ fit = d.cfg["strategy_fit"]
 
 ui.hero(
     "Method",
-    "How the screen is built, and where it can be wrong.",
+    "How Headroom is built, and where it can be wrong.",
     "Headroom is a personal research project. It is not affiliated with any investment firm and is "
     "not investment advice. Every figure on screen carries a source and an as-of date. Extracted "
     "figures below the confidence threshold are marked unverified.",

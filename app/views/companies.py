@@ -266,7 +266,6 @@ ui.table(
         ui.Col("pv", "Property value, SEK m", "num"),
         ui.Col("next", "Next bond", "date", ui.fmt_date),
     ],
-    bleed=True,
 )
 ui.source_line(
     f"{f.height} companies. LTV is net debt over property value; ICR is EBIT over net interest, "
