@@ -23,11 +23,9 @@ stress_bp = ms["covenant"]["stress_bp"]
 ranked = d.scores.sort("score", descending=True, nulls_last=True)
 orgs = ranked["org_nr"].to_list()
 names = dict(zip(ranked["org_nr"], ranked["name"], strict=True))
+# The company comes from the link or the search box in the header (?org=...).
 qp = st.query_params.get("org")
-sel_col, _ = st.columns([4, 8])
-org = sel_col.selectbox(
-    "Issuer", orgs, index=orgs.index(qp) if qp in orgs else 0, format_func=lambda o: names[o]
-)
+org = qp if qp in orgs else orgs[0]
 if st.query_params.get("org") != org:
     st.query_params["org"] = org
 

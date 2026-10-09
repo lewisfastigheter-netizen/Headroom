@@ -192,3 +192,9 @@ table.hr-table { width: 100%; border-collapse: collapse; font-size: 15px; color:
   width: 260px; padding: .6rem .75rem; background: var(--ink); color: #fff; font-size: 12px; font-weight: 400;
   letter-spacing: 0; text-transform: none; line-height: 1.45; text-align: left; white-space: normal;
   border-radius: 2px; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+
+/* Company search in the header, top right */
+.st-key-header_search { position: fixed; top: .85rem; right: 2rem; width: 260px; z-index: 999991; }
+.st-key-header_search .react-aria-ComboBox > div, .st-key-header_search [data-baseweb="select"] > div {
+  min-height: 2.3rem; font-size: 14px; }
+@media (max-width: 760px) { .st-key-header_search { position: static; width: 100%; } }
