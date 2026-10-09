@@ -109,8 +109,16 @@ period = (
 )
 ui.facts(
     [
-        ("Property value", fv("property_value", ui.fmt_sek_m) + period),
-        ("LTV", fv("ltv", ui.fmt_pct) + period),
+        (
+            "Property value",
+            fv("property_value", ui.fmt_sek_m)
+            + ui.basis_tag((fin or {}).get("value_basis"))
+            + period,
+        ),
+        (
+            "LTV" + (" (book value)" if (fin or {}).get("value_basis") == "book_value" else ""),
+            fv("ltv", ui.fmt_pct) + period,
+        ),
         ("Interest cover", fv("icr", lambda v: ui.fmt_x(v, 2)) + period),
         ("Next bond maturity", next_txt),
     ]

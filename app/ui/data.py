@@ -46,7 +46,10 @@ class Data:
 @st.cache_data(show_spinner=False)
 def _load(mode: str, generated_at: str | None) -> tuple[dict, dict[str, pl.DataFrame]]:
     snap = open_snapshot(mode)
-    return snap.meta, {name: snap.table(name) for name in TABLES}
+    t = {name: snap.table(name) for name in TABLES}
+    if "value_basis" not in t["financials"].columns:  # snapshots written before the field
+        t["financials"] = t["financials"].with_columns(pl.lit(None, pl.Utf8).alias("value_basis"))
+    return snap.meta, t
 
 
 def available_modes() -> list[str]:

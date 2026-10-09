@@ -721,6 +721,7 @@ def build() -> dict[str, pl.DataFrame]:
                 "source_url": url,
                 "page": None,
                 "confidence": 1.0,
+                "value_basis": "book_value" if c.tier == "private" else "fair_value",
             }
             # Private ABs: annual reports disclose short-term debt only.
             if c.tier == "private":

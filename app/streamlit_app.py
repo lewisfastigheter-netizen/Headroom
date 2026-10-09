@@ -22,6 +22,9 @@ from ui.data import available_modes, current_mode, get_data  # noqa: E402
 inject_css()
 st.logo(str(Path(__file__).parent / "static" / "wordmark.svg"), size="large")
 
+with st.container(key="byline"):
+    st.markdown('<span class="byline">av William Lewis</span>', unsafe_allow_html=True)
+
 data = get_data()
 
 pages = [

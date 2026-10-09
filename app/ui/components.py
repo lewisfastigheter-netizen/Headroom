@@ -87,6 +87,19 @@ def unverified(
     return f'<span class="hr-unverified" title="{esc(title)}">{value_html}</span>'
 
 
+def basis_tag(basis: str | None, short: bool = False) -> str:
+    """Small label saying whether a property value (and the LTV on it) is market or book value."""
+    from headroom.model import valuation
+
+    if not basis:
+        return ""
+    label = "book" if short and basis == valuation.BOOK else valuation.LABEL.get(basis, basis)
+    if short and basis != valuation.BOOK:
+        return ""  # market value is the norm; only book value needs a flag in dense tables
+    cls = "hr-basis book" if basis == valuation.BOOK else "hr-basis"
+    return f'<span class="{cls}" title="{esc(valuation.NOTE.get(basis, ""))}">{esc(label)}</span>'
+
+
 # --------------------------------------------------------------------------- layout blocks
 
 

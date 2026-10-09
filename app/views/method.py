@@ -177,6 +177,10 @@ issuers with near-term fixed-rate maturities.</p></div>""")
 
 ui.section(6, "Limitations")
 ui.render("""<div class="hr-prose"><ul>
+<li><b>Market value vs book value.</b> Companies reporting under IFRS value investment property at fair value (IAS 40), and LTV uses that.
+Private companies under K2/K3 carry property at cost less depreciation, usually well below market value. Headroom uses the fair value
+disclosed in the notes when the annual report has one, otherwise the book value, and labels it: <i>Market value</i> (stated as fair or market value),
+<i>Market value (IFRS)</i> (basis not stated next to the figure, presumed fair value) or <i>Book value</i>. LTV on book value is flagged BOOK, as it overstates leverage.</li>
 <li>Covenant definitions differ between bonds (rolling 12-month or quarterly ICR, LTV on market or book value). Reported KPIs are a proxy for the defined test.</li>
 <li>Bank facilities usually carry tighter covenants than bonds and are rarely public. Covenant headroom is measured against bond terms only.</li>
 <li>LLM extraction can misread tables. Each extracted field stores page and confidence; low-confidence values are shown as unverified and should be checked against the source.</li>

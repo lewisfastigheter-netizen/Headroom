@@ -157,6 +157,8 @@ class Financials(BaseModel):
     source_url: str
     page: int | None = None
     confidence: float = 1.0
+    # fair_value | fair_value_presumed | book_value, see model/valuation.py
+    value_basis: str | None = None
 
 
 class Event(BaseModel):

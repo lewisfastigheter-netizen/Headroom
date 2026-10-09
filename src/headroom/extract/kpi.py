@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 
 from headroom.extract.documents import Document, render_for_llm, select_pages
 from headroom.extract.llm import structured
+from headroom.model import valuation
 
 PROMPT_VERSION = "kpi-v2"
 
@@ -240,6 +241,10 @@ def to_rows(
         "period_type": period_type,
         "source_url": url,
         "page": None,
+        # wording around the property value says whether it is market or book value
+        "value_basis": valuation.classify(best["property_value"].evidence)
+        if "property_value" in best
+        else None,
     }
     direct = {
         "property_value": ("property_value", True, False),

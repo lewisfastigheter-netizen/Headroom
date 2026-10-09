@@ -42,6 +42,7 @@ df = d.scores.join(
         "debt_due_12m",
         "gross_debt",
         "period_end",
+        "value_basis",
     ),
     on="org_nr",
     how="left",
@@ -150,7 +151,8 @@ for i, r in enumerate(f.to_dicts(), start=1):
                 ui.fmt_pct(r["ltv"]),
                 0.0 if r["ltv"] is not None and not 0 <= r["ltv"] <= 1 else r["conf_ltv"],
                 min_conf,
-            ),
+            )
+            + ui.basis_tag(r["value_basis"], short=True),
             "icr": ui.unverified(ui.fmt_x(r["icr"], 1), r["conf_icr"], min_conf),
             "flags": str(r["n_flags"]) if r["n_flags"] else "",
             "nd_ebitda": ui.fmt_x(r["net_debt"] / r["ebitda"], 1)
@@ -207,7 +209,8 @@ if show_comp and n_scored:
     ]
 ui.table(rows, cols)
 note = (
-    "LTV is net debt over property value; ICR is EBIT over net interest, as reported; "
+    "LTV is net debt over property value, at market value unless flagged BOOK (K2/K3 book "
+    "value, which overstates leverage); ICR is EBIT over net interest, as reported; "
     "figures marked unverified were extracted with low confidence. "
 ) + (
     "Refi to Mkt are 0–100 component scores. Headroom +100bp is the tightest maintenance covenant "
@@ -238,6 +241,7 @@ export = f.select(
     "ltv",
     "icr",
     "property_value",
+    "value_basis",
     "net_debt",
     "ebitda",
     "avg_rate",

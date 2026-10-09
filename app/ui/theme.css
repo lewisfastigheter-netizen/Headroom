@@ -137,6 +137,10 @@ table.hr-table { width: 100%; border-collapse: collapse; font-size: 15px; color:
 .hr-unverified::after { content: "unverified"; font-size: 10.5px; font-weight: 500; letter-spacing: .06em;
   text-transform: uppercase; color: var(--watch); margin-left: .4rem; }
 
+.hr-basis { font-size: 10.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--graphite); margin-left: .4rem; cursor: help; white-space: nowrap; }
+.hr-basis.book { color: var(--high); }
+
 .hr-bar { position: relative; height: 3px; background: var(--rule); min-width: 90px; margin-top: .5rem; }
 .hr-bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); }
 

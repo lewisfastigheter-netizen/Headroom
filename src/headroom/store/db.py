@@ -39,7 +39,8 @@ TABLES: dict[str, str] = {
         interest_expense DOUBLE, avg_rate DOUBLE, fixed_share DOUBLE,
         fixed_period_years DOUBLE, equity_ratio DOUBLE, cash DOUBLE,
         undrawn_facilities DOUBLE, debt_due_12m DOUBLE, debt_due_24m DOUBLE,
-        source_url VARCHAR, page INTEGER, confidence DOUBLE""",
+        source_url VARCHAR, page INTEGER, confidence DOUBLE,
+        value_basis VARCHAR""",
     # Field-level provenance for extracted figures: one row per (company, period, field).
     "provenance": """
         table_name VARCHAR, org_nr VARCHAR, period_end DATE, field VARCHAR,

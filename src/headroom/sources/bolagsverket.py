@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
 import re
 import time
@@ -34,6 +35,7 @@ import httpx
 
 from headroom.config import settings
 from headroom.http import Fetcher
+from headroom.model import valuation
 from headroom.schemas import normalise_org_nr
 
 log = logging.getLogger(__name__)
@@ -120,26 +122,52 @@ def _find_lists(obj: Any, key: str) -> Iterator[dict]:
 
 
 def sni_codes(org: dict | None) -> list[str]:
-    """SNI codes anywhere in the organisation record (keys mentioning 'sni' or 'kod')."""
+    """SNI codes from the industry part of the record (naringsgrenOrganisation.sni).
+
+    Only values under a key mentioning 'sni' or 'naringsgren' count, so other
+    codes in the record (legal form '49', for instance) are not mistaken for SNI.
+    Blank and unknown ('00000') codes are dropped.
+    """
     out: list[str] = []
 
-    def walk(o: Any, parent: str = "") -> None:
+    def walk(o: Any, in_sni: bool = False) -> None:
         if isinstance(o, dict):
             for k, v in o.items():
-                walk(v, k.lower())
+                kl = k.lower()
+                walk(v, in_sni or "sni" in kl or "naringsgren" in kl)
         elif isinstance(o, list):
             for v in o:
-                walk(v, parent)
-        elif (
-            isinstance(o, str)
-            and ("sni" in parent or parent == "kod")
-            and re.fullmatch(r"\d{2}\.?\d{0,3}", o.strip())
-        ):
+                walk(v, in_sni)
+        elif in_sni and isinstance(o, str) and re.fullmatch(r"\d{2}\.?\d{0,3}", o.strip()):
             code = o.strip().replace(".", "")
-            out.append(f"{code[:2]}.{code[2:]}" if len(code) > 2 else code)
+            if code.strip("0"):
+                out.append(f"{code[:2]}.{code[2:]}" if len(code) > 2 else code)
 
     walk(org)
     return list(dict.fromkeys(out))
+
+
+def proceedings(org: dict | None) -> str | None:
+    """Ongoing liquidation, bankruptcy or reconstruction registered for the company, as text."""
+    if not org:
+        return None
+    items = org.get("organisationer") if isinstance(org, dict) else None
+    rec = items[0] if items else org
+    val = (
+        rec.get("pagaendeAvvecklingsEllerOmstruktureringsforfarande")
+        if isinstance(rec, dict)
+        else None
+    )
+    if not val:
+        return None
+    return json.dumps(val, ensure_ascii=False).lower()
+
+
+PROCEEDING_TYPES = (
+    ("konkurs", "bankruptcy_in_group"),
+    ("rekonstruktion", "reconstruction"),
+    ("likvidation", "liquidation"),
+)
 
 
 def is_real_estate(snis: list[str]) -> bool:
@@ -231,7 +259,17 @@ def annual_figures(facts: list[Fact]) -> dict[str, float | date | None]:
     latest = max(ends)
     cur = {f.concept: f.value for f in facts if f.period_end == latest}
     # duration facts end on the same date as the balance-sheet instant
-    out: dict[str, float | date | None] = {"period_end": latest}
+    out: dict[str, float | date | str | None] = {"period_end": latest}
+    # K3 companies often disclose the fair value of investment property in a note.
+    # Prefer it; any concept naming both property and fair value counts.
+    fair = next(
+        (
+            v
+            for k, v in cur.items()
+            if re.search(r"fastighet", k, re.I) and re.search(r"verkligtvarde", k, re.I)
+        ),
+        None,
+    )
     for target, names in IXBRL_MAP.items():
         val = next((cur[n] for n in names if n in cur), None)
         if val is None:
@@ -240,6 +278,11 @@ def annual_figures(facts: list[Fact]) -> dict[str, float | date | None]:
             out[target] = val / 100 if val > 1 else val
         else:
             out[target] = val / 1e6
+    if fair is not None:
+        out["property_value"] = fair / 1e6
+        out["value_basis"] = valuation.FAIR
+    elif out.get("property_value") is not None:
+        out["value_basis"] = valuation.BOOK
     return out
 
 
@@ -247,7 +290,8 @@ def to_financials(org_nr: str, a: dict, source_url: str) -> dict:
     """Map annual-report figures to the financials table (private ABs).
 
     Debt to credit institutions due within a year is reported as short-term:
-    that is the refinancing need. LTV uses the book value of property.
+    that is the refinancing need. Property is at fair value when the report
+    discloses it in a note, otherwise at book value; `value_basis` says which.
     """
     debt = sum(
         x or 0
@@ -267,6 +311,7 @@ def to_financials(org_nr: str, a: dict, source_url: str) -> dict:
         "period_end": a.get("period_end"),
         "period_type": "FY",
         "property_value": pv,
+        "value_basis": a.get("value_basis"),
         "gross_debt": debt or None,
         "net_debt": (debt - (cash or 0)) if debt else None,
         "ltv": ((debt - (cash or 0)) / pv) if debt and pv else None,
