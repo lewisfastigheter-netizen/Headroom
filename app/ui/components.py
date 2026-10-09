@@ -217,7 +217,9 @@ def table(
     cols: Sequence[Col],
     foot: dict[str, str] | None = None,
     max_height: int | None = None,
+    bleed: bool = False,
 ) -> None:
+    """`bleed` runs the blue header row out to both edges of the window."""
     head = "".join(
         f'<th class="{"num" if c.kind == "num" else ""}">{esc(c.label)}</th>' for c in cols
     )
@@ -239,8 +241,9 @@ def table(
             + "</tr></tfoot>"
         )
     style = f' style="max-height:{max_height}px;overflow-y:auto"' if max_height else ""
+    wrap = "hr-table-wrap bleed" if bleed else "hr-table-wrap"
     render(
-        f'<div class="hr-table-wrap"{style}><table class="hr-table"><thead><tr>{head}</tr></thead>'
+        f'<div class="{wrap}"{style}><table class="hr-table"><thead><tr>{head}</tr></thead>'
         f"<tbody>{''.join(body)}</tbody>{tfoot}</table></div>"
     )
 

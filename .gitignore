@@ -20,6 +20,7 @@ data/*
 !data/private_candidates.parquet
 !data/private_checked.csv
 !data/private_found.jsonl
+!data/issuer_sni.csv
 data/snapshots/*
 !data/snapshots/demo/
 !data/snapshots/live/

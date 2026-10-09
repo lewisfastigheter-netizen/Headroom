@@ -227,3 +227,11 @@ header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !import
 .hr-table td { padding-left: 1rem !important; padding-right: 1rem !important; }
 .hr-table th:first-child, .hr-table td:first-child { padding-left: .9rem !important; }
 .hr-table th:last-child, .hr-table td:last-child { padding-right: .9rem !important; }
+
+/* Full-bleed table header: ui.table(..., bleed=True) runs the blue row to both window edges.
+   A border-image outset paints past the cell without adding scroll width; it needs separate borders. */
+.hr-table-wrap.bleed { overflow: visible; }
+.hr-table-wrap.bleed table.hr-table { border-collapse: separate; border-spacing: 0; }
+.hr-table-wrap.bleed thead th:first-child { border-image: linear-gradient(var(--blue), var(--blue)) fill 0 / 0 / 0 0 0 100vmax; }
+.hr-table-wrap.bleed thead th:last-child { border-image: linear-gradient(var(--blue), var(--blue)) fill 0 / 0 / 0 100vmax 0 0; }
+@media (max-width: 900px) { .hr-table-wrap.bleed { overflow-x: auto; } }
