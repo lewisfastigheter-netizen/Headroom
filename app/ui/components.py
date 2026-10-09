@@ -66,6 +66,30 @@ def fmt_num(v: float | None, digits: int = 0) -> str:
     return "–" if v is None else f"{v:,.{digits}f}".replace("-", "−")
 
 
+def fmt_delta(v: float | None, digits: int = 1, unit: str = "%") -> str:
+    """Signed change: '+1.3%', '−0.4 pp'. Fractions for '%', raw numbers otherwise."""
+    if v is None:
+        return "–"
+    x = v * 100 if unit == "%" else v
+    sep = "" if unit == "%" else " "
+    return f"{x:+.{digits}f}".replace("-", "−") + sep + unit
+
+
+def fmt_km(v: float | None) -> str:
+    return "–" if v is None else f"{v:,.0f} km"
+
+
+def fmt_people(v: float | None) -> str:
+    """Large counts: '3.4m', '412k', '8,950'."""
+    if v is None:
+        return "–"
+    if abs(v) >= 1e6:
+        return f"{v / 1e6:.1f}m"
+    if abs(v) >= 1e5:
+        return f"{v / 1e3:.0f}k"
+    return f"{v:,.0f}"
+
+
 def band(score: float | None, high: float, watch: float) -> str:
     if score is None:
         return "ok"
@@ -225,6 +249,7 @@ def table(
     )
     body = []
     for r in rows:
+        cls = r.get("_class")
         tds = []
         for c in cols:
             v = r.get(c.key)
@@ -232,7 +257,8 @@ def table(
             if not (c.raw_html or c.kind == "html"):
                 s = esc(s)
             tds.append(f'<td class="{c.kind}">{s}</td>')
-        body.append(f"<tr>{''.join(tds)}</tr>")
+        tr = f'<tr class="{esc(cls)}">' if cls else "<tr>"
+        body.append(f"{tr}{''.join(tds)}</tr>")
     tfoot = ""
     if foot:
         tfoot = (

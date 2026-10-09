@@ -54,6 +54,26 @@ TABLES: dict[str, str] = {
     "rate": """series VARCHAR, date DATE, value DOUBLE, source_url VARCHAR""",
 }
 
+# Location snapshot (data/snapshots/locations), the same in live and demo mode.
+LOCATION_TABLES: dict[str, str] = {
+    "location": """
+        level VARCHAR, code VARCHAR, name VARCHAR, display_name VARCHAR,
+        parent_kommun VARCHAR, parent_lan VARCHAR, regso_version VARCHAR,
+        tatort_codes VARCHAR, lat DOUBLE, lon DOUBLE, kommungrupp VARCHAR,
+        la_region VARCHAR, la_name VARCHAR, storstad VARCHAR,
+        population DOUBLE, population_year VARCHAR""",
+    "location_indicator": """
+        code VARCHAR, level VARCHAR, indicator VARCHAR, period VARCHAR, value DOUBLE,
+        unit VARCHAR, source VARCHAR, source_table VARCHAR, source_url VARCHAR,
+        as_of VARCHAR, note VARCHAR""",
+    "location_score": """
+        code VARCHAR, level VARCHAR, score_kind VARCHAR, score DOUBLE, coverage DOUBLE,
+        components_json VARCHAR""",
+    "location_peer": """
+        code VARCHAR, level VARCHAR, peer_set VARCHAR, peer_code VARCHAR, rank BIGINT,
+        distance DOUBLE, reason VARCHAR""",
+}
+
 
 @dataclass
 class Snapshot:
@@ -85,7 +105,7 @@ def open_snapshot(mode: str) -> Snapshot:
     meta_path = path / "meta.json"
     meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
     con = duckdb.connect(":memory:")
-    for name, ddl in TABLES.items():
+    for name, ddl in (LOCATION_TABLES if mode == "locations" else TABLES).items():
         file = path / f"{name}.parquet"
         if file.exists():
             con.execute(f"CREATE VIEW {name} AS SELECT * FROM read_parquet('{file.as_posix()}')")
@@ -109,10 +129,11 @@ def write_snapshot(
     path = snapshot_dir(mode)
     path.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(":memory:")
+    ddl = {**TABLES, **LOCATION_TABLES}
     for name, frame in tables.items():
-        if name not in TABLES:
+        if name not in ddl:
             raise KeyError(f"unknown table {name}")
-        con.execute(f"CREATE TABLE {name} ({TABLES[name]})")
+        con.execute(f"CREATE TABLE {name} ({ddl[name]})")
         con.register("frame", frame.to_arrow())
         cols = ", ".join(frame.columns)
         con.execute(f"INSERT INTO {name} ({cols}) SELECT {cols} FROM frame")

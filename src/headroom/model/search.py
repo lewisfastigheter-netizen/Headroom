@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from dataclasses import dataclass
 
 
 def fold(s: str | None) -> str:
@@ -39,7 +40,11 @@ def _allowed(n: int) -> int:
 
 def score(query: str, text: str) -> float | None:
     """Lower is better; None means no match."""
-    q, t = fold(query), fold(text)
+    return _score(fold(query), fold(text))
+
+
+def _score(q: str, t: str, typo: bool = True) -> float | None:
+    """score() on strings that are already folded."""
     if not q or not t:
         return None
     words = t.split()
@@ -53,7 +58,7 @@ def score(query: str, text: str) -> float | None:
         return 2.0
     # typo tolerance: compare with word prefixes of about the same length
     limit = _allowed(len(qc))
-    if not limit:
+    if not limit or not typo:
         return None
     best = None
     for w in [compact, *words]:
@@ -75,3 +80,59 @@ def search(query: str, items: list[tuple[str, str]], limit: int = 8) -> list[tup
             hits.append((s, len(label), label, value))
     hits.sort()
     return [(label, value) for _, _, label, value in hits[:limit]]
+
+
+# --------------------------------------------------------------------------- tiered index
+# Thousands of places (RegSO areas, cities) are searched on every keystroke in the header,
+# so their match strings are folded once, the typo pass only runs when exact matches run
+# short, and a lower tier (companies, counties, municipalities) always ranks first.
+
+
+@dataclass(frozen=True)
+class Entry:
+    label: str
+    value: str
+    tier: float
+    keys: tuple[str, ...]  # folded strings to match against
+
+
+def prepare(items: list[tuple[str, str, float, list[str]]]) -> list[Entry]:
+    """items: (label, value, tier, match strings; the label when empty). Fold once and
+    reuse on every keystroke."""
+    return [
+        Entry(lab, val, tier, tuple(dict.fromkeys(fold(k) for k in (keys or [lab]) if k)))
+        for lab, val, tier, keys in items
+    ]
+
+
+def search_tiered(query: str, entries: list[Entry], limit: int = 8) -> list[tuple[str, str]]:
+    """Best tier first, then closeness, then shorter label. Typos are tried only when the
+    exact pass finds fewer than `limit` results, and only against keys with the same first
+    letter (that keeps it fast over thousands of places)."""
+    q = fold(query)
+    if not q:
+        return []
+    hits: dict[int, tuple] = {}
+    for i, e in enumerate(entries):
+        best = None
+        for k in e.keys:
+            s = _score(q, k, typo=False)
+            if s is not None and (best is None or s < best):
+                best = s
+        if best is not None:
+            hits[i] = (e.tier, best, len(e.label), i)
+    if len(hits) < limit and len(q.replace(" ", "")) >= 4:
+        for i, e in enumerate(entries):
+            if i in hits:
+                continue
+            best = None
+            for k in e.keys:
+                if not k or k[0] != q[0]:
+                    continue
+                s = _score(q, k)
+                if s is not None and (best is None or s < best):
+                    best = s
+            if best is not None:
+                hits[i] = (e.tier, best, len(e.label), i)
+    order = sorted(hits.values())[:limit]
+    return [(entries[i].label, entries[i].value) for *_, i in order]

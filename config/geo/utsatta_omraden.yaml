@@ -1,0 +1,462 @@
+# Polisen, Lägesbild över utsatta områden 2025 (December 2025), table 19, pages 35-38.
+# https://polisen.se/siteassets/dokument/organiserad_brottslighet/utsatta-omraden/lagesbild-over-utsatta-omraden-2025.pdf
+# 65 areas: 46 utsatta, 19 särskilt utsatta. The category riskområde was removed in 2025;
+# ro_2023 marks areas that were riskområden in 2023. trend: the police's assessment of the
+# change since 2024 (positive, stable, negative; new for an area added in 2025).
+#
+# The police's borders do not follow RegSO. `regso` lists the RegSO 2025 whose names carry
+# the area's name (matched within the municipality, then checked by hand); an empty list
+# means no RegSO name matches, and the flag is then shown for the municipality only.
+# The match is an approximation and is labelled as such in the app.
+source: Polisen, Lägesbild över utsatta områden 2025
+source_url: https://polisen.se/siteassets/dokument/organiserad_brottslighet/utsatta-omraden/lagesbild-over-utsatta-omraden-2025.pdf
+published: 2025-12
+areas:
+  - name: Hagalund
+    kommun: "0184"  # Solna
+    category: utsatt
+    trend: positive
+    regso:
+      - "0184R010"  # Norra Hagalund-Haga norra
+      - "0184R018"  # Södra Hagalund
+  - name: Rissne
+    kommun: "0183"  # Sundbyberg
+    category: utsatt
+    trend: positive
+    ro_2023: true
+    regso:
+      - "0183R007"  # Rissne
+  - name: Tureberg
+    kommun: "0163"  # Sollentuna
+    category: utsatt
+    trend: positive
+    ro_2023: true
+    regso: []
+  - name: Storvreten
+    kommun: "0127"  # Botkyrka
+    category: utsatt
+    trend: positive
+    regso:
+      - "0127R013"  # Storvreten
+  - name: Lina
+    kommun: "0181"  # Södertälje
+    category: utsatt
+    trend: positive
+    regso:
+      - "0181R016"  # Lina-Vattubrinken-Dammkärr
+  - name: Hagsätra/Rågsved
+    kommun: "0180"  # Stockholm
+    category: utsatt
+    trend: positive
+    regso:
+      - "0180R031"  # Hagsätra
+      - "0180R078"  # Rågsved
+  - name: Hässelby Gård
+    kommun: "0180"  # Stockholm
+    category: utsatt
+    trend: positive
+    regso:
+      - "0180R039"  # Hässelby Gård
+  - name: Kronogården/Lextorp Norra
+    kommun: "1488"  # Trollhättan
+    category: utsatt
+    trend: positive
+    ro_2023: true
+    regso:
+      - "1488R008"  # Norra Lextorp-Västra Kronogården-Östra Kronogården
+  - name: Skiftinge
+    kommun: "0484"  # Eskilstuna
+    category: utsatt
+    trend: positive
+    regso:
+      - "0484R017"  # Skiftinge-Djursta
+      - "0484R018"  # Skiftinge-Ärsta-Sal
+  - name: Årby
+    kommun: "0484"  # Eskilstuna
+    category: utsatt
+    trend: positive
+    regso:
+      - "0484R028"  # Årby-Vallby
+  - name: Hageby
+    kommun: "0581"  # Norrköping
+    category: utsatt
+    trend: positive
+    regso:
+      - "0581R019"  # Nordöstra Hageby
+      - "0581R031"  # Sydvästra Hageby
+  - name: Brandbergen
+    kommun: "0136"  # Haninge
+    category: utsatt
+    trend: stable
+    regso:
+      - "0136R001"  # Brandbergen centrala
+      - "0136R002"  # Brandbergen norra
+      - "0136R003"  # Brandbergen södra
+  - name: Vårberg
+    kommun: "0180"  # Stockholm
+    category: utsatt
+    trend: stable
+    regso:
+      - "0180R108"  # Vårberg
+  - name: Finnsta
+    kommun: "0139"  # Upplands-Bro
+    category: utsatt
+    trend: stable
+    regso: []
+  - name: Fisksätra
+    kommun: "0182"  # Nacka
+    category: utsatt
+    trend: stable
+    regso:
+      - "0182R004"  # Fisksätra
+  - name: Fornhöjden
+    kommun: "0181"  # Södertälje
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "0181R006"  # Fornhöjden
+  - name: Valsta
+    kommun: "0191"  # Sigtuna
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "0191R005"  # Centrala Valsta
+      - "0191R018"  # Södra Valsta
+      - "0191R021"  # Västra Valsta
+      - "0191R024"  # Östra Valsta
+  - name: Saltskog
+    kommun: "0181"  # Södertälje
+    category: utsatt
+    trend: stable
+    regso:
+      - "0181R024"  # Saltskog
+  - name: Sångvägen
+    kommun: "0123"  # Järfälla
+    category: utsatt
+    trend: stable
+    regso: []
+  - name: Hallonbergen
+    kommun: "0183"  # Sundbyberg
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "0183R004"  # Hallonbergen Västra
+      - "0183R005"  # Hallonbergen Östra
+  - name: Vårby
+    kommun: "0126"  # Huddinge
+    category: utsatt
+    trend: stable
+    regso:
+      - "0126R021"  # Vårby Haga-Masmo
+      - "0126R022"  # Vårby Udde-Duvberget
+      - "0126R020"  # Vårby gård
+  - name: Skogås
+    kommun: "0126"  # Huddinge
+    category: utsatt
+    trend: stable
+    regso:
+      - "0126R014"  # Skogås västra
+      - "0126R015"  # Skogås östra
+  - name: Grantorp/Visättra
+    kommun: "0126"  # Huddinge
+    category: utsatt
+    trend: stable
+    regso: []
+  - name: Jordbro
+    kommun: "0136"  # Haninge
+    category: utsatt
+    trend: stable
+    regso:
+      - "0136R010"  # Jordbro centrala
+      - "0136R011"  # Jordbro norra
+      - "0136R012"  # Jordbro Södra
+  - name: Granängsringen
+    kommun: "0138"  # Tyresö
+    category: utsatt
+    trend: new
+    regso:
+      - "0138R003"  # Granängsringen-Nyboda
+  - name: Tjärna Ängar
+    kommun: "2081"  # Borlänge
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "2081R013"  # Tjärna Ängar
+  - name: Oxhagen
+    kommun: "1880"  # Örebro
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "1880R028"  # Varberga-Oxhagen
+  - name: Varberga
+    kommun: "1880"  # Örebro
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "1880R028"  # Varberga-Oxhagen
+  - name: Bäckby
+    kommun: "1980"  # Västerås
+    category: utsatt
+    trend: stable
+    regso:
+      - "1980R038"  # Västra Bäckby-Nordöstra Skälby
+      - "1980R046"  # Östra Bäckby
+  - name: Gottsunda
+    kommun: "0380"  # Uppsala
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "0380R006"  # Gamla Gottsunda-Vårdsätra-Vreta
+      - "0380R016"  # Mellersta Valsätra-Gottsunda centrum-Östra Gottsunda
+      - "0380R033"  # Södra Valsätra-Norra Gottsunda
+      - "0380R047"  # Västra Gottsunda
+  - name: Biskopsgården
+    kommun: "1480"  # Göteborg
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "1480R107"  # Norra Biskopsgården
+      - "1480R135"  # Södra Biskopsgården västra
+      - "1480R136"  # Södra Biskopsgården östra
+  - name: Hisings Backa
+    kommun: "1480"  # Göteborg
+    category: utsatt
+    trend: stable
+    regso:
+      - "1480R005"  # Backa centrala
+      - "1480R006"  # Backa Röd
+      - "1480R007"  # Backa östra
+  - name: Tynnered/Grevegården/Opaltorget
+    kommun: "1480"  # Göteborg
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "1480R034"  # Grevegården
+  - name: Fröslunda
+    kommun: "0484"  # Eskilstuna
+    category: utsatt
+    trend: stable
+    regso:
+      - "0484R005"  # Fröslunda-Vilsta
+  - name: Navestad
+    kommun: "0581"  # Norrköping
+    category: utsatt
+    trend: stable
+    regso:
+      - "0581R015"  # Navestad-Åselstad
+  - name: Råslätt
+    kommun: "0680"  # Jönköping
+    category: utsatt
+    trend: stable
+    regso:
+      - "0680R024"  # Råslätt
+  - name: Gamlegården
+    kommun: "1290"  # Kristianstad
+    category: utsatt
+    trend: stable
+    regso:
+      - "1290R005"  # Gamlegården
+  - name: Karlslund
+    kommun: "1282"  # Landskrona
+    category: utsatt
+    trend: stable
+    regso:
+      - "1282R012"  # Pilåkern-Silvergården-Karlslund-Säbyholm
+  - name: Holma/Kroksbäck
+    kommun: "1280"  # Malmö
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "1280R030"  # Holma
+      - "1280R031"  # Holma-Kroksbäck
+      - "1280R040"  # Kroksbäck väst
+  - name: Södra Sofielund/Seved
+    kommun: "1280"  # Malmö
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "1280R072"  # Södra Sofielund
+  - name: Araby
+    kommun: "0780"  # Växjö
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "0780R001"  # Araby-Dalbo-Nydala
+  - name: Dalhem/Drottninghög/Fredriksdal
+    kommun: "1283"  # Helsingborg
+    category: utsatt
+    trend: stable
+    ro_2023: true
+    regso:
+      - "1283R004"  # Dalhem-Väla södra
+      - "1283R005"  # Drottninghög
+      - "1283R008"  # Fredriksdal-Filborna
+  - name: Bredäng
+    kommun: "0180"  # Stockholm
+    category: utsatt
+    trend: negative
+    regso:
+      - "0180R010"  # Bredäng
+  - name: Hjulsta
+    kommun: "0180"  # Stockholm
+    category: utsatt
+    trend: negative
+    regso: []
+  - name: Söder
+    kommun: "1283"  # Helsingborg
+    category: utsatt
+    trend: negative
+    ro_2023: true
+    regso:
+      - "1283R026"  # Söder-Oceanhamnen-Oljehamnen
+  - name: Gårdsten
+    kommun: "1480"  # Göteborg
+    category: utsatt
+    trend: negative
+    regso:
+      - "1480R040"  # Gårdsten nordöstra
+      - "1480R041"  # Gårdsten sydvästra
+  - name: Alby
+    kommun: "0127"  # Botkyrka
+    category: sarskilt_utsatt
+    trend: positive
+    regso:
+      - "0127R001"  # Albyberget
+      - "0127R002"  # Albydalen
+  - name: Fittja
+    kommun: "0127"  # Botkyrka
+    category: sarskilt_utsatt
+    trend: positive
+    regso:
+      - "0127R005"  # Fittja
+  - name: Nydala/Hermodsdal/Lindängen
+    kommun: "1280"  # Malmö
+    category: sarskilt_utsatt
+    trend: positive
+    regso:
+      - "1280R045"  # Lindängen
+      - "1280R001"  # Almvik norr-Lindängen norr
+      - "1280R002"  # Almvik syd-Lindängen syd
+      - "1280R024"  # Gullviksborg-Hermodsdal syd
+      - "1280R027"  # Hermodsdal-Gullviksborg
+      - "1280R053"  # Nydala norr
+  - name: Hallunda/Norsborg
+    kommun: "0127"  # Botkyrka
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "0127R007"  # Hallunda
+      - "0127R010"  # Norsborg
+  - name: Ronna
+    kommun: "0181"  # Södertälje
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "0181R021"  # Ronna centrum-Ronna Park-Västra Ronna
+      - "0181R022"  # Ronna-Karlhov
+  - name: Geneta
+    kommun: "0181"  # Södertälje
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "0181R007"  # Geneta norra-Bårsta västra
+      - "0181R008"  # Geneta södra-Vasa
+  - name: Hovsjö
+    kommun: "0181"  # Södertälje
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "0181R012"  # Hovsjö
+  - name: Husby
+    kommun: "0180"  # Stockholm
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "0180R036"  # Husby
+  - name: Rinkeby
+    kommun: "0180"  # Stockholm
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "0180R076"  # Rinkeby
+  - name: Tensta
+    kommun: "0180"  # Stockholm
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "0180R102"  # Tensta
+  - name: Vivalla
+    kommun: "1880"  # Örebro
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "1880R029"  # Vivalla
+  - name: Bergsjön
+    kommun: "1480"  # Göteborg
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "1480R009"  # Bergsjön centrala
+      - "1480R010"  # Bergsjön nordvästra
+      - "1480R011"  # Bergsjön Rymdtorget
+      - "1480R012"  # Bergsjön sydöstra
+      - "1480R013"  # Bergsjön södra
+  - name: Hjällbo
+    kommun: "1480"  # Göteborg
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "1480R050"  # Hjällbo östra
+      - "1480R049"  # Hjällbo västra
+  - name: Lövgärdet
+    kommun: "1480"  # Göteborg
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "1480R098"  # Lövgärdet
+  - name: Hässleholmen
+    kommun: "1490"  # Borås
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "1490R019"  # Hässleholmen väst
+      - "1490R020"  # Hässleholmen öst norr
+  - name: Skäggetorp
+    kommun: "0580"  # Linköping
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "0580R018"  # Skäggetorp-Tornby
+  - name: Rosengård
+    kommun: "1280"  # Malmö
+    category: sarskilt_utsatt
+    trend: stable
+    regso:
+      - "1280R028"  # Herrgården norr
+      - "1280R088"  # Örtagården syd-Herrgården syd
+      - "1280R016"  # Emilstorp-Östra kyrkogården-Apelgården
+  - name: Norrby
+    kommun: "1490"  # Borås
+    category: sarskilt_utsatt
+    trend: negative
+    regso:
+      - "1490R025"  # Norrby
+  - name: Hammarkullen
+    kommun: "1480"  # Göteborg
+    category: sarskilt_utsatt
+    trend: negative
+    regso:
+      - "1480R044"  # Hammarkullen centrala
+      - "1480R045"  # Hammarkullen yttre

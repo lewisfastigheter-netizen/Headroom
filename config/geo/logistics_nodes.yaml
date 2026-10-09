@@ -1,0 +1,47 @@
+# Logistics nodes used for "distance to the nearest port / intermodal terminal / cargo
+# airport". Straight-line distance from a place's population-weighted centroid; the app
+# says it is an approximation of drive time.
+#
+# Coordinates are copied from Wikidata (P625) or OpenStreetMap, retrieved 2026-10-09, and
+# each entry names its object id so it can be checked. The list is not exhaustive: OSM and
+# Wikidata only tag some of Sweden's intermodal terminals by name. Add a node with its
+# coordinates and source, and rerun `uv run headroom locations`.
+#
+# Ports: the seven named in the brief plus other ports with regular freight traffic.
+# Wikidata © CC0; OpenStreetMap © OpenStreetMap contributors, ODbL.
+
+ports:
+  - {name: Göteborgs hamn, lat: 57.7000, lon: 11.9300, source: "Wikidata Q1796227"}
+  - {name: Helsingborgs hamn, lat: 56.0381, lon: 12.6940, source: "Wikidata Q1185055"}
+  - {name: Malmö hamn, lat: 55.6167, lon: 13.0000, source: "Wikidata Q1185198"}
+  - {name: Trelleborgs hamn, lat: 55.3700, lon: 13.1500, source: "Wikidata Q10351953"}
+  - {name: Stockholm Norvik hamn, lat: 58.9383, lon: 17.9766, source: "Wikidata Q10603142"}
+  - {name: Norrköpings hamn, lat: 58.5970, lon: 16.2130, source: "Wikidata Q10602815"}
+  - {name: Gävle hamn, lat: 60.6927, lon: 17.2128, source: "Wikidata Q23807296"}
+  - {name: Karlshamns hamn, lat: 56.1580, lon: 14.8200, source: "Wikidata Q1252481"}
+  - {name: Halmstads hamn, lat: 56.6552, lon: 12.8581, source: "Wikidata Q113571957"}
+  - {name: Varbergs hamn, lat: 57.1133, lon: 12.2441, source: "Wikidata Q10351957"}
+  - {name: Ystad hamn, lat: 55.4250, lon: 13.8270, source: "Wikidata Q5401283"}
+  - {name: Södertälje hamn, lat: 59.1793, lon: 17.6555, source: "Wikidata Q10688802"}
+  - {name: Kapellskärs hamn, lat: 59.7214, lon: 19.0647, source: "Wikidata Q1975317"}
+  - {name: Oxelösunds hamn, lat: 58.6610, lon: 17.1150, source: "Wikidata Q963132"}
+  - {name: Karlskrona hamn, lat: 56.1661, lon: 15.6378, source: "Wikidata Q32263669"}
+  - {name: Oskarshamns hamn, lat: 57.2669, lon: 16.4681, source: "Wikidata Q7231222"}
+  - {name: Sundsvalls hamn, lat: 62.4098, lon: 17.3877, source: "Wikidata Q111752831"}
+  - {name: Umeå hamn, lat: 63.6981, lon: 20.3464, source: "Wikidata Q10709187"}
+  - {name: Luleå hamn, lat: 65.5480, lon: 22.2510, source: "Wikidata Q1184873 (malmhamnen)"}
+
+intermodal_terminals:
+  - {name: Arken kombiterminal (Göteborg), lat: 57.6964, lon: 11.8314, source: "Wikidata Q88982553"}
+  - {name: Kombiterminal Stockholm Nord (Rosersberg), lat: 59.5611, lon: 17.8917, source: "Wikidata Q88870142"}
+  - {name: Stockholm-Årsta kombiterminal, lat: 59.2950, lon: 18.0260, source: "OSM way 116643713"}
+  - {name: Jönköpings kombiterminal, lat: 57.6740, lon: 14.1650, source: "OSM node 8500695084"}
+  - {name: Nässjö kombiterminal, lat: 57.6860, lon: 14.6890, source: "OSM way 1014245774"}
+  - {name: Malmö kombiterminal, lat: 55.6200, lon: 13.0470, source: "OSM way 542844574"}
+  - {name: Interlink Logistik kombiterminal (Helsingborg), lat: 56.0280, lon: 12.7150, source: "OSM way 547268087"}
+  - {name: Alwex Intermodal (Älmhult), lat: 56.8950, lon: 14.5520, source: "OSM way 940386402"}
+  - {name: Torsboda kombiterminal (Timrå), lat: 62.5190, lon: 17.4780, source: "OSM way 168580977"}
+
+cargo_airports:
+  - {name: Stockholm Arlanda, lat: 59.6519, lon: 17.9186, source: "Wikidata Q223499"}
+  - {name: Göteborg Landvetter, lat: 57.6600, lon: 12.2911, source: "Wikidata Q1137115"}

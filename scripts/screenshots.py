@@ -20,7 +20,8 @@ def pages(mode: str) -> dict[str, str]:
     return {
         "market": f"?{q}",
         "companies": f"companies?{q}",
-        "regions": f"regions?{q}",
+        "locations": f"locations?{q}",
+        "location": f"locations?level=kommun&code=0380&{q}",
         "issuer": f"issuer?org={ISSUER[mode]}&{q}",
         "method": f"method?{q}",
     }

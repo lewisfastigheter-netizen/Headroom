@@ -39,6 +39,10 @@ HOST_INTERVAL: dict[str, float] = {
     "firds.esma.europa.eu": 1.0,
     "mfn.se": 3.0,
     "news.cision.com": 3.0,
+    "statistikdatabasen.scb.se": 0.4,  # documented limit: 30 calls per 10 seconds
+    "geodata.scb.se": 0.5,
+    "api.kolada.se": 0.5,
+    "overpass-api.de": 5.0,
 }
 DEFAULT_INTERVAL = 2.0
 
@@ -159,6 +163,25 @@ class Fetcher:
     def _get(self, url: str, params: dict | None, headers: dict | None) -> httpx.Response:
         self._wait(urlsplit(url).netloc)
         r = self.client.get(url, params=params, headers=headers)
+        if r.status_code == 429 or r.status_code >= 500:
+            ra = r.headers.get("retry-after")
+            wait = float(ra) if ra and ra.isdigit() else None
+            if wait:
+                time.sleep(min(wait, 120))
+            raise RetryableStatus(r.status_code, wait)
+        return r
+
+    @retry(
+        retry=retry_if_exception(lambda e: isinstance(e, RetryableStatus | httpx.TransportError)),
+        wait=wait_exponential_jitter(multiplier=2, max=60),
+        stop=stop_after_attempt(5),
+        reraise=True,
+    )
+    def post_json(self, url: str, body: Any, params: dict | None = None) -> httpx.Response:
+        """POST a JSON body (used for API queries too long for a URL). Same host
+        interval and retry rules as GET; not cached here (callers cache results)."""
+        self._wait(urlsplit(url).netloc)
+        r = self.client.post(url, json=body, params=params)
         if r.status_code == 429 or r.status_code >= 500:
             ra = r.headers.get("retry-after")
             wait = float(ra) if ra and ra.isdigit() else None

@@ -39,6 +39,14 @@ dev = [
     "respx>=0.23.1",
     "ruff>=0.16.10",
 ]
+geo = [
+    "shapely>=2.2.0",
+]
+
+[tool.uv]
+# The geo group (shapely) is only needed by `headroom locations`; the app reads the
+# GeoJSON it writes, so requirements.txt for Streamlit Cloud does not include it.
+default-groups = ["dev", "geo"]
 
 [project.scripts]
 headroom = "headroom.cli:main"
@@ -58,6 +66,7 @@ ignore = ["RUF001", "RUF002", "RUF003", "UP047", "SIM105"]  # Swedish characters
 "src/headroom/extract/*.py" = ["E501"]  # prompts and regex vocabularies
 "src/headroom/sources/bolagsverket.py" = ["E501"]
 "tests/*.py" = ["E501"]  # inline fixtures
+"app/ui/place_search.py" = ["E501"]  # inline JavaScript for the search component
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

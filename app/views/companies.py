@@ -205,9 +205,7 @@ city_options = sorted(present(df.filter(pl.col("county") == county), "city"))
 cols["city"].selectbox(
     "City", ["All cities", *city_options], disabled=county == "All counties", key=f"city_{county}"
 )
-grey_empty(
-    f"city_{county}".replace(" ", "-"), city_options, present(apply(df, "city"), "city"), 1
-)
+grey_empty(f"city_{county}".replace(" ", "-"), city_options, present(apply(df, "city"), "city"), 1)
 if styles:
     ui.render("<style>" + "\n".join(styles) + "</style>")
 

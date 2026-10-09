@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from headroom.model.location import COMPONENT_LABEL
 from headroom.store import private
 from ui import components as ui
 from ui.data import get_data
@@ -63,6 +64,36 @@ sources = [
         "SNI codes, digitally filed annual reports (iXBRL), proceedings; private-AB universe",
         "Värdefulla datamängder API (OAuth2) and bulk file",
         "Code ready; runs once API credentials are set",
+    ),
+    (
+        "SCB Statistikdatabasen",
+        "Locations: population, migration, housing, construction, rents, prices, income, jobs, commuting",
+        "PxWebApi 2.0 (CC0), cached per table and refetched only when SCB updates it",
+        "Connected",
+    ),
+    (
+        "SCB öppna geodata",
+        "Locations: RegSO borders, cities, 1 km population grid, business areas",
+        "WFS (geodata.scb.se)",
+        "Connected",
+    ),
+    (
+        "Kolada",
+        "Locations: housing-market assessment, unemployment, tax base, similar municipalities",
+        "Kolada API v3",
+        "Connected",
+    ),
+    (
+        "Polisen, OpenStreetMap, Wikidata",
+        "Locations: vulnerable areas 2025; motorway junctions; ports, terminals and cargo airports",
+        "Entered by hand or fetched once into config/geo, with source and date",
+        "Committed files",
+    ),
+    (
+        "Svensk Mäklarstatistik",
+        "Tenant-owned flat prices by area",
+        "Licence forbids giving third parties access",
+        "Not used",
     ),
     (
         "Post- och Inrikes Tidningar",
@@ -173,6 +204,64 @@ ui.render("""<div class="hr-prose">
 reported fixed or hedged share. If the hedged share is not reported, all debt is treated as floating, and the issuer page says so.
 EBITDA is held constant and fixed-rate debt maturing during the period is not repriced, so the shock understates pressure for
 issuers with near-term fixed-rate maturities.</p></div>""")
+
+# --------------------------------------------------------------------------- locations
+
+ui.section(None, "Location scores")
+lc = d.cfg.get("location", {})
+ui.render("""<div class="hr-prose">
+<p>The Locations page scores places for a value-add investor in rental housing and in logistics and light industrial property.
+These scores are separate from the company scores and do not affect them. Each component is a linear ramp from a value that scores 0
+to one that scores 100; components without data are dropped and the rest re-weighted; below half the weight a place is not scored.
+Everything is public statistics: SCB (Statistikdatabasen and öppna geodata), Kolada, Polisen, OpenStreetMap and Wikidata.
+No figure is interpolated, and no model or LLM decides a score.</p>
+<ul>
+<li><b>Residential</b> (municipalities and counties) asks whether people are arriving faster than homes are built:
+population growth, new residents per completed home, the inflow of 20–34-year-olds (the renter cohort), the municipality's own
+housing-market assessment, how many homes are under way, income and education.</li>
+<li><b>Residential, areas</b> (RegSO) asks whether an area within a city is growing, rented, young and improving:
+growth since 2020 where SCB kept the borders (otherwise last year), the share aged 20–34, the rental share, the fall in SCB's
+socio-economic index over ten years (a weak area that improves is a value-add signal), income against the municipality,
+and the municipality's own score.</li>
+<li><b>Logistics</b> (municipalities and counties) asks whether there are people within reach and the infrastructure and labour
+to serve them: residents within 100 km, transport and warehousing jobs against Sweden's share and their growth, distance to the
+nearest port, intermodal terminal or cargo airport and to a junction on E4, E6, E18 or E20, in- vs out-commuters, and jobs in
+business areas (verksamhetsområden).</li>
+</ul>
+<p>Distances and catchments are straight lines from a population-weighted centre on SCB's 1 km grid: an approximation of drive time.
+RegSO statistics from 2024 use the 2025 borders, earlier years the 2020 borders; SCB's change file tells which areas kept their borders,
+and series are joined only for those. Police-listed vulnerable areas (Lägesbild 2025) are flagged in orange, linked to RegSO by name
+(approximate), and do not change the score.</p></div>""")
+for key, title in (
+    ("residential", "Residential: municipalities and counties"),
+    ("residential_regso", "Residential: areas (RegSO)"),
+    ("logistics", "Logistics"),
+):
+    block = lc.get(key)
+    if not block:
+        continue
+    ui.render('<div style="height:1.5rem"></div>' + ui.eyebrow(title))
+    ui.table(
+        [
+            {
+                "c": COMPONENT_LABEL.get(k, k),
+                "w": f"{w:.0%}",
+                "z": f"{block[k]['zero']:,}",
+                "f": f"{block[k]['full']:,}"
+                + (" (log scale)" if block[k].get("scale") == "log" else ""),
+            }
+            for k, w in block["weights"].items()
+        ],
+        [
+            ui.Col("c", "Component"),
+            ui.Col("w", "Weight", "num"),
+            ui.Col("z", "Scores 0 at", "num"),
+            ui.Col("f", "Scores 100 at", "num"),
+        ],
+    )
+ui.source_line(
+    "Weights and ramps: <code>config/weights.yaml</code>, block <code>location</code>. Rules: <code>src/headroom/model/location.py</code>."
+)
 
 # --------------------------------------------------------------------------- limitations
 

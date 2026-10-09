@@ -1,0 +1,33 @@
+# Logistics-location rankings, entered by hand. Shown on the Locations page with year and
+# source; not part of the Logistics score (the 2026 list ranks nine Nordic regions, too
+# coarse to score a single municipality).
+#
+# Intelligent Logistik's annual "Sveriges bästa logistiklägen" ended when the magazine
+# closed in 2024. Dagens Logistik took the list over in 2025 as a Nordic, region-level
+# ranking without points.
+#
+# `counties` maps each Swedish region to the counties it covers, as Headroom reads the
+# article's description; the article itself names regions, not counties.
+
+editions:
+  - year: 2026
+    title: "Nordens bästa logistiklägen 2026"
+    publisher: Dagens Logistik
+    published: 2026-02-25
+    source_url: https://dagenslogistik.se/lista-har-ar-nordens-basta-logistiklagen-2026/
+    method: "Editorial regional ranking (no points): infrastructure, goods flows, proximity to consumers, logistics labour, industry."
+    places:
+      - {rank: 1, name: Göteborgsregionen, counties: ["14"]}
+      - {rank: 2, name: Öresundsregionen, counties: ["12"], note: "Denmark and Sweden"}
+      - {rank: 3, name: Mälardalsregionen, counties: ["01", "03", "04", "18", "19"]}
+      - {rank: 7, name: Jönköpingsregionen, counties: ["06"]}
+      - {rank: 8, name: Bottenviken, counties: ["25"], note: "Norway, Sweden and Finland"}
+  - year: 2024
+    title: "Sveriges bästa logistiklägen 2024"
+    publisher: Intelligent Logistik
+    published: 2024-03-01
+    source_url: https://www.realtid.se/samhalle/har-ar-sveriges-basta-logistiklage/
+    method: "Points-based ranking of Swedish logistics locations; the full table was published as an image and is not reproduced."
+    places:
+      - {rank: 1, name: Göteborgsregionen, kommuner: ["1480"], note: "Shared first place"}
+      - {rank: 1, name: Helsingborgsregionen, kommuner: ["1283"], note: "Shared first place"}

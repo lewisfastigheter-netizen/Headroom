@@ -24,6 +24,8 @@ data/*
 data/snapshots/*
 !data/snapshots/demo/
 !data/snapshots/live/
+# Location statistics (public data, the same in live and demo mode)
+!data/snapshots/locations/
 !data/cache/
 data/cache/*
 # LLM results are committed so a fresh checkout never re-reads a document

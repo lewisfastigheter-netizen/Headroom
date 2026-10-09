@@ -2,6 +2,13 @@
 
 Underlag för granskning innan någon kod skrivs. Alla tabell-ID:n nedan är kontrollerade mot de riktiga API:erna den 9 oktober 2026 (metadata, senaste period, regionnivå och kodlistor). Baslinjen i repot: 80 tester (63 testfunktioner, några parametriserade) går igenom och `ruff check` är ren.
 
+## Beslut (9 oktober 2026)
+
+- **Stor sökruta**: egen liten komponent med Streamlits `components.v2` (inget nytt beroende), namnet stort och nivå/förälder i `--muted`, stilad från `theme.css`. Headern behåller `streamlit_searchbox`.
+- **RegSO är huvudnivån inom städer.** Från kommun- och tätortssidan ska man kunna öppna en karta över området med RegSO markerade, och klicka sig vidare till ett RegSO. shapely används bara i pipelinen (dependency-grupp `geo`), appen läser färdig GeoJSON.
+- **Utsatta områden**: bara flagga (orange), påverkar inte poängen.
+- **Logistikrankingen**: visas med år och källa, ingår inte i Logistics score.
+
 ## 1. Vad koden har i dag (det som styr designen)
 
 - `streamlit_app.py` bygger headerns söklista av bolag + län + städer *som har bolag*; `search()` är en ren funktion utan nivåer eller ranking mellan typer.

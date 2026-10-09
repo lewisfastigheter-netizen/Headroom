@@ -18,7 +18,19 @@ In July 2026 Holmström Fastigheter Holding AB (publ) started a written procedur
 
 ![Company page](docs/screenshots/live_issuer.png)
 
-The app has four pages: **Market Overview** (maturity wall, latest credit events), **Companies** (the ranked list with key figures, filtered by company type, accounting standard, segment, county and city), **Locations** (reserved for a future map view) and **Method**. Each company has its own page, opened from the tables or from the search box in the top-right corner, which also finds counties and cities and opens the Companies list filtered to them.
+The app has four pages: **Market Overview** (maturity wall, latest credit events), **Companies** (the ranked list with key figures, filtered by company type, accounting standard, segment, county and city), **Locations** (place analysis for housing and logistics, below) and **Method**. Each company has its own page, opened from the tables or from the search box in the top-right corner. That box also finds counties, municipalities, cities and areas: a place opens on Locations, and "Companies in …" opens the Companies list filtered to it.
+
+### Locations
+
+How Sweden's 21 counties, 290 municipalities, about 2,000 cities and 3,363 areas within cities (SCB's RegSO) develop, read for a value-add investor in rental housing and logistics / light industrial property. Every section answers what the numbers mean for a housing or a logistics investment there.
+
+- **No place selected**: a statement from the data, a large place search, a ranking of municipalities on a Residential and a Logistics score (filter by county, SKR municipality group and population; export to CSV and Excel) and a map of Sweden.
+- **A place selected** (`?level=kommun&code=0380`, `lan`, `tatort`, `regso`): a headline chosen by rule from the indicator where the place differs most from Sweden; key facts with periods; **Residential** (growth, new residents per completed home, the inflow of 20–34-year-olds, the municipality's housing-market assessment, rents, new-build rent premium, charts); **Logistics and light industrial** (people within 50/100/200 km, nearest port, intermodal terminal, cargo airport and motorway junction, logistics jobs, commuting, industrial transaction prices); **Areas** (the RegSO as a table and a map; click to open); **Peers** (Kolada's similar municipalities, nearest neighbours in the same labour market, statistical twins, county and Sweden on the same rows); **Property companies here** (companies with a large share of their portfolio there, their seller score and a link to Companies).
+- Every figure carries its period and source table; – means SCB suppresses or does not publish it. Police-listed vulnerable areas are flagged in orange.
+
+![Locations](docs/screenshots/live_locations.png)
+
+![A municipality on Locations](docs/screenshots/live_location.png)
 
 ## Why this matters for a value-add investor
 
@@ -39,6 +51,7 @@ That pressure is visible in public data before it becomes a sale. Bonds force un
 | 5 | Events from MFN and Cision releases and bondholder notices | Done |
 | 6 | Scoring, issuer page, cited draft memo | Done |
 | 7 | Tests, README, deployment | Done, except the Streamlit Cloud account step (below) |
+| 8 | Locations: SCB, Kolada and geodata clients, indicators, scores, peers, RegSO areas and maps, place search | Done |
 
 Live run of 9 October 2026: 70 property issuers (37 listed, 33 bond-only), 734 bonds, 64 newswire feeds found, 60 reports read for 35 companies, 258 events, 33 share-price series.
 
@@ -50,7 +63,8 @@ Requires [uv](https://docs.astral.sh/uv/).
 uv sync
 uv run streamlit run app/streamlit_app.py      # http://localhost:8501, live and demo data
 uv run headroom refresh                        # rebuild data/snapshots/live from public sources
-uv run pytest                                  # 63 tests, no network
+uv run headroom locations                      # rebuild data/snapshots/locations only (SCB, Kolada, geodata)
+uv run pytest                                  # tests, no network
 ```
 
 Copy `.env.example` to `.env` and fill in:
@@ -77,10 +91,13 @@ On Windows with the repository inside OneDrive, keep the virtual environment out
 7. **Location** (`model/geo.py`). County and city from the registered address at Bolagsverket (municipality table from Statistics Sweden, postcode prefixes as fallback); listed companies and bond issuers are placed where the largest share of their portfolio is when the report names a Swedish place.
 8. **Market vs book value** (`model/valuation.py`). Every property value is labelled fair value (stated in the source), fair value presumed (IFRS report, basis not stated) or book value (K2/K3). Annual reports use the fair value disclosed in the notes when there is one. LTV on book value is flagged in the app.
 9. **Private ABs** (`sources/bolagsverket.py`). Candidates come from Bolagsverket's bulk file: SNI 68 where the file has it, otherwise wording in the name or registered business description ("äga och förvalta fast egendom", "uthyrning av lokaler" and similar), most likely first. The candidate list is saved to `data/private_candidates.parquet` so the scheduled job can use it without the bulk file. Each candidate's SNI code is checked through the API, its latest digitally filed annual report (iXBRL) is parsed, and those with at least SEK 20m of property are scored. `data/private_checked.csv` records every result and coverage grows run by run. A separate workflow (`.github/workflows/private.yml`, `headroom private`) runs four times a day for up to 5.5 hours each, checking candidates at Bolagsverket's rate limit (it slows down by itself on HTTP 429). Kept companies go to `data/private_found.jsonl`, which the app merges into the live data, so the private scan and the weekly refresh never write the same files. Companies registered in the last 15 months are skipped, as they have not filed an annual report yet. It uses no LLM, so it costs nothing. Late annual reports and registered proceedings become events.
+10. **Locations** (`location_pipeline.py`, `uv run headroom locations`; also run by `headroom refresh`). SCB PxWebApi 2.0 (`sources/scb.py`): reads `/config`, splits selections over the 150,000-cell limit, keeps to 30 calls per 10 seconds and backs off on 429, turns json-stat2 into long Polars frames with SCB's dots as null, and caches each table selection as Parquet, skipping the download while the table's `updated` stamp is unchanged. Kolada v3 (`sources/kolada.py`) adds the housing-market assessment, unemployment, tax base and the "Liknande kommuner socioekonomi" peer groups. SCB's WFS (`sources/scb_geo.py`) gives RegSO 2025 polygons (joined into municipality and county borders), cities, the 1 km population grid and business areas; distances are computed in SWEREF 99 TM and maps written as simplified GeoJSON per municipality. Output: `data/snapshots/locations/` (`location`, `location_indicator` in long format with source table, URL and as-of per row, `location_score`, `location_peer`, `geo/`). It is public data, shown in both live and demo mode. Building it needs shapely (`geo` dependency group, installed by `uv sync`); the app does not.
 
 ## Scoring
 
 Motivated-seller score, 0 to 100: refinancing pressure 30%, covenant headroom 25%, leverage and coverage 15%, events 20% (half-life 180 days), market 10% (listed only). Missing components are dropped and the rest re-weighted, and the company is flagged; below 50% coverage a company is not scored. When the reported maturity profile is missing, bond maturities from FIRDS are used and labelled as such. Strategy fit measures exposure to residential, light industrial and logistics property, to Nordic growth regions, and to a target deal size. All weights are in `config/weights.yaml` and on the Method page.
+
+Location scores (Locations page only; they do not touch the company scores): **Residential** for municipalities and counties (5-year growth 20%, new residents per completed home 20%, net inflow of 20–34-year-olds 15%, housing-market assessment 15%, homes started 10%, income vs Sweden 10%, higher education 10%), **Residential** for RegSO areas (growth 25%, share aged 20–34 15%, rental share 15%, socio-economic improvement over ten years 20%, income vs the municipality 15%, the municipality's score 10%) and **Logistics** for municipalities and counties (people within 100 km 25%, transport and warehousing jobs vs Sweden 20% and their growth 10%, nearest port/terminal/cargo airport 15%, nearest motorway junction 10%, in- vs out-commuters 10%, business-area jobs per resident 10%). Same rules as above: linear ramps, missing components re-weighted, no score below 50% coverage. The ramps were set against the 2025–2026 distribution of each indicator.
 
 ## Deploy to Streamlit Community Cloud
 
@@ -99,17 +116,25 @@ Motivated-seller score, 0 to 100: refinancing pressure 30%, covenant headroom 25
 - **MFN robots.txt** disallows its RSS/JSON feeds, so the HTML pages and company search are used instead. **Post- och Inrikes Tidningar** and Bolagsverket's website block automated access and are not scraped.
 - **Models**: `claude-sonnet-5-5` for reports and memos, `claude-haiku-5-5` for event classification; change in `.env`.
 - **Opportunity type is rule-based** and transparent (`model/scoring.py`); the LLM extracts and drafts, it does not score.
+- **Locations sources.** SCB tables were checked against the API in October 2026; where the brief's table did not hold the level needed, another was used: TAB6574 for population (5-year age bands, so 20–34 can be built; TAB7046 has 10-year bands), TAB3204/TAB3785 for jobs at the workplace by industry per municipality (TAB5458 only covers counties and FA regions), TAB6534 for education. SNI 46 (wholesale) is not published per municipality, so logistics is SNI H and light industry SNI B+C and F. Rents per municipality exist only for the 20 largest municipalities (TAB4603) and new-build rent premiums only for the three metro regions and two size groups (TAB6417). Vacant flats (TAB3214) are national only, so the housing-market assessment stands in for vacancy risk. Industrial assessed values have no floor area, so they are per taxation unit.
+- **RegSO versions.** Statistics from 2024 use RegSO 2025, earlier years RegSO 2020. Some tables return 0 rather than '..' outside a version's years, so rows are dropped by version and year, never by value. SCB's change file (`config/geo/regso_changes.csv`, 2026-03-25) lists 288 of 3,363 areas whose borders changed; their series break in 2024 and are flagged. Name changes and extensions into territorial water keep the series.
+- **Straight lines, not drive times.** Catchments and distances are straight lines from a population-weighted centre on SCB's 1 km grid. The app says so next to each figure.
+- **Hand-entered location sources** live in `config/geo` with source and date: Polisen's Lägesbild över utsatta områden 2025 (65 areas; the risk-area category was dropped in 2025; linked to RegSO by name, approximately), logistics nodes (ports, intermodal terminals and cargo airports with Wikidata/OpenStreetMap ids; not exhaustive), motorway junctions on E4/E6/E18/E20 (built once from OpenStreetMap by `scripts/motorway_junctions.py`) and logistics rankings. Intelligent Logistik's ranking ended in 2024; Dagens Logistik's 2026 list ranks nine Nordic regions and is shown but not scored. Market yields and rents from broker reports are not used.
+- **Not used**: Svensk Mäklarstatistik (its licence forbids giving third parties access), and paid services such as Datscha, Valueguard and Pamind (possible additions).
+- **Place search** on Locations is a small Streamlit component (components v2, no iframe) so result rows can show the name large and level and parent muted; it searches in the browser over the place index. The header keeps streamlit_searchbox and searches companies and places; companies, counties and municipalities rank before cities, cities before areas.
 - **Visual style**: large statements, hairline rules, white and light-grey bands, Roboto, one blue accent (#00839B), orange for breach and amber for watch.
 
 ## Layout
 
 ```
-src/headroom/   sources/ (firds, gleif, riksbank, newsfeeds, prices, bolagsverket)
-                extract/ (documents, llm, kpi, events, memo)  model/ (scoring, stress, universe)
-                store/ (DuckDB over Parquet)  pipeline.py  cli.py  demo/
+src/headroom/   sources/ (firds, gleif, riksbank, newsfeeds, prices, bolagsverket, scb, scb_geo, kolada)
+                extract/ (documents, llm, kpi, events, memo)
+                model/ (scoring, stress, universe, geo, location, search)
+                store/ (DuckDB over Parquet)  pipeline.py  location_pipeline.py  cli.py  demo/
 app/            streamlit_app.py, views/, ui/ (theme.css, plotly_template.py, components)
-config/         weights.yaml, universe_seed.yaml
-data/snapshots/ demo/ and live/ (committed); data/cache/ is not
+config/         weights.yaml, universe_seed.yaml, geo/ (municipalities, RegSO changes, vulnerable areas,
+                logistics nodes, motorway junctions, logistics rankings)
+data/snapshots/ demo/, live/ and locations/ (committed); data/cache/ is not
 tests/
 ```
 

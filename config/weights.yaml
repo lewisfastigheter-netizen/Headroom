@@ -110,3 +110,67 @@ private_universe:
   max_minutes_per_run: 330
   # New companies checked during the weekly refresh (0 = leave it to the daily job).
   max_lookups_in_refresh: 0
+
+location:
+  # Location scores for the Locations page only; they do not feed the company scores.
+  # Same pattern as motivated_seller: each component is a linear ramp from `zero`
+  # (score 0) to `full` (score 100), clipped; `scale: log` ramps on log10 of the value.
+  # Weights within a score sum to 1.0. Components without data are dropped and the
+  # rest re-weighted; below `min_coverage` of the weight a place is not scored.
+  min_coverage: 0.50
+  bands:
+    high: 65
+    watch: 45
+
+  residential:            # municipalities and counties
+    weights:
+      growth_5y: 0.20          # population growth per year, last 5 years
+      housing_pressure: 0.20   # residents added per completed home, last 3 years
+      young_inflow: 0.15       # net domestic inflow of 20-34-year-olds per 1,000 residents, 3-year mean
+      bme: 0.15                # municipality's own housing-market assessment (Kolada U30446)
+      pipeline: 0.10           # homes started per 1,000 residents, last 4 quarters (fewer = less new supply)
+      income_rel: 0.10         # median income relative to Sweden
+      education: 0.10          # share of 25-65-year-olds with 3+ years of post-secondary education
+    growth_5y:        {zero: 0.000, full: 0.015}
+    housing_pressure: {zero: 0.0,   full: 2.0}
+    young_inflow:     {zero: -2.0,  full: 6.0}
+    bme:              {zero: 2.0,   full: 0.0}    # surplus (2) scores 0, shortage (0) scores 100
+    pipeline:         {zero: 5.0,   full: 1.0}
+    income_rel:       {zero: 0.85,  full: 1.15}
+    education:        {zero: 0.15,  full: 0.35}
+
+  residential_regso:      # areas within cities
+    weights:
+      growth: 0.25             # per year over 5 years where the RegSO kept its borders, else 1 year
+      share_20_34: 0.15        # the renter cohort
+      rental_share: 0.15       # rental flats as a share of all dwellings
+      sei_improvement: 0.20    # fall in SCB's socio-economic index over 10 years (higher index = more challenges)
+      income_rel_kommun: 0.15  # mean net income relative to the municipality
+      kommun_context: 0.10     # the municipality's Residential score
+    growth:            {zero: 0.000, full: 0.020}
+    share_20_34:       {zero: 0.12,  full: 0.25}
+    rental_share:      {zero: 0.10,  full: 0.50}
+    sei_improvement:   {zero: -0.5,  full: 3.0}   # percentage points
+    income_rel_kommun: {zero: 0.75,  full: 1.10}
+    kommun_context:    {zero: 0,     full: 100}
+
+  logistics:              # municipalities and counties
+    weights:
+      catchment_100km: 0.25    # residents within 100 km, straight line
+      logistics_lq: 0.20       # transport and warehousing (SNI H) share of local jobs / Sweden's share
+      logistics_growth: 0.10   # growth per year in SNI H jobs at workplaces in the municipality
+      node_distance: 0.15      # nearest port, intermodal terminal or cargo airport, km
+      motorway_distance: 0.10  # nearest junction on E4, E6, E18 or E20, km
+      job_hub: 0.10            # in-commuters / out-commuters
+      industrial_cluster: 0.10 # employees in business areas (verksamhetsområden) per 1,000 residents
+    catchment_100km:    {zero: 300000, full: 3000000, scale: log}
+    logistics_lq:       {zero: 0.8,  full: 2.0}
+    logistics_growth:   {zero: 0.0,  full: 0.04}
+    node_distance:      {zero: 80.0, full: 10.0}
+    motorway_distance:  {zero: 40.0, full: 3.0}
+    job_hub:            {zero: 0.7,  full: 1.3}
+    industrial_cluster: {zero: 50.0, full: 250.0}
+
+  # Statements in the start-page headline.
+  pressure_shortage: 2.0     # residents per completed home above this suggests a shortage
+  min_percentile_n: 20       # no percentile from fewer comparable values

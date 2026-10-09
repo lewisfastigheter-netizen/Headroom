@@ -1,0 +1,543 @@
+kommun,kommun_name,old_code,old_name,new_code,new_name,change,date
+0160,Täby,0160R003,Ella Gård,0160R003,Ella gård,Namnändrad (ej kodändrad),2026-01-01
+0160,Täby,0160R004,Ella Park,0160R004,Ella park,Namnändrad (ej kodändrad),2026-01-01
+0160,Täby,0160R009,Karlsund,0160R009,Karlslund,Namnändrad (ej kodändrad),2026-01-01
+0160,Täby,0160R013,Näsby Park,0160R013,Näsbypark,Namnändrad (ej kodändrad),2026-01-01
+0160,Täby,0160R014,Näsby Slott,0160R014,Näsby slott,Namnändrad (ej kodändrad),2026-01-01
+0160,Täby,0160R020,Täby Centrum,0160R020,Täby centrum,Namnändrad (ej kodändrad),2026-01-01
+0160,Täby,0160R021,Täby Park,0160R021,Täby park,Namnändrad (ej kodändrad),2026-01-01
+2510,Jokkmokk,2510R001,Jokkmokk centralort västra,2510R001,Jokkmokk centralort östra,Namnändrad (ej kodändrad),2026-01-01
+2510,Jokkmokk,2510R002,Jokkmokk centralort östra,2510R002,Jokkmokk centralort västra,Namnändrad (ej kodändrad),2026-01-01
+2510,Jokkmokk,2510R003,Jokkmokk västra omland,2510R003,Jokkmokk östra omland,Namnändrad (ej kodändrad),2026-01-01
+2510,Jokkmokk,2510R004,Jokkmokk östra omland,2510R004,Jokkmokk västra omland,Namnändrad (ej kodändrad),2026-01-01
+0120,Värmdö,0120R002,Djurö-Vindö,0120R002,Djurö-Vindö,Utvidgas,2025-01-01
+0120,Värmdö,0120R003,Farstalandet-Charlottendal,0120R003,Farstalandet-Charlottendal,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0120,Värmdö,0120R003,Farstalandet-Charlottendal,0120R007,Ingarö norr,Ger del/delar till befintlig,2025-01-01
+0120,Värmdö,0120R005,Hemmesta,0120R005,Hemmesta,Utvidgas,2025-01-01
+0120,Värmdö,0120R006,Herrviksnäs-Strömma-Hässelmara,0120R006,Herrviksnäs-Strömma-Hässelmara,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0120,Värmdö,0120R006,Herrviksnäs-Strömma-Hässelmara,0120R012,Norra Värmdölandet-Skärgården,Ger del/delar till befintlig,2025-01-01
+0120,Värmdö,0120R012,Norra Värdölandet-Skärgården,0120R012,Norra Värmdölandet-Skärgården,Namnändrad (ej kodändrad),2025-01-01
+0120,Värmdö,0120R012,Norra Värdölandet-Skärgården,0120R012,Norra Värmdölandet-Skärgården,Utvidgas till territorialvattnet,2025-01-01
+0120,Värmdö,0120R015,Stavsnäs,0120R012,Norra Värmdölandet-Skärgården,Ger del/delar till befintlig,2025-01-01
+0120,Värmdö,0120R015,Stavsnäs,0120R015,Stavsnäs,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0123,Järfälla,0123R003,Barkarbystaden norra,0123R003,Barkarbystaden norra,Utvidgas,2025-01-01
+0123,Järfälla,0123R025,Ålsta,0123R003,Barkarbystaden norra,Ger del/delar till befintlig,2025-01-01
+0123,Järfälla,0123R025,Ålsta,0123R025,Ålsta,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0127,Botkyrka,0127R001,Albyberget,0127R001,Albyberget,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0136,Haninge,0136R004,Dalarö,0136R004,Dalarö,Utvidgas,2025-01-01
+0136,Haninge,0136R009,Haninge skärgård-glesbygd,0136R009,Haninge skärgård-glesbygd,Utvidgas till territorialvattnet,2025-01-01
+0138,Tyresö,0138R006,Lindalen,0138R006,Lindalen,Utvidgas,2025-01-01
+0139,Upplands-Bro,0139R003,Centrala Kungsängen,0139R003,Centrala Kungsängen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0139,Upplands-Bro,0139R003,Centrala Kungsängen,0139R006,Norrboda-Tibble,Ger del/delar till befintlig,2025-01-01
+0139,Upplands-Bro,0139R003,Centrala Kungsängen,0139R010,Upplands-Bro södra omland,Ger del/delar till befintlig,2025-01-01
+0139,Upplands-Bro,0139R006,Norrboda-Tibble,0139R006,Norrboda-Tibble,Utvidgas,2025-01-01
+0160,Täby,0160R012,Nytorp,0160R012,Nytorp,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0160,Täby,0160R012,Nytorp,0160R021,Täby Park,Ger del/delar till befintlig,2025-01-01
+0160,Täby,0160R021,Täby Park,0160R021,Täby Park,Utvidgas,2025-01-01
+0180,Stockholm,0180R019,Enskedefältet,0180R019,Enskedefältet,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0180,Stockholm,0180R019,Enskedefältet,0180R122,Östberga,Ger del/delar till befintlig,2025-01-01
+0180,Stockholm,0180R027,Gröndal,0180R027,Gröndal,Utvidgas,2025-01-01
+0180,Stockholm,0180R053,Liljeholmen,0180R053,Liljeholmen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0180,Stockholm,0180R053,Liljeholmen,0180R062,Midsommarkransen,Ger del/delar till befintlig,2025-01-01
+0180,Stockholm,0180R054,Lilla Essingen,0180R054,Lilla Essingen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0180,Stockholm,0180R062,Midsommarkransen,0180R062,Midsommarkransen,Utvidgas,2025-01-01
+0183,Sundbyberg,0183R008,Stora Ursvik Nordvästra,0183R008,Stora Ursvik Nordvästra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0183,Sundbyberg,0183R008,Stora Ursvik Nordvästra,0183R010,Stora Ursvik-Kymlinge-Brotorp,Ger del/delar till befintlig,2025-01-01
+0184,Solna,0184R016,Solna centrum,0184R016,Solna centrum,Utvidgas,2025-01-01
+0184,Solna,0184R018,Södra Hagalund,0184R011,Norra Hagastaden,Ger del/delar till befintlig,2025-01-01
+0184,Solna,0184R018,Södra Hagalund,0184R016,Solna centrum,Ger del/delar till befintlig,2025-01-01
+0184,Solna,0184R018,Södra Hagalund,0184R018,Södra Hagalund,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0188,Norrtälje,0188R015,Rådmansö,0188R015,Rådmansö,Utvidgas till territorialvattnet,2025-01-01
+0188,Norrtälje,0188R018,Vätö-Väddö-Björkö-Arholma,0188R018,Vätö-Väddö-Björkö-Arholma,Utvidgas till territorialvattnet,2025-01-01
+0188,Norrtälje,0188R019,Yxlan-Blidö,0188R019,Yxlan-Blidö,Utvidgas till territorialvattnet,2025-01-01
+0191,Sigtuna,0191R003,Broby,0191R003,Broby,Utvidgas,2025-01-01
+0191,Sigtuna,0191R004,Centrala Märsta,0191R003,Broby,Ger del/delar till befintlig,2025-01-01
+0191,Sigtuna,0191R004,Centrala Märsta,0191R004,Centrala Märsta,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0191,Sigtuna,0191R005,Centrala Valsta,0191R005,Centrala Valsta,Utvidgas,2025-01-01
+0191,Sigtuna,0191R009,Märstadal,0191R003,Broby,Ger del/delar till befintlig,2025-01-01
+0191,Sigtuna,0191R009,Märstadal,0191R009,Märstadal,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0191,Sigtuna,0191R017,Sätuna,0191R003,Broby,Ger del/delar till befintlig,2025-01-01
+0191,Sigtuna,0191R017,Sätuna,0191R017,Sätuna,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0191,Sigtuna,0191R017,Sätuna,0191R022,Östra Norrbacka,Ger del/delar till befintlig,2025-01-01
+0191,Sigtuna,0191R021,Västra Valsta,0191R005,Centrala Valsta,Ger del/delar till befintlig,2025-01-01
+0191,Sigtuna,0191R021,Västra Valsta,0191R021,Västra Valsta,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0191,Sigtuna,0191R022,Östra Norrbacka,0191R003,Broby,Ger del/delar till befintlig,2025-01-01
+0191,Sigtuna,0191R022,Östra Norrbacka,0191R022,Östra Norrbacka,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0192,Nynäshamn,0192R002,Nynäshamns stad-norra,0192R002,Nynäshamns stad-norra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0192,Nynäshamn,0192R002,Nynäshamns stad-norra,0192R002,Nynäshamns stad-norra,Utvidgas,2025-01-01
+0192,Nynäshamn,0192R002,Nynäshamns stad-norra,0192R006,Nynäshamns södra kommundel,Ger del/delar till befintlig,2025-01-01
+0192,Nynäshamn,0192R003,Nynäshamns stad-södra,0192R002,Nynäshamns stad-norra,Ger del/delar till befintlig,2025-01-01
+0192,Nynäshamn,0192R003,Nynäshamns stad-södra,0192R003,Nynäshamns stad-södra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0192,Nynäshamn,0192R003,Nynäshamns stad-södra,0192R003,Nynäshamns stad-södra,Utvidgas,2025-01-01
+0192,Nynäshamn,0192R003,Nynäshamns stad-södra,0192R006,Nynäshamns södra kommundel,Ger del/delar till befintlig,2025-01-01
+0192,Nynäshamn,0192R004,Nynäshamns stad-västra,0192R002,Nynäshamns stad-norra,Ger del/delar till befintlig,2025-01-01
+0192,Nynäshamn,0192R004,Nynäshamns stad-västra,0192R004,Nynäshamns stad-västra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0192,Nynäshamn,0192R004,Nynäshamns stad-västra,0192R004,Nynäshamns stad-västra,Utvidgas,2025-01-01
+0192,Nynäshamn,0192R005,Nynäshamns stad-östra,0192R005,Nynäshamns stad-östra,Utvidgas,2025-01-01
+0192,Nynäshamn,0192R006,Nynäshamns södra kommundel,0192R006,Nynäshamns södra kommundel,Utvidgas till territorialvattnet,2025-01-01
+0305,Håbo,0305R007,Södra Bålsta-Kalmar landsbygd,0305R007,Södra Bålsta-Kalmar landsbygd,Utvidgas,2025-01-01
+0319,Älvkarleby,0319R001,Skutskär centrala-Skutskär nordvästra,0319R001,Skutskär centrala-Skutskär nordvästra,Utvidgas,2025-01-01
+0319,Älvkarleby,0319R002,Skutskär nordöstra,0319R002,Skutskär nordöstra,Utvidgas,2025-01-01
+0319,Älvkarleby,0319R005,Älvkarlebys omland,0319R005,Älvkarlebys omland,Utvidgas till territorialvattnet,2025-01-01
+0330,Knivsta,0330R003,Knivsta centrala,0330R002,Alsike östra,Ger del/delar till befintlig,2025-01-01
+0330,Knivsta,0330R003,Knivsta centrala,0330R003,Knivsta centrala,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0360,Tierp,0360R004,Skärplinge-Hållnäs,0360R004,Skärplinge-Hållnäs,Utvidgas till territorialvattnet,2025-01-01
+0380,Uppsala,0380R009,Kungsängen,0380R009,Kungsängen,Utvidgas,2025-01-01
+0380,Uppsala,0380R016,Mellersta Valsätra-Gottsunda centrum-Östra Gottsunda,0380R016,Mellersta Valsätra-Gottsunda centrum-Östra Gottsunda,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0380,Uppsala,0380R024,Nåntuna-Vilan,0380R024,Nåntuna-Vilan,Utvidgas,2025-01-01
+0381,Enköping,0381R002,Bredsand-Haga,0381R002,Bredsand-Haga,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0381,Enköping,0381R002,Bredsand-Haga,0381R010,Trögd,Ger del/delar till befintlig,2025-01-01
+0382,Östhammar,0382R005,Öregrund,0382R005,Öregrund,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0382,Östhammar,0382R005,Öregrund,0382R006,Öregrund omland,Ger del/delar till befintlig,2025-01-01
+0382,Östhammar,0382R006,Öregrund omland,0382R006,Öregrund omland,Utvidgas till territorialvattnet,2025-01-01
+0382,Östhammar,0382R007,Österbybruk,0382R007,Österbybruk,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0382,Östhammar,0382R007,Österbybruk,0382R008,Österbybruk omland,Ger del/delar till befintlig,2025-01-01
+0480,Nyköping,0480R005,Bryngelstorp-Tjuvholmen,0480R005,Bryngelstorp-Tjuvholmen,Utvidgas,2025-01-01
+0480,Nyköping,0480R018,Tystberga-Lästringe,0480R018,Tystberga-Lästringe,Utvidgas till territorialvattnet,2025-01-01
+0481,Oxelösund,0481R002,Oxelösund norra omland,0481R002,Oxelösund norra omland,Utvidgas,2025-01-01
+0481,Oxelösund,0481R003,Oxelösund södra omland,0481R003,Oxelösund södra omland,Utvidgas till territorialvattnet,2025-01-01
+0486,Strängnäs,0486R007,Strängnäs norra,0486R007,Strängnäs norra,Utvidgas,2025-01-01
+0488,Trosa,0488R003,Trosa östra,0488R003,Trosa östra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0488,Trosa,0488R003,Trosa östra,0488R006,Västerljung,Ger del/delar till befintlig,2025-01-01
+0488,Trosa,0488R006,Västerljung,0488R006,Västerljung,Utvidgas till territorialvattnet,2025-01-01
+0563,Valdemarsvik,0563R001,Gryt-Skärgården,0563R001,Gryt-Skärgården,Utvidgas till territorialvattnet,2025-01-01
+0580,Linköping,0580R006,Gottfridsberg,0580R006,Gottfridsberg,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0580,Linköping,0580R006,Gottfridsberg,0580R025,Valla-T1,Ger del/delar till befintlig,2025-01-01
+0580,Linköping,0580R015,Malmslätt,0580R015,Malmslätt,Utvidgas,2025-01-01
+0580,Linköping,0580R016,Ramshäll,0580R001,Berga,Ger del/delar till befintlig,2025-01-01
+0580,Linköping,0580R016,Ramshäll,0580R016,Ramshäll,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0580,Linköping,0580R017,Ryd,0580R017,Ryd,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0580,Linköping,0580R017,Ryd,0580R018,Skäggetorp-Tornby,Ger del/delar till befintlig,2025-01-01
+0580,Linköping,0580R018,Skäggetorp-Tornby,0580R018,Skäggetorp-Tornby,Utvidgas,2025-01-01
+0580,Linköping,0580R026,Vasastaden-Hunneberg,0580R026,Vasastaden-Hunneberg,Utvidgas,2025-01-01
+0581,Norrköping,0581R023,Pryssgården-Taborsberg,0581R023,Pryssgården-Taborsberg,Utvidgas,2025-01-01
+0581,Norrköping,0581R040,Östra Vikbolandet,0581R040,Östra Vikbolandet,Utvidgas till territorialvattnet,2025-01-01
+0582,Söderköping,0582R003,Mogata-Sankt Anna,0582R003,Mogata-Sankt Anna,Utvidgas till territorialvattnet,2025-01-01
+0583,Motala,0583R002,Charlottenborg-Ekenäs-Grankulla,0583R002,Charlottenborg-Ekenäs-Grankulla,Utvidgas,2025-01-01
+0583,Motala,0583R007,Motala tätort-övrigt,0583R007,Motala tätort-övrigt,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0583,Motala,0583R007,Motala tätort-övrigt,0583R008,Nykyrka-Tjällmo-Godegård,Ger del/delar till befintlig,2025-01-01
+0584,Vadstena,0584R002,Tycklinge,0584R002,Tycklinge,Utvidgas,2025-01-01
+0642,Mullsjö,0642R003,Mullsjö tätort södra,0642R003,Mullsjö tätort södra,Utvidgas,2025-01-01
+0643,Habo,0643R006,Kärr,0643R006,Kärr,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0683,Värnamo,0683R009,Trälleborg,0683R009,Trälleborg,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0683,Värnamo,0683R010,Vråen-Rörstorp,0683R010,Vråen-Rörstorp,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0684,Sävsjö,0684R004,Sävsjö sydöst,0684R004,Sävsjö sydöst,Minskas och ger del till befintlig eller nybildad,2025-01-01
+0684,Sävsjö,0684R004,Sävsjö sydöst,0684R006,Sävsjö väst,Ger del/delar till befintlig,2025-01-01
+0684,Sävsjö,0684R006,Sävsjö väst,0684R006,Sävsjö väst,Utvidgas,2025-01-01
+0686,Eksjö,0686R005,Eksjö östra,0686R005,Eksjö östra,Utvidgas,2025-01-01
+0780,Växjö,0780R006,Hovshaga,0780R006,Hovshaga,Utvidgas,2025-01-01
+0834,Torsås,0834R003,Möre,0834R003,Möre,Utvidgas till territorialvattnet,2025-01-01
+0840,Mörbylånga,0840R001,Algutsrum-Saxnäs-Glömminge,0840R001,Algutsrum-Saxnäs-Glömminge,Utvidgas,2025-01-01
+0840,Mörbylånga,0840R006,Mörbylånga omland,0840R006,Mörbylånga omland,Utvidgas till territorialvattnet,2025-01-01
+0861,Mönsterås,0861R006,Mönsterås södra samhälle-Oknö,0861R006,Mönsterås södra samhälle-Oknö,Utvidgas,2025-01-01
+0880,Kalmar,0880R001,Berga,0880R001,Berga,Utvidgas till territorialvattnet,2025-01-01
+0880,Kalmar,0880R002,Bergavik-Björkenäs,0880R002,Bergavik-Björkenäs,Utvidgas till territorialvattnet,2025-01-01
+0880,Kalmar,0880R003,Boholmarna-Dunö-Rinkabyholm,0880R003,Boholmarna-Dunö-Rinkabyholm,Utvidgas till territorialvattnet,2025-01-01
+0880,Kalmar,0880R005,Getingen-Tallhagen-Västra Norrgård,0880R005,Getingen-Tallhagen-Västra Norrgård,Utvidgas till territorialvattnet,2025-01-01
+0880,Kalmar,0880R006,Kalmar centrala-Stensö,0880R006,Kalmar centrala-Stensö,Utvidgas till territorialvattnet,2025-01-01
+0880,Kalmar,0880R007,Kalmar norra kommundelen,0880R007,Kalmar norra kommundelen,Utvidgas till territorialvattnet,2025-01-01
+0880,Kalmar,0880R008,Kalmar södra kommundelen,0880R008,Kalmar södra kommundelen,Utvidgas till territorialvattnet,2025-01-01
+0882,Oskarshamn,0882R001,Bockara-Påskallavik,0882R001,Bockara-Påskallavik,Utvidgas till territorialvattnet,2025-01-01
+0882,Oskarshamn,0882R003,Gröndal-Åsa,0882R003,Gröndal-Åsa,Utvidgas,2025-01-01
+0882,Oskarshamn,0882R004,Hummlekärrshult-Mockebo-Saltvik,0882R004,Hummlekärrshult-Mockebo-Saltvik,Utvidgas,2025-01-01
+0882,Oskarshamn,0882R005,Kristdala-Fårbo-Figeholm,0882R005,Kristdala-Fårbo-Figeholm,Utvidgas till territorialvattnet,2025-01-01
+0882,Oskarshamn,0882R006,Kristineberg-Mysingsö,0882R006,Kristineberg-Mysingsö,Utvidgas,2025-01-01
+0883,Västervik,0883R005,Norra Tjust,0883R005,Norra Tjust,Utvidgas till territorialvattnet,2025-01-01
+0883,Västervik,0883R011,Södra Tjust,0883R011,Södra Tjust,Utvidgas till territorialvattnet,2025-01-01
+0885,Borgholm,0885R001,Borgholm norra kommundelen,0885R001,Borgholm norra kommundelen,Utvidgas till territorialvattnet,2025-01-01
+0885,Borgholm,0885R002,Borgholm södra kommundelen,0885R002,Borgholm södra kommundelen,Utvidgas till territorialvattnet,2025-01-01
+0980,Gotland,0980R002,Gotland mellersta,0980R002,Gotland mellersta,Utvidgas till territorialvattnet,2025-01-01
+0980,Gotland,0980R003,Gotland norra,0980R003,Gotland norra,Utvidgas till territorialvattnet,2025-01-01
+0980,Gotland,0980R004,Gotland södra,0980R004,Gotland södra,Utvidgas till territorialvattnet,2025-01-01
+0980,Gotland,0980R011,Visby omland,0980R011,Visby omland,Utvidgas till territorialvattnet,2025-01-01
+1080,Karlskrona,1080R017,Pantarholmen,1080R017,Pantarholmen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1080,Karlskrona,1080R017,Pantarholmen,1080R021,Skärgården,Ger del/delar till befintlig,2025-01-01
+1080,Karlskrona,1080R020,Saltö-Björkholmen,1080R020,Saltö-Björkholmen,Utvidgas,2025-01-01
+1080,Karlskrona,1080R021,Skärgården,1080R021,Skärgården,Utvidgas till territorialvattnet,2025-01-01
+1080,Karlskrona,1080R026,Torhamn-Kristianopel-Jämjös omland,1080R026,Torhamn-Kristianopel-Jämjös omland,Utvidgas till territorialvattnet,2025-01-01
+1081,Ronneby,1081R002,Bräkne-Hoby,1081R002,Bräkne-Hoby,Utvidgas till territorialvattnet,2025-01-01
+1081,Ronneby,1081R008,Saxemara-Listerby-Johannishus,1081R008,Saxemara-Listerby-Johannishus,Utvidgas till territorialvattnet,2025-01-01
+1082,Karlshamn,1082R001,Asarum centrala,1082R001,Asarum centrala,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1082,Karlshamn,1082R001,Asarum centrala,1082R002,Duveryd,Ger del/delar till befintlig,2025-01-01
+1082,Karlshamn,1082R004,Hällaryd-Åryd,1082R004,Hällaryd-Åryd,Utvidgas till territorialvattnet,2025-01-01
+1082,Karlshamn,1082R006,Karlshamn centrala,1082R006,Karlshamn centrala,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1082,Karlshamn,1082R012,Mörrum-Svängsta omland,1082R012,Mörrum-Svängsta omland,Utvidgas till territorialvattnet,2025-01-01
+1083,Sölvesborg,1083R003,Kylinge-Gammalstorp-Ysane,1083R003,Kylinge-Gammalstorp-Ysane,Utvidgas,2025-01-01
+1083,Sölvesborg,1083R004,Listerlandet-Hanö,1083R004,Listerlandet-Hanö,Utvidgas till territorialvattnet,2025-01-01
+1230,Staffanstorp,1230R001,Hjärup-Hjärup omnejd,1230R001,Hjärup-Hjärup omnejd,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1230,Staffanstorp,1230R001,Hjärup-Hjärup omnejd,1230R005,Norra Hjärup-omnejd-Bergströmshusen,Ger del/delar till befintlig,2025-01-01
+1230,Staffanstorp,1230R006,Staffanstorp centrala,1230R006,Staffanstorp centrala,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1230,Staffanstorp,1230R007,Staffanstorp södra,1230R007,Staffanstorp södra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1230,Staffanstorp,1230R007,Staffanstorp södra,1230R012,Sydöstra Staffanstorp-omnejd,Ger del/delar till befintlig,2025-01-01
+1233,Vellinge,1233R002,Falsterbo,1233R002,Falsterbo,Utvidgas,2025-01-01
+1233,Vellinge,1233R006,Ljunghusen,1233R006,Ljunghusen,Utvidgas,2025-01-01
+1233,Vellinge,1233R007,Skanör,1233R007,Skanör,Utvidgas,2025-01-01
+1233,Vellinge,1233R009,Vellinge kommuns jordbrukslandskap,1233R009,Vellinge kommuns jordbrukslandskap,Utvidgas till territorialvattnet,2025-01-01
+1256,Östra Göinge,1256R006,Knislinge öst,1256R005,Knislinge väst,Ger del/delar till befintlig,2025-01-01
+1256,Östra Göinge,1256R006,Knislinge öst,1256R006,Knislinge öst,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1261,Kävlinge,1261R010,Löddeköpinge väster-Barsebäck,1261R010,Löddeköpinge väster-Barsebäck,Utvidgas till territorialvattnet,2025-01-01
+1262,Lomma,1262R002,Bjärred södra,1262R002,Bjärred södra,Utvidgas till territorialvattnet,2025-01-01
+1262,Lomma,1262R004,Lomma centrala,1262R004,Lomma centrala,Utvidgas till territorialvattnet,2025-01-01
+1262,Lomma,1262R005,Lomma norra,1262R005,Lomma norra,Utvidgas,2025-01-01
+1262,Lomma,1262R006,Lomma södra-Alnarp,1262R006,Lomma södra-Alnarp,Utvidgas till territorialvattnet,2025-01-01
+1264,Skurup,1264R001,Bingsmarken-Abbekås-Mossby,1264R001,Bingsmarken-Abbekås-Mossby,Utvidgas till territorialvattnet,2025-01-01
+1264,Skurup,1264R008,Skurup sydväst,1264R007,Skurup sydost,Ger del/delar till befintlig,2025-01-01
+1264,Skurup,1264R008,Skurup sydväst,1264R008,Skurup sydväst,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1265,Sjöbo,1265R007,Sjöbo centrum-Sjöbo östra,1265R007,Sjöbo centrum-Sjöbo östra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1265,Sjöbo,1265R007,Sjöbo centrum-Sjöbo östra,1265R009,Sommarbyarna Södra-Ryggorna-Spjälla,Ger del/delar till befintlig,2025-01-01
+1272,Bromölla,1272R006,Nymölla-Edenryd-Valje,1272R006,Nymölla-Edenryd-Valje,Utvidgas till territorialvattnet,2025-01-01
+1275,Perstorp,1275R002,Perstorp nordöstra tätorten,1275R002,Perstorp sydöstra tätorten,Namnändrad (ej kodändrad),2025-01-01
+1275,Perstorp,1275R005,Perstorp sydöstra tätorten,1275R005,Perstorp nordöstra tätorten,Namnändrad (ej kodändrad),2025-01-01
+1277,Åstorp,1277R005,Haganäs,1277R005,Haganäs,Utvidgas,2025-01-01
+1278,Båstad,1278R001,Båstad landsbygd,1278R001,Båstad landsbygd,Utvidgas till territorialvattnet,2025-01-01
+1278,Båstad,1278R005,Torekov,1278R005,Torekov,Utvidgas,2025-01-01
+1278,Båstad,1278R007,Västra Karup-Hov,1278R007,Västra Karup-Hov,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R008,RegSO-Bellevue-Nya Bellevue,1280R008,RegSO-Bellevue-Nya Bellevue,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R009,RegSO-Bunkeflostrand syd,1280R009,RegSO-Bunkeflostrand syd,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R010,RegSO-Bunkeflostrand väst,1280R010,RegSO-Bunkeflostrand väst,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R011,RegSO-Bunkeflostrand öst,1280R011,RegSO-Bunkeflostrand öst,Utvidgas,2025-01-01
+1280,Malmö,1280R025,RegSO-Hamnen-Stortorget,1280R025,RegSO-Hamnen-Stortorget,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R030,RegSO-Holma,1280R030,RegSO-Holma,Utvidgas,2025-01-01
+1280,Malmö,1280R044,RegSO-Limhamns hamnområde,1280R044,RegSO-Limhamns hamnområde,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1280,Malmö,1280R044,RegSO-Limhamns hamnområde,1280R044,RegSO-Limhamns hamnområde,Utvidgas,2025-01-01
+1280,Malmö,1280R044,RegSO-Limhamns hamnområde,1280R086,RegSO-Ön,Ger del/delar till befintlig,2025-01-01
+1280,Malmö,1280R050,RegSO-Möllevången syd,1280R050,RegSO-Möllevången syd,Utvidgas,2025-01-01
+1280,Malmö,1280R057,RegSO-Ribersborg,1280R057,RegSO-Ribersborg,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R064,RegSO-Sibbarp,1280R064,RegSO-Sibbarp,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R073,RegSO-Tygelsjö by omland,1280R073,RegSO-Tygelsjö by omland,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R079,RegSO-Västra hamnen nordväst,1280R079,RegSO-Västra hamnen nordväst,Utvidgas,2025-01-01
+1280,Malmö,1280R080,RegSO-Västra hamnen norr,1280R080,RegSO-Västra hamnen norr,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R081,RegSO-Västra hamnen sydöst,1280R081,RegSO-Västra hamnen sydöst,Utvidgas,2025-01-01
+1280,Malmö,1280R082,RegSO-Västra hamnen väst,1280R082,RegSO-Västra hamnen väst,Utvidgas till territorialvattnet,2025-01-01
+1280,Malmö,1280R086,RegSO-Ön norr,1280R086,RegSO-Ön,Namnändrad (ej kodändrad),2025-01-01
+1280,Malmö,1280R086,RegSO-Ön norr,1280R086,RegSO-Ön,Utvidgas till territorialvattnet,2025-01-01
+1282,Landskrona,1282R017,Ven,1282R017,Ven,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R002,Allerum-Domsten,1283R002,Allerum-Domsten,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R009,Helsingborg centrum-Slottshöjden västra,1283R009,Helsingborg centrum-Slottshöjden västra,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R011,Högasten-Miatorp östra,1283R011,Högasten-Miatorp östra,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R012,Kattarp-Hasslarp-Utvälinge,1283R012,Kattarp-Hasslarp-Utvälinge,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R016,Norr-Pålsjö,1283R016,Norr-Pålsjö,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R019,Planteringen-Miatorp västra,1283R019,Planteringen-Miatorp västra,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R024,Rydebäck-Rya,1283R024,Rydebäck-Rya,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R025,Råå-Pålstorp-Örby,1283R025,Råå-Pålstorp-Örby,Utvidgas till territorialvattnet,2025-01-01
+1283,Helsingborg,1283R026,Söder-Oceanhamnen-Oljehamnen,1283R026,Söder-Oceanhamnen-Oljehamnen,Utvidgas,2025-01-01
+1284,Höganäs,1284R001,Höganäs landsbygd,1284R001,Höganäs landsbygd,Utvidgas till territorialvattnet,2025-01-01
+1286,Ystad,1286R005,Glemmingebro-Löderup,1286R005,Glemmingebro-Löderup,Utvidgas till territorialvattnet,2025-01-01
+1286,Ystad,1286R007,Sövestad-Stora Köpinge,1286R007,Sövestad-Stora Köpinge,Utvidgas till territorialvattnet,2025-01-01
+1286,Ystad,1286R008,Vallösa-Skårby-Svarte,1286R008,Vallösa-Skårby-Svarte,Utvidgas till territorialvattnet,2025-01-01
+1287,Trelleborg,1287R001,Alstad-Gislöv-Södra Åby-Södra Åby omland,1287R001,Alstad-Gislöv-Södra Åby-Södra Åby omland,Utvidgas till territorialvattnet,2025-01-01
+1287,Trelleborg,1287R008,Skegrie-Västra Tommarp omland,1287R008,Skegrie-Västra Tommarp omland,Utvidgas till territorialvattnet,2025-01-01
+1287,Trelleborg,1287R010,Trelleborg innerstaden,1287R010,Trelleborg innerstaden,Utvidgas,2025-01-01
+1287,Trelleborg,1287R012,Västra stadsdelarna-Kurland,1287R008,Skegrie-Västra Tommarp omland,Ger del/delar till befintlig,2025-01-01
+1287,Trelleborg,1287R012,Västra stadsdelarna-Kurland,1287R012,Västra stadsdelarna-Kurland,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1290,Kristianstad,1290R003,Degeberga-Everöd-Vittskövle,1290R003,Degeberga-Everöd-Vittskövle,Utvidgas till territorialvattnet,2025-01-01
+1290,Kristianstad,1290R004,Fjälkinge-Arkelstorp-Bäckaskog,1290R004,Fjälkinge-Arkelstorp-Bäckaskog,Utvidgas till territorialvattnet,2025-01-01
+1290,Kristianstad,1290R020,Åhus södra-Yngsjö,1290R020,Åhus södra-Yngsjö,Utvidgas,2025-01-01
+1291,Simrishamn,1291R004,Kivik,1291R004,Kivik,Utvidgas till territorialvattnet,2025-01-01
+1291,Simrishamn,1291R006,Simrishamn centrala,1291R006,Simrishamn centrala,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1291,Simrishamn,1291R006,Simrishamn centrala,1291R009,Simrishamn södra,Ger del/delar till befintlig,2025-01-01
+1291,Simrishamn,1291R008,Simrishamn sydvästra landsbygd,1291R008,Simrishamn sydvästra landsbygd,Utvidgas till territorialvattnet,2025-01-01
+1291,Simrishamn,1291R012,Vik,1291R012,Vik,Utvidgas till territorialvattnet,2025-01-01
+1292,Ängelholm,1292R011,Vejbystrand-Magnarp-Skepparkroken,1292R011,Vejbystrand-Magnarp-Skepparkroken,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1292,Ängelholm,1292R011,Vejbystrand-Magnarp-Skepparkroken,1292R016,Ängelholm omland syd,Ger del/delar till befintlig,2025-01-01
+1292,Ängelholm,1292R016,Ängelholm omland syd,1292R016,Ängelholm omland syd,Utvidgas till territorialvattnet,2025-01-01
+1380,Halmstad,1380R006,Eldsberga-Simlångsdalen-Skedala,1380R006,Eldsberga-Simlångsdalen-Skedala,Utvidgas till territorialvattnet,2025-01-01
+1382,Falkenberg,1382R003,Falkenbergs norra kustområde,1382R003,Falkenbergs norra kustområde,Utvidgas till territorialvattnet,2025-01-01
+1382,Falkenberg,1382R004,Falkenbergs södra kustområde,1382R004,Falkenbergs södra kustområde,Utvidgas till territorialvattnet,2025-01-01
+1383,Varberg,1383R001,Breared-Mariedal-Apelviken,1383R001,Breared-Mariedal-Apelviken,Utvidgas till territorialvattnet,2025-01-01
+1383,Varberg,1383R003,Bua-Värö,1383R003,Bua-Värö,Utvidgas till territorialvattnet,2025-01-01
+1383,Varberg,1383R007,Södra Näs-Träslövsläge-Gamla Köpstad,1383R007,Södra Näs-Träslövsläge-Gamla Köpstad,Utvidgas till territorialvattnet,2025-01-01
+1383,Varberg,1383R012,Tvååkers omland,1383R012,Tvååkers omland,Utvidgas till territorialvattnet,2025-01-01
+1383,Varberg,1383R014,Varberg centrum,1383R014,Varberg centrum,Utvidgas till territorialvattnet,2025-01-01
+1383,Varberg,1383R016,Veddige-Derome,1383R016,Veddige-Derome,Utvidgas till territorialvattnet,2025-01-01
+1384,Kungsbacka,1384R002,Björkris-Voxlöv,1384R002,Björkris-Voxlöv,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1384,Kungsbacka,1384R002,Björkris-Voxlöv,1384R009,Kungsbacka norra,Ger del/delar till befintlig,2025-01-01
+1384,Kungsbacka,1384R009,Kungsbacka norra,1384R009,Kungsbacka norra,Utvidgas,2025-01-01
+1384,Kungsbacka,1384R014,Vallda,1384R014,Vallda,Utvidgas till territorialvattnet,2025-01-01
+1384,Kungsbacka,1384R015,Västra Onsala,1384R015,Västra Onsala,Utvidgas till territorialvattnet,2025-01-01
+1402,Partille,1402R009,Oluff Nilssons väg,1402R009,Oluff Nilssons väg,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1402,Partille,1402R009,Oluff Nilssons väg,1402R010,Partille centrum,Ger del/delar till befintlig,2025-01-01
+1407,Öckerö,1407R002,Hälsö-Nordöarna,1407R002,Hälsö-Nordöarna,Utvidgas till territorialvattnet,2025-01-01
+1407,Öckerö,1407R003,Hönö västra,1407R003,Hönö västra,Utvidgas,2025-01-01
+1407,Öckerö,1407R004,Hönö östra-Grötö-Fotö,1407R004,Hönö östra-Grötö-Fotö,Utvidgas till territorialvattnet,2025-01-01
+1419,Tjörn,1419R002,Skärhamn norra,1419R002,Skärhamn norra,Utvidgas,2025-01-01
+1419,Tjörn,1419R003,Tjörn sydväst,1419R003,Tjörn sydväst,Utvidgas till territorialvattnet,2025-01-01
+1419,Tjörn,1419R005,Tjörns omland,1419R005,Tjörns omland,Utvidgas till territorialvattnet,2025-01-01
+1421,Orust,1421R007,Västra Orust,1421R007,Västra Orust,Utvidgas till territorialvattnet,2025-01-01
+1427,Sotenäs,1427R002,Kungshamn–Smögen-Hovenäset–Väjern,1427R002,Kungshamn–Smögen-Hovenäset–Väjern,Utvidgas till territorialvattnet,2025-01-01
+1427,Sotenäs,1427R003,Sotenäs omland,1427R003,Sotenäs omland,Utvidgas till territorialvattnet,2025-01-01
+1435,Tanum,1435R002,Tanums kustområde,1435R002,Tanums kustområde,Utvidgas till territorialvattnet,2025-01-01
+1440,Ale,1440R005,Centrala Älvängen,1440R005,Centrala Älvängen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1440,Ale,1440R005,Centrala Älvängen,1440R012,Södra Älvängen,Ger del/delar till befintlig,2025-01-01
+1441,Lerum,1441R004,Gråbo,1441R001,Aggetorp-Björboholm,Ger del/delar till befintlig,2025-01-01
+1441,Lerum,1441R004,Gråbo,1441R004,Gråbo,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1442,Vårgårda,1442R005,Vårgårda tätort sydväst-Hallaberget-Hjultorp,1442R005,Vårgårda tätort sydväst-Hallaberget-Hjultorp,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1442,Vårgårda,1442R005,Vårgårda tätort sydväst-Hallaberget-Hjultorp,1442R007,Vårgårda tätort väst-Centrum-Hoberg,Ger del/delar till befintlig,2025-01-01
+1442,Vårgårda,1442R007,Vårgårda tätort väst-Centrum-Hoberg,1442R007,Vårgårda tätort väst-Centrum-Hoberg,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1472,Tibro,1472R001,Tibro centrala,1472R001,Tibro centrala,Utvidgas,2025-01-01
+1480,Göteborg,1480R043,Hagen,1480R043,Hagen,Utvidgas,2025-01-01
+1480,Göteborg,1480R114,Rambergsstaden mellersta,1480R114,Rambergsstaden mellersta,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1480,Göteborg,1480R114,Rambergsstaden mellersta,1480R115,Rambergsstaden västra,Ger del/delar till befintlig,2025-01-01
+1480,Göteborg,1480R122,Sanna,1480R043,Hagen,Ger del/delar till befintlig,2025-01-01
+1480,Göteborg,1480R122,Sanna,1480R122,Sanna,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1480,Göteborg,1480R137,Södra Skärgården,1480R137,Södra Skärgården,Utvidgas till territorialvattnet,2025-01-01
+1482,Kungälv,1482R006,Kungälv kust,1482R006,Kungälv kust,Utvidgas till territorialvattnet,2025-01-01
+1484,Lysekil,1484R003,Lyse,1484R003,Lyse,Utvidgas till territorialvattnet,2025-01-01
+1484,Lysekil,1484R005,Skaftö,1484R005,Skaftö,Utvidgas till territorialvattnet,2025-01-01
+1486,Strömstad,1486R003,Tjärnö-Koster-Kebal,1486R003,Tjärnö-Koster-Kebal,Utvidgas till territorialvattnet,2025-01-01
+1487,Vänersborg,1487R001,Bangatan-Marierovägen,1487R001,Bangatan-Marierovägen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1487,Vänersborg,1487R001,Bangatan-Marierovägen,1487R007,Hagaparken-Holmängen,Ger del/delar till befintlig,2025-01-01
+1487,Vänersborg,1487R005,Flanaden-Torpaområdet,1487R005,Flanaden-Torpaområdet,Utvidgas,2025-01-01
+1487,Vänersborg,1487R009,Mariero-Kassaretorpet,1487R009,Mariero-Kassaretorpet,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1487,Vänersborg,1487R010,Nabbensberg-Nordvästra Mariedal,1487R010,Nabbensberg-Nordvästra Mariedal,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R006,Byttorp-Parkstaden,1490R006,Byttorp-Parkstaden,Utvidgas,2025-01-01
+1490,Borås,1490R013,Frufällan-Sparsör väst,1490R004,Bredared,Ger del/delar till befintlig,2025-01-01
+1490,Borås,1490R013,Frufällan-Sparsör väst,1490R013,Frufällan-Sparsör väst,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R019,Hässleholmen väst,1490R019,Hässleholmen väst,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R019,Hässleholmen väst,1490R047,Östermalm,Ger del/delar till befintlig,2025-01-01
+1490,Borås,1490R022,Kristineberg öst-Hedvigsborg,1490R015,Göta centrum-Kristineberg väst,Ger del/delar till befintlig,2025-01-01
+1490,Borås,1490R022,Kristineberg öst-Hedvigsborg,1490R022,Kristineberg öst-Hedvigsborg,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R023,Lugnet,1490R023,Lugnet,Utvidgas,2025-01-01
+1490,Borås,1490R025,Norrby,1490R025,Norrby,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R025,Norrby,1490R038,Stadskärnan-Druvefors,Ger del/delar till befintlig,2025-01-01
+1490,Borås,1490R031,Salängen,1490R031,Salängen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R031,Salängen,1490R047,Östermalm,Ger del/delar till befintlig,2025-01-01
+1490,Borås,1490R033,Sjöbo centrum,1490R028,Ryda-Alideberg-Knalleland,Ger del/delar till befintlig,2025-01-01
+1490,Borås,1490R033,Sjöbo centrum,1490R033,Sjöbo centrum,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R033,Sjöbo centrum,1490R033,Sjöbo centrum,Utvidgas,2025-01-01
+1490,Borås,1490R034,Sjöbo norra,1490R028,Ryda-Alideberg-Knalleland,Ger del/delar till befintlig,2025-01-01
+1490,Borås,1490R034,Sjöbo norra,1490R034,Sjöbo norra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R035,Sjöbo-Johannelund,1490R028,Ryda-Alideberg-Knalleland,Ger del/delar till befintlig,2025-01-01
+1490,Borås,1490R035,Sjöbo-Johannelund,1490R035,Sjöbo-Johannelund,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R042,Trandared centrum,1490R042,Trandared centrum,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1490,Borås,1490R047,Östermalm,1490R047,Östermalm,Utvidgas,2025-01-01
+1491,Ulricehamn,1491R008,Ulricehamn centrum,1491R008,Ulricehamn centrum,Utvidgas,2025-01-01
+1492,Åmål,1492R001,Åmål centrum västra,1492R001,Åmål centrum västra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1492,Åmål,1492R001,Åmål centrum västra,1492R005,Åmål norra,Ger del/delar till befintlig,2025-01-01
+1492,Åmål,1492R002,Åmål centrum östra,1492R002,Åmål centrum östra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1492,Åmål,1492R002,Åmål centrum östra,1492R003,Åmål landsbygd norra,Ger del/delar till befintlig,2025-01-01
+1496,Skövde,1496R009,Lunden-Trädgårdsstaden,1496R007,Igelstorp-Värsås,Ger del/delar till befintlig,2025-01-01
+1496,Skövde,1496R009,Lunden-Trädgårdsstaden,1496R009,Lunden-Trädgårdsstaden,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1715,Kil,1715R002,Fryksta-Vikstad,1715R002,Fryksta-Vikstad,Utvidgas,2025-01-01
+1760,Storfors,1760R001,Storfors centralort,1760R001,Storfors centralort,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1760,Storfors,1760R001,Storfors centralort,1760R002,Storfors tätorter-Storfors landsbygd,Ger del/delar till befintlig,2025-01-01
+1761,Hammarö,1761R001,Götetorp-Hammar,1761R001,Götetorp-Hammar,Utvidgas,2025-01-01
+1761,Hammarö,1761R003,Nolgård-Lövnäs,1761R003,Nolgård-Lövnäs,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1761,Hammarö,1761R003,Nolgård-Lövnäs,1761R003,Nolgård-Lövnäs,Utvidgas,2025-01-01
+1761,Hammarö,1761R003,Nolgård-Lövnäs,1761R007,Tynäs-Bärstad-Hallersrud,Ger del/delar till befintlig,2025-01-01
+1761,Hammarö,1761R004,Skoghall-Gunnarskär,1761R001,Götetorp-Hammar,Ger del/delar till befintlig,2025-01-01
+1761,Hammarö,1761R004,Skoghall-Gunnarskär,1761R004,Skoghall-Gunnarskär,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1761,Hammarö,1761R004,Skoghall-Gunnarskär,1761R004,Skoghall-Gunnarskär,Utvidgas,2025-01-01
+1761,Hammarö,1761R004,Skoghall-Gunnarskär,1761R006,Skoghall-Vidöåsen,Ger del/delar till befintlig,2025-01-01
+1761,Hammarö,1761R005,Skoghall-Mörmon,1761R003,Nolgård-Lövnäs,Ger del/delar till befintlig,2025-01-01
+1761,Hammarö,1761R005,Skoghall-Mörmon,1761R005,Skoghall-Mörmon,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1761,Hammarö,1761R006,Skoghall-Vidöåsen,1761R006,Skoghall-Vidöåsen,Utvidgas,2025-01-01
+1761,Hammarö,1761R007,Tynäs-Bärstad-Hallersrud,1761R003,Nolgård-Lövnäs,Ger del/delar till befintlig,2025-01-01
+1761,Hammarö,1761R007,Tynäs-Bärstad-Hallersrud,1761R007,Tynäs-Bärstad-Hallersrud,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1762,Munkfors,1762R001,Munkerud-Munkebol,1762R001,Munkfors centrala områden,Namnändrad (ej kodändrad),2025-01-01
+1762,Munkfors,1762R002,Munkfors centrala områden,1762R002,Munkerud-Munkebol,Namnändrad (ej kodändrad),2025-01-01
+1764,Grums,1764R002,Gamla Slottsbron,1764R002,Gamla Slottsbron,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1764,Grums,1764R006,Slottsbron,1764R006,Slottsbron,Utvidgas,2025-01-01
+1765,Årjäng,1765R004,Årjäng,1765R001,Trankil-Blomskog-Silbodal-Sillerud,Ger del/delar till befintlig,2025-01-01
+1765,Årjäng,1765R004,Årjäng,1765R004,Årjäng,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1780,Karlstad,1780R005,Gruvlyckan,1780R005,Gruvlyckan,Utvidgas,2025-01-01
+1780,Karlstad,1780R013,Kroppkärr-Lorensberg-Välsviken,1780R013,Kroppkärr-Lorensberg-Välsviken,Utvidgas,2025-01-01
+1780,Karlstad,1780R015,Molkom-Blombacka,1780R015,Molkom-Blombacka,Utvidgas,2025-01-01
+1780,Karlstad,1780R024,Stockfallet-Edsgatan södra-Steffensminne,1780R024,Stockfallet-Edsgatan södra-Steffensminne,Utvidgas,2025-01-01
+1780,Karlstad,1780R031,Zakrisdal-Bergvik-Björkås,1780R031,Zakrisdal-Bergvik-Björkås,Utvidgas,2025-01-01
+1781,Kristinehamn,1781R002,Bro,1781R002,Bro,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1781,Kristinehamn,1781R002,Bro,1781R003,Broängen-Presterud-Strandudden,Ger del/delar till befintlig,2025-01-01
+1781,Kristinehamn,1781R003,Broängen-Presterud-Strandudden,1781R003,Broängen-Presterud-Strandudden,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1781,Kristinehamn,1781R003,Broängen-Presterud-Strandudden,1781R005,Kristinehamn norra omland,Ger del/delar till befintlig,2025-01-01
+1781,Kristinehamn,1781R010,Strand-Marieberg-Villastaden,1781R005,Kristinehamn norra omland,Ger del/delar till befintlig,2025-01-01
+1781,Kristinehamn,1781R010,Strand-Marieberg-Villastaden,1781R010,Strand-Marieberg-Villastaden,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1784,Arvika,1784R001,Arvika centrum-Högåsen-Degerängen,1784R001,Arvika centrum-Högåsen-Degerängen,Utvidgas,2025-01-01
+1784,Arvika,1784R002,Dottevik-Östra Sund,1784R002,Dottevik-Östra Sund,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1784,Arvika,1784R002,Dottevik-Östra Sund,1784R006,Jössefors-Västra Sund,Ger del/delar till befintlig,2025-01-01
+1881,Kumla,1881R002,Kumla centrum-Fylsta-Via,1881R002,Kumla centrum-Fylsta-Via,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1881,Kumla,1881R002,Kumla centrum-Fylsta-Via,1881R004,Kumlaby-Korsta-Sannahed,Ger del/delar till befintlig,2025-01-01
+1881,Kumla,1881R004,Kumlaby-Korsta-Sannahed,1881R004,Kumlaby-Korsta-Sannahed,Utvidgas,2025-01-01
+1882,Askersund,1882R005,Askersund stad,1882R003,Askersund omland väster,Ger del/delar till befintlig,2025-01-01
+1882,Askersund,1882R005,Askersund stad,1882R005,Askersund stad,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1884,Nora,1884R001,Esstorp-Fibbetorp,1884R001,Esstorp-Fibbetorp,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1884,Nora,1884R001,Esstorp-Fibbetorp,1884R001,Esstorp-Fibbetorp,Utvidgas,2025-01-01
+1884,Nora,1884R001,Esstorp-Fibbetorp,1884R005,Nora södra centrum,Ger del/delar till befintlig,2025-01-01
+1884,Nora,1884R001,Esstorp-Fibbetorp,1884R007,Ås-Gyttorp,Ger del/delar till befintlig,2025-01-01
+1884,Nora,1884R004,Nora norra centrum,1884R004,Nora norra centrum,Utvidgas,2025-01-01
+1884,Nora,1884R005,Nora södra centrum,1884R002,Nora landsbygd norr,Ger del/delar till befintlig,2025-01-01
+1884,Nora,1884R005,Nora södra centrum,1884R005,Nora södra centrum,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1884,Nora,1884R006,Pershyttan-Hitorp,1884R005,Nora södra centrum,Ger del/delar till befintlig,2025-01-01
+1884,Nora,1884R006,Pershyttan-Hitorp,1884R006,Pershyttan-Hitorp,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1884,Nora,1884R007,Ås-Gyttorp,1884R007,Ås-Gyttorp,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1885,Lindesberg,1885R004,Frövi tätort,1885R004,Frövi tätort,Utvidgas,2025-01-01
+1885,Lindesberg,1885R007,Lindesberg norra,1885R007,Lindesberg norra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1885,Lindesberg,1885R007,Lindesberg norra,1885R010,Lindesberg västra,Ger del/delar till befintlig,2025-01-01
+1885,Lindesberg,1885R012,Storå tätort,1885R012,Storå tätort,Utvidgas,2025-01-01
+1907,Surahammar,1907R001,Bruket,1907R001,Bruket,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1907,Surahammar,1907R002,Dalskogen,1907R002,Dalskogen,Utvidgas,2025-01-01
+1907,Surahammar,1907R003,Ramnäs,1907R003,Ramnäs,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1907,Surahammar,1907R003,Ramnäs,1907R006,Surahammars landsbygd,Ger del/delar till befintlig,2025-01-01
+1907,Surahammar,1907R007,Virsbo,1907R006,Surahammars landsbygd,Ger del/delar till befintlig,2025-01-01
+1907,Surahammar,1907R007,Virsbo,1907R007,Virsbo,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1960,Kungsör,1960R004,Kungsör södra,1960R004,Kungsör södra,Utvidgas,2025-01-01
+1961,Hallstahammar,1961R002,Duvhällarna-Fredhem,1961R002,Duvhällarna-Fredhem,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1961,Hallstahammar,1961R002,Duvhällarna-Fredhem,1961R006,Näs-Lustigkulla,Ger del/delar till befintlig,2025-01-01
+1961,Hallstahammar,1961R008,Surbrunnsvägen-Tuna,1961R008,Surbrunnsvägen-Tuna,Utvidgas,2025-01-01
+1980,Västerås,1980R006,Enhagen-Barkarö,1980R006,Enhagen-Barkarö,Utvidgas,2025-01-01
+1980,Västerås,1980R009,Framnäs-Talltorp-Hässlö,1980R009,Framnäs-Talltorp-Hässlö,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1980,Västerås,1980R009,Framnäs-Talltorp-Hässlö,1980R037,Västerås östra landsbygd,Ger del/delar till befintlig,2025-01-01
+1980,Västerås,1980R009,Framnäs-Talltorp-Hässlö,1980R047,Östra hamnen-Öster Mälarstrand,Ger del/delar till befintlig,2025-01-01
+1980,Västerås,1980R011,Hacksta-Stohagen,1980R011,Hacksta-Stohagen,Utvidgas,2025-01-01
+1980,Västerås,1980R019,Kvicksund,1980R019,Kvicksund,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1980,Västerås,1980R019,Kvicksund,1980R036,Västerås västra landsbygd,Ger del/delar till befintlig,2025-01-01
+1980,Västerås,1980R027,Skultuna,1980R027,Skultuna,Utvidgas,2025-01-01
+1980,Västerås,1980R047,Östra hamnen-Öster Mälarstrand,1980R047,Östra hamnen-Öster Mälarstrand,Utvidgas,2025-01-01
+1984,Arboga,1984R005,Nästkvarn-Studrestaden,1984R005,Nästkvarn-Sturestaden,Namnändrad (ej kodändrad),2025-01-01
+1984,Arboga,1984R006,Sjukhusgärdet-Ekbacken,1984R006,Sjukhusgärdet-Ekbacken,Minskas och ger del till befintlig eller nybildad,2025-01-01
+1984,Arboga,1984R006,Sjukhusgärdet-Ekbacken,1984R007,Strömsnäs-Brattberget,Ger del/delar till befintlig,2025-01-01
+2026,Gagnef,2026R004,Djurås,2026R002,Brötjärna omland,Ger del/delar till befintlig,2025-01-01
+2026,Gagnef,2026R004,Djurås,2026R004,Djurås,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2080,Falun,2080R011,Kvarnberget-Främby-Källviken,2080R001,Aspeboda,Ger del/delar till befintlig,2025-01-01
+2080,Falun,2080R011,Kvarnberget-Främby-Källviken,2080R011,Kvarnberget-Främby-Källviken,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2080,Falun,2080R011,Kvarnberget-Främby-Källviken,2080R011,Kvarnberget-Främby-Källviken,Utvidgas,2025-01-01
+2081,Borlänge,2081R005,Kupolen-Norra Backa-Hagalund-Ringen,2081R004,Jakobsgårdarna-Paradiset-Nygårdsdalen,Ger del/delar till befintlig,2025-01-01
+2081,Borlänge,2081R005,Kupolen-Norra Backa-Hagalund-Ringen,2081R005,Kupolen-Norra Backa-Hagalund-Ringen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2085,Ludvika,2085R004,Högberget,2085R004,Högberget,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2085,Ludvika,2085R004,Högberget,2085R007,Ludvika södra,Ger del/delar till befintlig,2025-01-01
+2085,Ludvika,2085R008,Marnäs,2085R008,Marnäs,Utvidgas,2025-01-01
+2132,Nordanstig,2132R004,Nordanstig nordöstra omland,2132R004,Nordanstig nordöstra omland,Utvidgas till territorialvattnet,2025-01-01
+2132,Nordanstig,2132R005,Nordanstig södra omland,2132R005,Nordanstig södra omland,Utvidgas till territorialvattnet,2025-01-01
+2161,Ljusdal,2161R005,Ljusdal norra,2161R005,Ljusdal norra,Utvidgas,2025-01-01
+2180,Gävle,2180R002,Bergby-Norrsundet,2180R002,Bergby-Norrsundet,Utvidgas till territorialvattnet,2025-01-01
+2180,Gävle,2180R003,Björke-Norrlandet,2180R003,Björke-Norrlandet,Utvidgas till territorialvattnet,2025-01-01
+2180,Gävle,2180R007,Gävle Strand-Näringen-Öster,2180R007,Gävle Strand-Näringen-Öster,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2180,Gävle,2180R007,Gävle Strand-Näringen-Öster,2180R014,Jonstorp-Lindbacka-Strömsbro,Ger del/delar till befintlig,2025-01-01
+2180,Gävle,2180R013,Holmsund-Sjöäng-Sörby Urfjäll,2180R013,Holmsund-Sjöäng-Sörby Urfjäll,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2180,Gävle,2180R013,Holmsund-Sjöäng-Sörby Urfjäll,2180R014,Jonstorp-Lindbacka-Strömsbro,Ger del/delar till befintlig,2025-01-01
+2180,Gävle,2180R014,Jonstorp-Lindbacka-Strömsbro,2180R014,Jonstorp-Lindbacka-Strömsbro,Utvidgas,2025-01-01
+2182,Söderhamn,2182R004,Norrala-Trönö,2182R004,Norrala-Trönö,Utvidgas till territorialvattnet,2025-01-01
+2182,Söderhamn,2182R005,Sandarne,2182R005,Sandarne,Utvidgas,2025-01-01
+2182,Söderhamn,2182R006,Skog,2182R006,Skog,Utvidgas till territorialvattnet,2025-01-01
+2183,Bollnäs,2183R009,Kilafors-Sibo tätort,2183R009,Kilafors-Sibo tätort,Utvidgas,2025-01-01
+2184,Hudiksvall,2184R005,Enånger-Njutångersbygden,2184R005,Enånger-Njutångersbygden,Utvidgas till territorialvattnet,2025-01-01
+2184,Hudiksvall,2184R011,Hög-Mellanbyn-Rogsta,2184R011,Hög-Mellanbyn-Rogsta,Utvidgas till territorialvattnet,2025-01-01
+2184,Hudiksvall,2184R012,Idenor,2184R012,Idenor,Utvidgas,2025-01-01
+2184,Hudiksvall,2184R013,Iggesund norra,2184R011,Hög-Mellanbyn-Rogsta,Ger del/delar till befintlig,2025-01-01
+2184,Hudiksvall,2184R013,Iggesund norra,2184R013,Iggesund norra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2184,Hudiksvall,2184R014,Iggesund södra,2184R011,Hög-Mellanbyn-Rogsta,Ger del/delar till befintlig,2025-01-01
+2184,Hudiksvall,2184R014,Iggesund södra,2184R014,Iggesund södra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2262,Timrå,2262R008,Timrå-Söråker omland,2262R008,Timrå-Söråker omland,Utvidgas till territorialvattnet,2025-01-01
+2280,Härnösand,2280R001,Bondsjöhöjden-Härnön östra-Häggdånger,2280R001,Bondsjöhöjden-Härnön östra-Häggdånger,Utvidgas till territorialvattnet,2025-01-01
+2280,Härnösand,2280R002,Hemsön-Älandsbro-Ramsås,2280R002,Hemsön-Älandsbro-Ramsås,Utvidgas till territorialvattnet,2025-01-01
+2281,Sundsvall,2281R002,Alnö,2281R002,Alnö,Utvidgas till territorialvattnet,2025-01-01
+2281,Sundsvall,2281R008,Essvik-Svartvik,2281R008,Essvik-Svartvik,Utvidgas,2025-01-01
+2281,Sundsvall,2281R013,Juniskär-Skottsund,2281R013,Juniskär-Skottsund,Utvidgas,2025-01-01
+2281,Sundsvall,2281R020,Njurunda Södra,2281R020,Njurunda Södra,Utvidgas till territorialvattnet,2025-01-01
+2282,Kramfors,2282R006,Nora-Skog,2282R006,Nora-Skog,Utvidgas till territorialvattnet,2025-01-01
+2282,Kramfors,2282R007,Nordingrå,2282R007,Nordingrå,Utvidgas till territorialvattnet,2025-01-01
+2284,Örnsköldsvik,2284R007,Grundsunda,2284R007,Grundsunda,Utvidgas till territorialvattnet,2025-01-01
+2284,Örnsköldsvik,2284R014,Nätradalens omland,2284R014,Nätradalens omland,Utvidgas till territorialvattnet,2025-01-01
+2284,Örnsköldsvik,2284R017,Västerhus-Själevad-Billsta,2284R017,Västerhus-Själevad-Billsta,Utvidgas,2025-01-01
+2284,Örnsköldsvik,2284R018,Örnsköldsviks centrum,2284R010,Hörnett-Sund,Ger del/delar till befintlig,2025-01-01
+2284,Örnsköldsvik,2284R018,Örnsköldsviks centrum,2284R018,Örnsköldsviks centrum,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2321,Åre,2321R001,Duved,2321R001,Duved,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2321,Åre,2321R001,Duved,2321R004,Nordvästra bygden,Ger del/delar till befintlig,2025-01-01
+2321,Åre,2321R007,Åre,2321R004,Nordvästra bygden,Ger del/delar till befintlig,2025-01-01
+2321,Åre,2321R007,Åre,2321R007,Åre,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2401,Nordmaling,2401R004,Nordmalings södra omland,2401R004,Nordmalings södra omland,Utvidgas till territorialvattnet,2025-01-01
+2409,Robertsfors,2409R003,Robertsfors norra omland,2409R003,Robertsfors norra omland,Utvidgas till territorialvattnet,2025-01-01
+2409,Robertsfors,2409R004,Robertsfors södra omland,2409R004,Robertsfors södra omland,Utvidgas till territorialvattnet,2025-01-01
+2480,Umeå,2480R003,Carlshem norra,2480R003,Carlshem norra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R003,Carlshem norra,2480R041,Ålidhem södra,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R004,Ersboda centrala-Ersboda sydöstra,2480R004,Ersboda centrala-Ersboda sydöstra,Utvidgas,2025-01-01
+2480,Umeå,2480R005,Ersboda nordöstra,2480R004,Ersboda centrala-Ersboda sydöstra,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R005,Ersboda nordöstra,2480R005,Ersboda nordöstra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R006,Ersboda västra,2480R006,Ersboda västra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R006,Ersboda västra,2480R007,Ersmark,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R007,Ersmark,2480R007,Ersmark,Utvidgas,2025-01-01
+2480,Umeå,2480R009,Haga,2480R009,Haga,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R009,Haga,2480R039,Västerslätt-Rödäng,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R012,Holmsund-Obbola omland,2480R012,Holmsund-Obbola omland,Utvidgas till territorialvattnet,2025-01-01
+2480,Umeå,2480R013,Hörnefors omland,2480R013,Hörnefors omland,Utvidgas till territorialvattnet,2025-01-01
+2480,Umeå,2480R014,Hörnefors tätort,2480R014,Hörnefors tätort,Utvidgas,2025-01-01
+2480,Umeå,2480R016,Mariehem västra,2480R016,Mariehem västra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R016,Mariehem västra,2480R017,Mariehem östra-Olofsdal,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R019,Röbäck,2480R019,Röbäck,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R020,Sandbacka,2480R020,Sandbacka,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R021,Sofiehem-Gimonäs-Carlshem södra,2480R021,Sofiehem-Gimonäs-Carlshem södra,Utvidgas,2025-01-01
+2480,Umeå,2480R022,Sävar omland,2480R022,Sävar omland,Utvidgas till territorialvattnet,2025-01-01
+2480,Umeå,2480R024,Teg centrala,2480R024,Teg centrala,Utvidgas,2025-01-01
+2480,Umeå,2480R025,Teg västra,2480R019,Röbäck,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R025,Teg västra,2480R025,Teg västra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R027,Tomtebo norra,2480R027,Tomtebo norra,Utvidgas,2025-01-01
+2480,Umeå,2480R028,Tomtebo västra,2480R028,Tomtebo västra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R028,Tomtebo västra,2480R029,Tomtebo östra-Innertavle,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R031,Umedalen västra-Backen,2480R031,Umedalen västra-Backen,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R031,Umedalen västra-Backen,2480R036,Umeå västra landsbygd,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R035,Umeå södra landsbygd,2480R035,Umeå södra landsbygd,Utvidgas,2025-01-01
+2480,Umeå,2480R039,Västerslätt-Rödäng,2480R039,Västerslätt-Rödäng,Utvidgas,2025-01-01
+2480,Umeå,2480R040,Ålidhem norra,2480R040,Ålidhem norra,Utvidgas,2025-01-01
+2480,Umeå,2480R041,Ålidhem södra,2480R040,Ålidhem norra,Ger del/delar till befintlig,2025-01-01
+2480,Umeå,2480R041,Ålidhem södra,2480R041,Ålidhem södra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2480,Umeå,2480R041,Ålidhem södra,2480R041,Ålidhem södra,Utvidgas,2025-01-01
+2481,Lycksele,2481R003,Lugnet-Lycksele centrum,2481R003,Norrmalm-Norräng-Solsidan,Namnändrad (ej kodändrad),2025-01-01
+2481,Lycksele,2481R005,Norrmalm-Norräng-Solsidan,2481R005,Lugnet-Lycksele centrum,Namnändrad (ej kodändrad),2025-01-01
+2482,Skellefteå,2482R004,Bureå omland,2482R004,Bureå omland,Utvidgas till territorialvattnet,2025-01-01
+2482,Skellefteå,2482R008,Byske omland,2482R008,Byske omland,Utvidgas till territorialvattnet,2025-01-01
+2482,Skellefteå,2482R014,Kåge omland,2482R014,Kåge omland,Utvidgas till territorialvattnet,2025-01-01
+2482,Skellefteå,2482R016,Lövånger,2482R016,Lövånger,Utvidgas till territorialvattnet,2025-01-01
+2514,Kalix,2514R001,Innanbäcken-Grytnäs,2514R001,Innanbäcken-Grytnäs,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2514,Kalix,2514R002,Kalix kustbyar,2514R002,Kalix kustbyar,Utvidgas till territorialvattnet,2025-01-01
+2514,Kalix,2514R006,Risön-Sangis,2514R006,Risön-Sangis,Utvidgas till territorialvattnet,2025-01-01
+2523,Gällivare,2523R001,Andra sidan,2523R001,Andra sidan,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2523,Gällivare,2523R001,Andra sidan,2523R011,Repisvaara-Dundret,Ger del till nybildad,2025-01-01
+2523,Gällivare,2523R003,Gällivare norra,2523R003,Gällivare norra,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2523,Gällivare,2523R003,Gällivare norra,2523R011,Repisvaara-Dundret,Ger del till nybildad,2025-01-01
+2523,Gällivare,2523R010,Vassara Älv,2523R010,Vassara Älv,Minskas och ger del till befintlig eller nybildad,2025-01-01
+2523,Gällivare,2523R010,Vassara Älv,2523R011,Repisvaara-Dundret,Ger del till nybildad,2025-01-01
+2580,Luleå,2580R002,Antnäs omland,2580R002,Antnäs omland,Utvidgas till territorialvattnet,2025-01-01
+2580,Luleå,2580R020,Persön-Persön omland,2580R020,Persön-Persön omland,Utvidgas till territorialvattnet,2025-01-01
+2581,Piteå,2581R010,Piteå kustnära områden,2581R010,Piteå kustnära områden,Utvidgas till territorialvattnet,2025-01-01
+2583,Haparanda,2583R005,Haparanda södra landsbygden,2583R005,Haparanda södra landsbygden,Utvidgas till territorialvattnet,2025-01-01
+2584,Kiruna,2584R001,Bolaget,2584R002,Högalid,Upphör; till befintlig,2025-01-01
+2584,Kiruna,2584R001,Bolaget,2584R006,Kiruna väst,Upphör; till befintlig,2025-01-01
+2584,Kiruna,2584R001,Bolaget,2584R013,Triangeln,Upphör; till befintlig,2025-01-01
+2584,Kiruna,2584R002,Högalid,2584R002,Högalid,Utvidgas,2025-01-01
+2584,Kiruna,2584R013,Triangeln,2584R013,Triangeln,Utvidgas,2025-01-01
+2584,Kiruna,2584R015,Övre Norrmalm,2584R015,Norrmalm,Utvidgas och namnändras,2025-01-01
+1380,Halmstad,1380R003,Brogård-Snöstorp,1380R003,Snöstorp-Brogård,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R004,Bäckagård,1380R004,Bäckagård centrum,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R005,Eketånga,1380R005,Söndrum-Eketånga,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R008,Frennarp-Kärleken-Slottsmöllan,1380R008,Frennarp-Kärleken-Galgberget östra,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R012,Getinge,1380R012,Getinge tätort,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R014,Gustavsfält-Linehed-Östergård,1380R014,Linehed norra-Gustavsfält,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R015,Halmstad centrum västra-Galgberget,1380R015,Halmstad centrum västra-Galgberget västra,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R016,Halmstad centrum östra-Nyatorp,1380R016,Halmstad centrum östra-Nyatorp västra,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R017,Halmstad centrum-Slottsjorden,1380R017,Halmstad centrum-Slottsjord-Kattegatt,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R018,Harplinge-Rävinge,1380R018,Harplinge-Getinge glesbygd,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R019,Holm-Kvibille,1380R019,Kvibille-Holm-Vapnö,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R020,Larsfrid-Östra Stranden,1380R020,Linehed södra-Östra Stranden,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R021,Laxvik-Påarp-Trönninge,1380R021,Trönninge-Gullbranna-Laxvik,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R022,Nyhem centrum,1380R022,Nyhem södra,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R023,Nyhem norra-Nyhem Västra,1380R023,Nyhem norra-Nyatorp östra,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R024,Oskarström,1380R024,Oskarström tätort,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R025,Skavböke-Slättåkra-Åled,1380R025,Åled-Sennan-Oskarström glesbygd,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R026,Söndrum,1380R026,Bäckagård norra-Bäckagård södra,Namnändrad (ej kodändrad),2023-01-11
+1380,Halmstad,1380R027,Vallås norra-Vallås östra,1380R027,Vallås östra,Namnändrad (ej kodändrad),2023-01-11
+1480,Göteborg,1480R061,Jättesten,1480R061,Svartedalen,Namnändrad (ej kodändrad),2023-01-11
+1480,Göteborg,1480R133,Svartedalen västra,1480R133,Jättesten västra,Namnändrad (ej kodändrad),2023-01-11
+1480,Göteborg,1480R134,Svartedalen östra,1480R134,Jättesten östra,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R004,Färjestad-Rud västra,1780R004,Färjestad-Järpetan-Rud sydvästra,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R006,Herrhagen,1780R006,Herrhagen sydöstra-Yttre hamn,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R007,Herrhagen västra-Lamberget-Sjöstad,1780R007,Herrhagen nordvästra-Lamberget-Sjöstad,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R009,Klara-Sandbäcken,1780R009,Klara-Sandbäcken-Sanna,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R011,Kronoparken södra,1780R011,Kronoparken centrala,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R012,Kronoparkens villaområde,1780R012,Kronoparken östra,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R013,Kroppkärr-Välsviken,1780R013,Kroppkärr-Lorensberg-Välsviken,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R019,Rud östra,1780R019,Rud nordöstra,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R022,Skåre samhälle-Stodene,1780R022,Skåre centrala-Ilanda-Stodene,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R024,Stockfallet-Edsgatan södra,1780R024,Stockfallet-Edsgatan södra-Steffensminne,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R027,Viken-Inre hamnsområdet,1780R027,Viken-Tyggårdsviken-Tullholmen,Namnändrad (ej kodändrad),2023-01-11
+1780,Karlstad,1780R031,Zakrisdal-Bergvik,1780R031,Zakrisdal-Bergvik-Björkås,Namnändrad (ej kodändrad),2023-01-11
+2021,Vansbro,2021R001,Dala-Järna,2021R001,Vansbro västra landsbygd,Namnändrad (ej kodändrad),2021-07-02
+2021,Vansbro,2021R003,Vansbro västra landsbygd,2021R003,Dala-Järna,Namnändrad (ej kodändrad),2021-07-02
