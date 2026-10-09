@@ -8,7 +8,7 @@ import json
 import polars as pl
 import streamlit as st
 
-from headroom.model import valuation
+from headroom.model import geo, valuation
 from ui import components as ui
 from ui.data import get_data
 from ui.labels import SEGMENT, TIER
@@ -18,9 +18,15 @@ bands = d.cfg["motivated_seller"]["bands"]
 min_conf = d.cfg["extraction"]["min_confidence"]
 
 ACCOUNTING = {
-    "ifrs": "IFRS (fair value)",
+    "ifrs": "IFRS",
     "k3_fair": "K3, fair value in notes",
-    "book": "K2/K3 (book value)",
+    "book": "K2/K3, book value",
+}
+# The part of each label shown in italics (CSS cannot style part of a plain-text label,
+# so the italic part is drawn with ::after on the menu item and the selected tag).
+ACCOUNTING_ITALIC = {
+    "k3_fair": ("K3,\\00a0", "fair value in notes"),
+    "book": ("K2/K3,\\00a0", "book value"),
 }
 
 latest = (
@@ -87,23 +93,13 @@ ui.hero(
 # --------------------------------------------------------------------------- filters
 
 ui.section(None, "Ranking")
-c1, c2, c3, c4, c5 = st.columns([2.2, 2.6, 2.2, 2.4, 2.2], gap="large")
-type_sel = c1.multiselect(
-    "Company type", list(TIER), format_func=TIER.get, placeholder="All company types"
+counties = (
+    pl.read_csv(geo.GEO / "kommuner.csv", schema_overrides={"kommun_code": pl.Utf8})
+    .sort("county_code")["county"]
+    .unique(maintain_order=True)
+    .to_list()
 )
-acc_sel = c2.multiselect(
-    "Accounting", list(ACCOUNTING), format_func=ACCOUNTING.get, placeholder="All standards"
-)
-# Segments come from listed companies' and bond issuers' reports; private annual reports
-# have no segment split, so the filter appears only when those types are chosen.
-seg_sel: list[str] = []
-if any(t in ("listed", "bond") for t in type_sel):
-    pool = df.filter(pl.col("tier").is_in(type_sel))
-    segments = sorted(set(pool["main_segment"].drop_nulls()), key=lambda s: SEGMENT.get(s, s))
-    seg_sel = c3.multiselect(
-        "Segment", segments, format_func=lambda s: SEGMENT.get(s, s), placeholder="All segments"
-    )
-counties = sorted(set(df["county"].drop_nulls()))
+
 # A county or city picked in the header search arrives as ?county=...&city=...
 qp_county, qp_city = st.query_params.get("county"), st.query_params.get("city")
 if qp_county or qp_city:
@@ -112,28 +108,110 @@ if qp_county or qp_city:
         st.session_state[f"city_{qp_county}"] = qp_city
     for k in ("county", "city"):
         st.query_params.pop(k, None)
-county = c4.selectbox("County", ["All counties", *counties], key="f_county")
-cities = (
-    sorted(set(df.filter(pl.col("county") == county)["city"].drop_nulls()))
-    if county != "All counties"
-    else []
-)
-city = c5.selectbox(
-    "City", ["All cities", *cities], disabled=county == "All counties", key=f"city_{county}"
-)
 
-f = df
-if type_sel:
-    f = f.filter(pl.col("tier").is_in(type_sel))
-if acc_sel:
-    f = f.filter(pl.col("accounting").is_in(acc_sel))
-if seg_sel:
-    f = f.filter(pl.col("main_segment").is_in(seg_sel))
-if county != "All counties":
-    f = f.filter(pl.col("county") == county)
-if city != "All cities":
-    f = f.filter(pl.col("city") == city)
+state = st.session_state
+type_sel: list[str] = state.get("f_type") or []
+# Listed companies and bond issuers all report under IFRS, so the accounting filter is only
+# offered when private companies can be in the list.
+show_acc = not type_sel or "private" in type_sel
+# Segments come from listed companies' and bond issuers' reports; private annual reports
+# have no segment split.
+show_seg = not type_sel or any(t in ("listed", "bond") for t in type_sel)
+acc_sel: list[str] = (state.get("f_acc") or []) if show_acc else []
+seg_sel: list[str] = (state.get("f_seg") or []) if show_seg else []
+county = state.get("f_county", "All counties")
+city = state.get(f"city_{county}", "All cities")
 
+
+def apply(frame: pl.DataFrame, skip: str = "") -> pl.DataFrame:
+    """Filter by every current choice except `skip` (used to count each option)."""
+    if type_sel and skip != "type":
+        frame = frame.filter(pl.col("tier").is_in(type_sel))
+    if acc_sel and skip != "acc":
+        frame = frame.filter(pl.col("accounting").is_in(acc_sel))
+    if seg_sel and skip != "seg":
+        frame = frame.filter(pl.col("main_segment").is_in(seg_sel))
+    if county != "All counties" and skip not in ("county", "city"):
+        frame = frame.filter(pl.col("county") == county)
+    if city != "All cities" and skip != "city":
+        frame = frame.filter(pl.col("city") == city)
+    return frame
+
+
+def present(frame: pl.DataFrame, col: str) -> set:
+    return set(frame[col].drop_nulls().to_list())
+
+
+styles: list[str] = []
+
+
+def grey_empty(key: str, options: list, have: set, offset: int = 0) -> None:
+    """Options with no companies (given the other filters) are shown in light grey."""
+    for i, o in enumerate(options):
+        if o not in have:
+            styles.append(
+                f'body:has(.st-key-{key} input:focus) [role="option"][data-key="{i + offset}"]'
+                " { color: var(--muted) !important; }"
+            )
+
+
+segments = list(SEGMENT)
+filters = ["type", *(["acc"] if show_acc else []), *(["seg"] if show_seg else []), "county", "city"]
+cols = dict(zip(filters, st.columns(len(filters), gap="large"), strict=True))
+
+cols["type"].multiselect(
+    "Company type",
+    list(TIER),
+    format_func=TIER.get,
+    placeholder="All company types",
+    key="f_type",
+)
+grey_empty("f_type", list(TIER), present(apply(df, "type"), "tier"))
+if show_acc:
+    cols["acc"].multiselect(
+        "Accounting standards",
+        list(ACCOUNTING),
+        format_func=ACCOUNTING.get,
+        placeholder="All standards",
+        key="f_acc",
+    )
+    grey_empty("f_acc", list(ACCOUNTING), present(apply(df, "acc"), "accounting"))
+    for i, k in enumerate(ACCOUNTING):
+        if k in ACCOUNTING_ITALIC:
+            head, tail = ACCOUNTING_ITALIC[k]
+            styles.append(
+                f'body:has(.st-key-f_acc input:focus) [role="option"][data-key="{i}"] [data-item-hl],'
+                f' .st-key-f_acc [data-tag][aria-label="{ACCOUNTING[k]}"] span[title]'
+                f" {{ font-size: 0 !important; }}"
+                f' body:has(.st-key-f_acc input:focus) [role="option"][data-key="{i}"] [data-item-hl]::before,'
+                f' .st-key-f_acc [data-tag][aria-label="{ACCOUNTING[k]}"] span[title]::before'
+                f' {{ content: "{head}"; font-size: 14px; }}'
+                f' body:has(.st-key-f_acc input:focus) [role="option"][data-key="{i}"] [data-item-hl]::after,'
+                f' .st-key-f_acc [data-tag][aria-label="{ACCOUNTING[k]}"] span[title]::after'
+                f' {{ content: "{tail}"; font-size: 14px; font-style: italic; }}'
+            )
+if show_seg:
+    cols["seg"].multiselect(
+        "Segment",
+        segments,
+        format_func=lambda s: SEGMENT.get(s, s),
+        placeholder="All segments",
+        key="f_seg",
+    )
+    grey_empty("f_seg", segments, present(apply(df, "seg"), "main_segment"))
+cols["county"].selectbox("County", ["All counties", *counties], key="f_county")
+grey_empty("f_county", counties, present(apply(df, "county"), "county"), offset=1)
+city_options = sorted(present(df.filter(pl.col("county") == county), "city"))
+cols["city"].selectbox(
+    "City", ["All cities", *city_options], disabled=county == "All counties", key=f"city_{county}"
+)
+grey_empty(
+    f"city_{county}".replace(" ", "-"), city_options, present(apply(df, "city"), "city"), 1
+)
+if styles:
+    ui.render("<style>" + "\n".join(styles) + "</style>")
+
+f = apply(df)
 nb = (
     d.t["bond"]
     .filter((pl.col("maturity") > d.ref) & (pl.col("maturity").dt.year() < 2100))  # skip perpetuals

@@ -193,8 +193,27 @@ table.hr-table { width: 100%; border-collapse: collapse; font-size: 15px; color:
   letter-spacing: 0; text-transform: none; line-height: 1.45; text-align: left; white-space: normal;
   border-radius: 2px; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
 
-/* Company search in the header, top right */
+/* Search in the header, top right */
+/* Streamlit's own toolbar (and Community Cloud's Share/star/edit/GitHub buttons) */
+[data-testid="stToolbarActions"], [data-testid="stToolbarActionButton"], [data-testid="stMainMenu"],
+[data-testid="stAppDeployButton"], [data-testid="stStatusWidget"] { display: none !important; }
+/* The list appears only once something is typed: hide it while the box is empty */
+body:has(.st-key-header_search input:placeholder-shown:focus) [data-testid="stSelectboxVirtualDropdown"] {
+  display: none !important; }
+.st-key-header_search [data-testid="stSelectbox"] svg { display: none; }
 .st-key-header_search { position: fixed; top: .85rem; right: 2rem; width: 260px; z-index: 999991; }
 .st-key-header_search .react-aria-ComboBox > div, .st-key-header_search [data-baseweb="select"] > div {
   min-height: 2.3rem; font-size: 14px; }
 @media (max-width: 760px) { .st-key-header_search { position: static; width: 100%; } }
+
+/* ---------- blue header ---------- */
+header[data-testid="stHeader"] { background: var(--blue) !important; border-bottom: none !important; }
+header [data-testid="stHeaderLogo"], header [data-testid="stLogo"] { filter: brightness(0) invert(1); }
+header [data-testid="stTopNavLink"] span, header [data-testid="stTopNavLink"] p { color: rgba(255,255,255,.78) !important; }
+header [data-testid="stTopNavLink"]:hover span, header [data-testid="stTopNavLink"]:hover p,
+header [data-testid="stTopNavLink"][aria-current="page"] span,
+header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !important; }
+.st-key-header_search input { color: #fff !important; background: transparent !important; }
+.st-key-header_search input::placeholder { color: rgba(255,255,255,.75) !important; }
+.st-key-header_search .react-aria-ComboBox > div, .st-key-header_search [data-baseweb="select"] > div {
+  background: transparent !important; border-bottom-color: rgba(255,255,255,.85) !important; }

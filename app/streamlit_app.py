@@ -33,30 +33,45 @@ pages = [
     st.Page("views/issuer.py", title="Company", url_path="issuer", visibility="hidden"),
 ]
 company_page = pages[-1]
+companies_page = pages[1]
 nav = st.navigation(pages, position="top")
 
 
-# Company search in the top-right corner: pick a company to open its page.
+# Search in the top-right corner: a company opens its page; a county or city opens the
+# Companies list filtered to it. The list only appears once something is typed (CSS).
 def _picked() -> None:
-    st.session_state["goto_company"] = st.session_state.get("company_search")
-    st.session_state["company_search"] = None
+    st.session_state["goto"] = st.session_state.get("header_search_box")
+    st.session_state["header_search_box"] = None
 
 
-names = dict(zip(data.scores["org_nr"], data.scores["name"], strict=True))
+sc = data.scores
+choices: dict[str, str] = {f"org:{o}": n for o, n in zip(sc["org_nr"], sc["name"], strict=True)}
+for county in sorted(set(sc["county"].drop_nulls())):
+    choices[f"county:{county}"] = f"{county} · county"
+for city, county in sorted(set(zip(sc["city"], sc["county"], strict=True)) - {(None, None)}):
+    if city:
+        choices[f"city:{county}|{city}"] = f"{city} · city"
 with st.container(key="header_search"):
     st.selectbox(
-        "Search companies",
-        sorted(names, key=lambda o: names[o].lower()),
+        "Search company or location",
+        sorted(choices, key=lambda k: choices[k].lower()),
         index=None,
-        placeholder="Search companies",
-        format_func=names.get,
+        placeholder="Search company or location",
+        format_func=choices.get,
         label_visibility="collapsed",
-        key="company_search",
+        key="header_search_box",
         on_change=_picked,
     )
-goto = st.session_state.pop("goto_company", None)
+goto = st.session_state.pop("goto", None)
 if goto:
-    st.switch_page(company_page, query_params={"org": goto})
+    kind, _, value = goto.partition(":")
+    if kind == "org":
+        st.switch_page(company_page, query_params={"org": value})
+    elif kind == "county":
+        st.switch_page(companies_page, query_params={"county": value})
+    else:
+        county, _, city = value.partition("|")
+        st.switch_page(companies_page, query_params={"county": county, "city": city})
 
 nav.run()
 

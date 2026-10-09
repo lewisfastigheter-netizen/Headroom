@@ -26,5 +26,5 @@ def test_header_search_lists_companies():
     at = AppTest.from_file(str(APP), default_timeout=90)
     at.session_state["mode"] = "demo"
     at.run()
-    box = next(s for s in at.selectbox if s.key == "company_search")
+    box = next(s for s in at.selectbox if s.key == "header_search_box")
     assert len(box.options) > 10 and box.value is None
