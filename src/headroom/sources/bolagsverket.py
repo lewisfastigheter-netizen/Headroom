@@ -1,0 +1,387 @@
+"""Bolagsverket "Värdefulla datamängder": company data and digitally filed annual reports.
+
+API (OAuth2 client credentials, free registration at Bolagsverket's API portal):
+  token:  POST https://portal.api.bolagsverket.se/oauth2/token
+  base:   https://gw.api.bolagsverket.se/vardefulla-datamangder/v1
+  POST /organisationer   {"identitetsbeteckning": "5565203186"}  company data incl. SNI codes
+  POST /dokumentlista    {"identitetsbeteckning": "5565203186"}  filed annual reports
+  GET  /dokument/{id}    zip with the iXBRL annual report
+Endpoints and the token URL were confirmed to exist (401 without credentials,
+404 for unknown paths) on 9 Oct 2026. Response field names are read defensively,
+because they could not be checked without credentials.
+
+Bulk file: Bolagsverket also publishes a free bulk file of all registered
+companies. Its website sits behind bot protection, so the pipeline never
+scrapes it: download the file in a browser and point `BOLAGSVERKET_BULKFILE`
+(or `--bulkfile`) at it.
+"""
+
+from __future__ import annotations
+
+import csv
+import io
+import logging
+import re
+import time
+import zipfile
+from collections.abc import Iterator
+from dataclasses import dataclass
+from datetime import date, timedelta
+from pathlib import Path
+from typing import Any
+
+import httpx
+
+from headroom.config import settings
+from headroom.http import Fetcher
+from headroom.schemas import normalise_org_nr
+
+log = logging.getLogger(__name__)
+
+TOKEN_URL = "https://portal.api.bolagsverket.se/oauth2/token"
+BASE = "https://gw.api.bolagsverket.se/vardefulla-datamangder/v1"
+SCOPE = "vardefulla-datamangder:read vardefulla-datamangder:ping"
+
+
+class NoCredentials(RuntimeError):
+    pass
+
+
+@dataclass
+class Token:
+    value: str
+    expires: float
+
+
+class Bolagsverket:
+    def __init__(self, f: Fetcher):
+        s = settings()
+        if not (s.bolagsverket_client_id and s.bolagsverket_client_secret):
+            raise NoCredentials("Set BOLAGSVERKET_CLIENT_ID and BOLAGSVERKET_CLIENT_SECRET in .env")
+        self.f = f
+        self.cid, self.secret = s.bolagsverket_client_id, s.bolagsverket_client_secret
+        self._token: Token | None = None
+
+    def token(self) -> str:
+        if self._token and self._token.expires > time.time() + 60:
+            return self._token.value
+        r = self.f.client.post(
+            TOKEN_URL,
+            data={"grant_type": "client_credentials", "scope": SCOPE},
+            auth=(self.cid, self.secret),
+            timeout=30,
+        )
+        r.raise_for_status()
+        j = r.json()
+        self._token = Token(j["access_token"], time.time() + float(j.get("expires_in", 3000)))
+        return self._token.value
+
+    def _post(self, path: str, org_nr: str) -> Any:
+        self.f._wait("gw.api.bolagsverket.se")
+        r = self.f.client.post(
+            f"{BASE}{path}",
+            json={"identitetsbeteckning": org_nr.replace("-", "")},
+            headers={"Authorization": f"Bearer {self.token()}"},
+            timeout=60,
+        )
+        if r.status_code == 404:
+            return None
+        r.raise_for_status()
+        return r.json()
+
+    def organisation(self, org_nr: str) -> dict | None:
+        return self._post("/organisationer", org_nr)
+
+    def documents(self, org_nr: str) -> list[dict]:
+        j = self._post("/dokumentlista", org_nr) or {}
+        return list(_find_lists(j, "dokumentId"))
+
+    def document(self, doc_id: str) -> bytes:
+        self.f._wait("gw.api.bolagsverket.se")
+        r = self.f.client.get(
+            f"{BASE}/dokument/{doc_id}",
+            headers={"Authorization": f"Bearer {self.token()}"},
+            timeout=120,
+        )
+        r.raise_for_status()
+        return r.content
+
+
+def _find_lists(obj: Any, key: str) -> Iterator[dict]:
+    """Yield every dict anywhere in a JSON tree that has `key`."""
+    if isinstance(obj, dict):
+        if key in obj:
+            yield obj
+        for v in obj.values():
+            yield from _find_lists(v, key)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _find_lists(v, key)
+
+
+def sni_codes(org: dict | None) -> list[str]:
+    """SNI codes anywhere in the organisation record (keys mentioning 'sni' or 'kod')."""
+    out: list[str] = []
+
+    def walk(o: Any, parent: str = "") -> None:
+        if isinstance(o, dict):
+            for k, v in o.items():
+                walk(v, k.lower())
+        elif isinstance(o, list):
+            for v in o:
+                walk(v, parent)
+        elif (
+            isinstance(o, str)
+            and ("sni" in parent or parent == "kod")
+            and re.fullmatch(r"\d{2}\.?\d{0,3}", o.strip())
+        ):
+            code = o.strip().replace(".", "")
+            out.append(f"{code[:2]}.{code[2:]}" if len(code) > 2 else code)
+
+    walk(org)
+    return list(dict.fromkeys(out))
+
+
+def is_real_estate(snis: list[str]) -> bool:
+    return any(s.startswith("68") for s in snis)
+
+
+# --------------------------------------------------------------------------- iXBRL
+
+# Concepts in the Swedish annual-report taxonomy (se-gen-base) for K2/K3 reports.
+# Each target lists candidates in order of preference.
+IXBRL_MAP: dict[str, list[str]] = {
+    "property_value": [
+        "ForvaltningsfastigheterVerkligtVarde",
+        "Forvaltningsfastigheter",
+        "ByggnaderMark",
+    ],
+    "total_assets": ["Tillgangar"],
+    "equity": ["EgetKapital"],
+    "cash": ["KassaBankExklRedovisningsmedel", "KassaBank", "LikvidaMedel"],
+    "debt_credit_long": ["SkulderKreditinstitutLangfristiga", "LangfristigaSkulderKreditinstitut"],
+    "debt_credit_short": ["SkulderKreditinstitutKortfristiga", "KortfristigaSkulderKreditinstitut"],
+    "debt_group_long": ["SkulderKoncernforetagLangfristiga"],
+    "operating_profit": ["Rorelseresultat"],
+    "interest_expense": ["RantekostnaderLiknandeResultatposter", "Rantekostnader"],
+    "revenue": ["Nettoomsattning"],
+    "depreciation": ["AvskrivningarNedskrivningarMateriellaImmateriellaAnlaggningstillgangar"],
+    "equity_ratio_pct": ["Soliditet"],
+}
+
+
+@dataclass
+class Fact:
+    concept: str
+    value: float
+    context: str
+    period_end: date | None
+
+
+def parse_ixbrl(xhtml: bytes) -> list[Fact]:
+    from lxml import etree
+
+    root = etree.fromstring(xhtml, parser=etree.XMLParser(recover=True, huge_tree=True))
+    ns_ix = "http://www.xbrl.org/2013/inlineXBRL"
+    ctx_end: dict[str, date | None] = {}
+    for c in root.iter("{http://www.xbrl.org/2003/instance}context"):
+        end = c.find(".//{http://www.xbrl.org/2003/instance}endDate")
+        inst = c.find(".//{http://www.xbrl.org/2003/instance}instant")
+        txt = end if end is not None else inst
+        try:
+            ctx_end[c.get("id")] = date.fromisoformat(txt.text.strip()) if txt is not None else None
+        except ValueError:
+            ctx_end[c.get("id")] = None
+    facts: list[Fact] = []
+    for el in root.iter(f"{{{ns_ix}}}nonFraction"):
+        name = (el.get("name") or "").split(":")[-1]
+        raw = "".join(el.itertext()).strip().replace(" ", "").replace("\xa0", "")
+        if not raw or el.get("{http://www.w3.org/2001/XMLSchema-instance}nil") == "true":
+            continue
+        try:
+            v = (
+                float(raw.replace(",", "."))
+                if raw.count(",") == 1 and "." not in raw
+                else float(raw.replace(",", ""))
+            )
+        except ValueError:
+            continue
+        v *= 10 ** int(el.get("scale") or 0)
+        if el.get("sign") == "-":
+            v = -v
+        facts.append(
+            Fact(name, v, el.get("contextRef") or "", ctx_end.get(el.get("contextRef") or ""))
+        )
+    return facts
+
+
+def ixbrl_from_zip(data: bytes) -> bytes | None:
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        for n in z.namelist():
+            if n.lower().endswith((".xhtml", ".html", ".htm")):
+                return z.read(n)
+    return None
+
+
+def annual_figures(facts: list[Fact]) -> dict[str, float | date | None]:
+    """Latest-period values for the mapped concepts, in SEK millions (ratios as shares)."""
+    ends = [f.period_end for f in facts if f.period_end]
+    if not ends:
+        return {}
+    latest = max(ends)
+    cur = {f.concept: f.value for f in facts if f.period_end == latest}
+    # duration facts end on the same date as the balance-sheet instant
+    out: dict[str, float | date | None] = {"period_end": latest}
+    for target, names in IXBRL_MAP.items():
+        val = next((cur[n] for n in names if n in cur), None)
+        if val is None:
+            out[target] = None
+        elif target == "equity_ratio_pct":
+            out[target] = val / 100 if val > 1 else val
+        else:
+            out[target] = val / 1e6
+    return out
+
+
+def to_financials(org_nr: str, a: dict, source_url: str) -> dict:
+    """Map annual-report figures to the financials table (private ABs).
+
+    Debt to credit institutions due within a year is reported as short-term:
+    that is the refinancing need. LTV uses the book value of property.
+    """
+    debt = sum(
+        x or 0
+        for x in (a.get("debt_credit_long"), a.get("debt_credit_short"), a.get("debt_group_long"))
+    )
+    cash = a.get("cash")
+    pv = a.get("property_value")
+    ebitda = None
+    if a.get("operating_profit") is not None:
+        ebitda = a["operating_profit"] + abs(a.get("depreciation") or 0)
+    interest = abs(a["interest_expense"]) if a.get("interest_expense") else None
+    eq = a.get("equity_ratio_pct")
+    if eq is None and a.get("equity") is not None and a.get("total_assets"):
+        eq = a["equity"] / a["total_assets"]
+    return {
+        "org_nr": org_nr,
+        "period_end": a.get("period_end"),
+        "period_type": "FY",
+        "property_value": pv,
+        "gross_debt": debt or None,
+        "net_debt": (debt - (cash or 0)) if debt else None,
+        "ltv": ((debt - (cash or 0)) / pv) if debt and pv else None,
+        "icr": (ebitda / interest) if ebitda is not None and interest else None,
+        "ebitda": ebitda,
+        "interest_expense": interest,
+        "avg_rate": (interest / debt) if interest and debt else None,
+        "fixed_share": None,
+        "fixed_period_years": None,
+        "equity_ratio": eq,
+        "cash": cash,
+        "undrawn_facilities": None,
+        "debt_due_12m": a.get("debt_credit_short"),
+        "debt_due_24m": None,
+        "source_url": source_url,
+        "page": None,
+        "confidence": 0.95,
+    }
+
+
+# --------------------------------------------------------------------------- bulk file
+
+BULK_COLUMNS = {
+    "org_nr": ("organisationsidentitet", "organisationsnummer", "identitetsbeteckning"),
+    "name": ("organisationsnamn", "namn", "foretagsnamn"),
+    "form": ("organisationsform",),
+    "deregistered": ("avregistreringsdatum",),
+    "proceedings": ("pagandeavvecklingselleromstruktureringsforfarande", "pagaende_avveckling"),
+    "description": ("verksamhetsbeskrivning",),
+    "registered": ("registreringsdatum",),
+}
+
+
+def read_bulkfile(path: Path) -> Iterator[dict]:
+    """Rows from Bolagsverket's bulk file (zip or text, ; or tab separated)."""
+    if path.suffix.lower() == ".zip":
+        with zipfile.ZipFile(path) as z:
+            name = next(n for n in z.namelist() if n.lower().endswith((".txt", ".csv")))
+            text = io.TextIOWrapper(z.open(name), encoding="utf-8", errors="replace")
+            yield from _bulk_rows(text)
+    else:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            yield from _bulk_rows(fh)
+
+
+def _bulk_rows(fh: io.TextIOBase) -> Iterator[dict]:
+    head = fh.readline()
+    delim = ";" if head.count(";") >= head.count("\t") else "\t"
+    cols = [
+        re.sub(
+            r"[^a-z_]", "", c.strip().lower().replace("å", "a").replace("ä", "a").replace("ö", "o")
+        )
+        for c in head.split(delim)
+    ]
+    idx = {
+        k: next((cols.index(a) for a in alts if a in cols), None)
+        for k, alts in BULK_COLUMNS.items()
+    }
+    for parts in csv.reader(fh, delimiter=delim):
+        row = {
+            k: (parts[i].strip() if i is not None and i < len(parts) else None)
+            for k, i in idx.items()
+        }
+        try:
+            row["org_nr"] = normalise_org_nr((row["org_nr"] or "").split("$")[0])
+        except ValueError:
+            continue
+        yield row
+
+
+PROPERTY_TEXT = re.compile(r"fastighet|hyresfastighet|bostäder|uthyrning av lokaler|förvalt", re.I)
+
+
+def private_candidates(rows: Iterator[dict], exclude: set[str]) -> list[dict]:
+    """Active aktiebolag whose name or business description points to property."""
+    out = []
+    for r in rows:
+        if r["org_nr"] in exclude or r.get("deregistered"):
+            continue
+        form = (r.get("form") or "").upper()
+        if form and "AB" not in form and "AKTIEBOLAG" not in form:
+            continue
+        text = f"{r.get('name') or ''} {r.get('description') or ''}"
+        if PROPERTY_TEXT.search(text):
+            out.append(r)
+    return out
+
+
+def latest_annual_report(docs: list[dict]) -> dict | None:
+    """The newest digitally filed annual report in a document list."""
+
+    def end(d: dict) -> str:
+        return str(
+            d.get("rapporteringsperiodTom")
+            or d.get("periodTom")
+            or d.get("registreringstidpunkt")
+            or ""
+        )
+
+    reports = [d for d in docs if "rsredovisning" in str(d).lower() or d.get("filformat")]
+    return max(reports or docs, key=end, default=None)
+
+
+def is_late(last_period_end: date | None, today: date) -> bool:
+    """Annual reports are due within seven months of the year end."""
+    if last_period_end is None:
+        return False
+    due = last_period_end + timedelta(days=7 * 30 + 15)
+    next_end = (
+        date(last_period_end.year + 1, last_period_end.month, last_period_end.day)
+        if not (last_period_end.month == 2 and last_period_end.day == 29)
+        else date(last_period_end.year + 1, 2, 28)
+    )
+    return today > next_end + (due - last_period_end)
+
+
+def http_error(e: Exception) -> bool:
+    return isinstance(e, httpx.HTTPError)

@@ -1,0 +1,63 @@
+name: Weekly refresh
+
+# Rebuilds data/snapshots/live from public sources and commits the Parquet files.
+on:
+  schedule:
+    - cron: "17 18 * * 4"  # Thursdays 18:17 UTC, after the day's 07:00-08:00 report releases
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --frozen
+
+      # LLM results live in data/cache/llm.jsonl, committed with the snapshot, so each
+      # run only pays for documents it has not read before. HTTP responses are cached here.
+      - name: Cache HTTP responses
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/cache/http
+            data/cache/bolagsverket
+          key: cache-${{ github.run_id }}
+          restore-keys: cache-
+
+      - name: Refresh live snapshot
+        env:
+          HTTP_CONTACT: ${{ secrets.HTTP_CONTACT }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BOLAGSVERKET_CLIENT_ID: ${{ secrets.BOLAGSVERKET_CLIENT_ID }}
+          BOLAGSVERKET_CLIENT_SECRET: ${{ secrets.BOLAGSVERKET_CLIENT_SECRET }}
+        run: uv run headroom refresh
+
+      - name: Test against the new snapshot
+        run: uv run pytest -q
+
+      - name: Commit snapshot
+        run: |
+          git config user.name "headroom-bot"
+          git config user.email "headroom-bot@users.noreply.github.com"
+          git add data/snapshots/live data/cache/llm.jsonl
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Refresh live snapshot $(date -u +%Y-%m-%d)"
+            git push
+          fi

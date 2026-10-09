@@ -1,0 +1,51 @@
+[client]
+toolbarMode = "minimal"
+showErrorDetails = "stacktrace"
+
+[server]
+headless = true
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#00839B"            # blue (accent)
+backgroundColor = "#FFFFFF"         # paper
+secondaryBackgroundColor = "#F4F4F4" # tint
+textColor = "#212121"               # ink
+linkColor = "#6A6A6A"               # graphite
+linkUnderline = true
+borderColor = "#E4E4E4"             # hairline rule
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "none"
+buttonRadius = "none"
+baseFontSize = 15
+baseFontWeight = 400
+font = "Roboto:https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+headingFont = "Roboto:https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+codeFont = "'Roboto Mono':https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap"
+codeFontSize = "0.8rem"
+codeBackgroundColor = "#F4F4F4"
+codeTextColor = "#212121"
+headingFontWeights = [400, 400, 500, 500, 500, 500]
+headingFontSizes = ["2.6rem", "1.75rem", "1.25rem", "1rem", "0.9rem", "0.8rem"]
+metricValueFontSize = "2.25rem"
+metricValueFontWeight = 400
+chartCategoricalColors = ["#212121", "#00839B", "#9B9B9B", "#6A6A6A"]
+chartSequentialColors = ["#F4F4F4", "#DDEFF2", "#C2E3E9", "#A3D5DE", "#80C4D1", "#5AB1C2", "#349DB1", "#0F8CA3", "#00839B", "#006A7D"]
+dataframeHeaderBackgroundColor = "#FFFFFF"
+dataframeHeaderTextColor = "#6A6A6A"
+dataframeBorderColor = "#E4E4E4"
+redColor = "#E16E1D"
+orangeColor = "#C2901A"
+yellowColor = "#C2901A"
+greenColor = "#00839B"
+blueColor = "#6A6A6A"
+violetColor = "#6A6A6A"
+grayColor = "#9B9B9B"
+
+[theme.sidebar]
+backgroundColor = "#F4F4F4"

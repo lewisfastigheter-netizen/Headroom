@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info
+.venv
+.ruff_cache/
+.pytest_cache/
+
+# Secrets
+.env
+.streamlit/secrets.toml
+
+# Data: everything is generated, except the committed snapshots
+data/*
+!data/snapshots/
+data/snapshots/*
+!data/snapshots/demo/
+!data/snapshots/live/
+!data/cache/
+data/cache/*
+# LLM results are committed so a fresh checkout never re-reads a document
+!data/cache/llm.jsonl
+*.duckdb
+*.duckdb.wal

@@ -1,0 +1,106 @@
+# Scoring configuration. Every number here is shown on the Method page.
+# Edit, then reload the app. Weights within a score must sum to 1.0.
+
+motivated_seller:
+  weights:
+    refinancing: 0.30
+    covenant: 0.25
+    leverage: 0.15
+    events: 0.20
+    market: 0.10     # listed companies only; re-weighted away for others
+
+  # Below this share of the nominal weight, a company is not scored at all.
+  min_coverage: 0.50
+
+  # Each component maps a raw metric to 0-100 with a linear ramp between
+  # `zero` (score 0) and `full` (score 100). Values beyond the ends are clipped.
+  refinancing:
+    # need = due within 12m + weight_12_24m * (due in months 13-24)
+    weight_12_24m: 0.6
+    # ratio = need / (cash + undrawn facilities), scored on a log scale because
+    # ratios run from below 1x to 100x for issuers with near-zero liquidity
+    scale: log
+    ratio_zero: 0.75
+    ratio_full: 10.0
+
+  covenant:
+    # headroom = distance to threshold as a share of the threshold
+    # min-tests (ICR, equity ratio): (actual - threshold) / threshold
+    # max-tests (LTV): (threshold - actual) / threshold
+    # The tightest maintenance test is scored at base rates and again with ICR
+    # recomputed at base + stress_bp. The component is the average of the two,
+    # so an issuer already in breach scores above one that breaches only under stress.
+    stress_bp: 100
+    stress_weight: 0.5
+    headroom_zero: 0.40   # 40% headroom or more scores 0
+    headroom_full: 0.00   # at or through the covenant scores 100
+
+  leverage:
+    ltv:            {zero: 0.40, full: 0.70}
+    icr:            {zero: 3.0,  full: 1.0}
+    net_debt_ebitda: {zero: 8.0, full: 20.0}
+
+  events:
+    half_life_days: 180
+    cap: 100
+    # Points before decay. Several events add up, capped at `cap`.
+    severity:
+      written_procedure: 60
+      waiver: 40
+      interest_deferral: 70
+      reconstruction: 90
+      bankruptcy_in_group: 80
+      liquidation: 80
+      going_concern: 60
+      late_annual_report: 25
+      disposal_below_book: 30
+      rating_downgrade: 30
+      refinancing_completed: 0
+      equity_raise: 15
+      interim_report: 0
+      disposal: 5
+
+  market:
+    pnav_discount: {zero: 0.0, full: 0.50}
+    drawdown_52w:  {zero: 0.0, full: 0.60}
+
+  bands:
+    high: 60    # oxblood marker
+    watch: 40   # ochre marker
+
+strategy_fit:
+  # A value-add mandate in Nordic residential, light industrial and logistics.
+  weights:
+    segment: 0.50
+    region: 0.30
+    size: 0.20
+  target_segments: [residential, light_industrial, logistics]
+  growth_regions: [Stockholm, Gothenburg, Malmö, Uppsala, Linköping, Örebro, Västerås, Helsinki, Oslo, Copenhagen]
+  # Deal size, by property value in SEK m. Full score inside the band,
+  # linear fade to zero at the outer bounds.
+  size_sek_m:
+    outer_low: 200
+    band_low: 1000
+    band_high: 15000
+    outer_high: 40000
+
+opportunity:
+  # Thresholds used by the rule-based opportunity-type label.
+  large_portfolio_sek_m: 3000
+  wind_down_score: 75
+  recap_ltv: 0.60
+
+extraction:
+  # Extracted fields below this confidence are shown as unverified.
+  min_confidence: 0.80
+
+rate_shock:
+  max_bp: 300
+  step_bp: 25
+
+private_universe:
+  # Private ABs from Bolagsverket's bulk file, kept if their latest annual report
+  # shows at least this much property (book value, SEK m).
+  min_property_value_sek_m: 100
+  # API lookups per refresh. Results are cached, so coverage grows run by run.
+  max_lookups_per_run: 400

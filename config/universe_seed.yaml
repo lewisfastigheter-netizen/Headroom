@@ -1,0 +1,77 @@
+# Seed list for the live universe.
+#
+# The bond universe is discovered automatically: ESMA FIRDS gives every listed
+# bond and its issuer LEI; GLEIF turns the LEI into a legal name, country and
+# Swedish organisation number. Property companies are then identified by a
+# keyword in the legal name (see model/universe.py) or by this seed list.
+#
+# Seeds are NAMES ONLY. Org numbers and LEIs are never typed in here: they are
+# resolved from GLEIF at run time, so every identifier comes from the register.
+# From milestone 4, Bolagsverket SNI codes (68.x) replace the name heuristic.
+
+# Property companies whose legal name has no property keyword.
+# Matched case-insensitively as a whole word in the GLEIF legal name.
+property_names:
+  - Castellum
+  - Sagax
+  - Wallenstam
+  - Hufvudstaden
+  - Atrium Ljungberg
+  - Wihlborgs
+  - Corem
+  - Akelius
+  - Rikshem
+  - Vasakronan
+  - Platzer
+  - Catena
+  - NP3
+  - Pandox
+  - Heimstaden
+  - Kungsleden
+  - Diös
+  - Nyfosa
+  - Logistea
+  - Emilshus
+  - Neobo
+  - Stenhus
+  - Willhem
+  - Intea
+  - K2A
+  - Fabege
+  - Humlegården
+  - Akademiska Hus
+  - Victoriahem
+  - Hemsö
+  - Samhällsbyggnadsbolaget
+  - Cibus
+  - Annehem
+  - Trianon
+  - FastPartner
+  - John Mattson
+  - Klövern
+  - Balder
+  - Vacse
+  - Stendörren
+  - Magnolia Bostad
+  - Genova
+  - Brinova
+  - SSM Holding
+  - Fastator
+  - Jernhusen
+  - K-Fast
+  - Offentliga Hus
+  - Tagehus
+  - Patriam
+  - Golden Heights
+  - ALM Equity
+  - Titania
+  - M2 Asset Management
+
+# Legal-name words that rule an issuer out even if a keyword matches
+# (mortgage lenders, banks and property-debt funds that finance property rather than own it).
+exclude_words: [hypotek, bank, kredit, försäkring, pension, kommuninvest, finance company,
+                räntefond, fastighetsfinansiering]
+
+# Force-include or exclude by LEI after review. Each entry needs a reason.
+include_leis: []
+exclude_leis: []

@@ -1,0 +1,63 @@
+[project]
+name = "headroom"
+version = "0.1.0"
+description = "Nordic property credit monitor: motivated-seller screening from public bond, filing and insolvency data."
+readme = "README.md"
+authors = [{ name = "William" }]
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=1.12.1",
+    "duckdb>=1.5.6",
+    "feedparser>=6.0.14",
+    "httpx>=0.28.1",
+    "lxml>=6.1.3",
+    "openai>=3.26.1",
+    "plotly>=7.1.0",
+    "polars>=2.0.0",
+    "pyarrow>=25.0.1",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pymupdf>=1.28.2",
+    "python-dotenv>=1.2.4",
+    "pyyaml>=6.0.3",
+    "streamlit>=1.65.0",
+    "tenacity>=9.2.1",
+    "xlsxwriter>=3.2.9",
+    "yfinance>=1.7.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.32,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "playwright==1.56.0",
+    "pytest>=9.1.1",
+    "respx>=0.23.1",
+    "ruff>=0.16.10",
+]
+
+[project.scripts]
+headroom = "headroom.cli:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003", "UP047", "SIM105"]  # Swedish characters in strings and comments are intended
+
+[tool.ruff.lint.per-file-ignores]
+# Page modules hold HTML and prose strings; wrapping them hurts readability.
+"app/views/*.py" = ["E501"]
+"src/headroom/extract/*.py" = ["E501"]  # prompts and regex vocabularies
+"src/headroom/sources/bolagsverket.py" = ["E501"]
+"tests/*.py" = ["E501"]  # inline fixtures
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

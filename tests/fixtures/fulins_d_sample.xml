@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BizData xmlns="urn:iso:std:iso:20022:tech:xsd:head.003.001.01">
+  <Pyld>
+    <Document xmlns="urn:iso:std:iso:20022:tech:xsd:auth.017.001.02">
+      <FinInstrmRptgRefDataRpt>
+        <!-- floating senior secured bond, listed on two venues -->
+        <RefData>
+          <FinInstrmGnlAttrbts><Id>SE0000000001</Id><FullNm>Example Fastigheter AB FRN 2026</FullNm><ClssfctnTp>DBVSFR</ClssfctnTp><NtnlCcy>SEK</NtnlCcy></FinInstrmGnlAttrbts>
+          <Issr>TESTLEI0000000000001</Issr>
+          <TradgVnRltdAttrbts><Id>XSTO</Id><FrstTradDt>2023-10-30T00:00:00Z</FrstTradDt><TermntnDt>2026-10-30T23:59:59Z</TermntnDt></TradgVnRltdAttrbts>
+          <DebtInstrmAttrbts><TtlIssdNmnlAmt Ccy="SEK">900000000</TtlIssdNmnlAmt><MtrtyDt>2026-10-30</MtrtyDt><NmnlValPerUnit Ccy="SEK">1250000</NmnlValPerUnit>
+            <IntrstRate><Fltg><RefRate><Indx>STBO</Indx></RefRate><Term><Unit>MNTH</Unit><Val>3</Val></Term><BsisPtSprd>650</BsisPtSprd></Fltg></IntrstRate></DebtInstrmAttrbts>
+          <TechAttrbts><RlvntCmptntAuthrty>SE</RlvntCmptntAuthrty></TechAttrbts>
+        </RefData>
+        <RefData>
+          <FinInstrmGnlAttrbts><Id>SE0000000001</Id><FullNm>Example Fastigheter AB FRN 2026</FullNm><ClssfctnTp>DBVSFR</ClssfctnTp><NtnlCcy>SEK</NtnlCcy></FinInstrmGnlAttrbts>
+          <Issr>TESTLEI0000000000001</Issr>
+          <TradgVnRltdAttrbts><Id>FRAA</Id><FrstTradDt>2024-01-15T00:00:00Z</FrstTradDt></TradgVnRltdAttrbts>
+          <DebtInstrmAttrbts><TtlIssdNmnlAmt Ccy="SEK">900000000</TtlIssdNmnlAmt><MtrtyDt>2026-10-30</MtrtyDt>
+            <IntrstRate><Fltg><RefRate><Indx>STBO</Indx></RefRate><Term><Unit>MNTH</Unit><Val>3</Val></Term><BsisPtSprd>650</BsisPtSprd></Fltg></IntrstRate></DebtInstrmAttrbts>
+        </RefData>
+        <!-- fixed-rate euro bond -->
+        <RefData>
+          <FinInstrmGnlAttrbts><Id>XS0000000002</Id><FullNm>Example Bostad AB 2.5 2029</FullNm><ClssfctnTp>DBFUFR</ClssfctnTp><NtnlCcy>EUR</NtnlCcy></FinInstrmGnlAttrbts>
+          <Issr>TESTLEI0000000000002</Issr>
+          <TradgVnRltdAttrbts><Id>XDUB</Id><FrstTradDt>2022-05-10T00:00:00Z</FrstTradDt></TradgVnRltdAttrbts>
+          <DebtInstrmAttrbts><TtlIssdNmnlAmt Ccy="EUR">500000000</TtlIssdNmnlAmt><MtrtyDt>2029-05-10</MtrtyDt>
+            <IntrstRate><Fxd>2.5</Fxd></IntrstRate></DebtInstrmAttrbts>
+        </RefData>
+        <!-- matured bond: filtered out -->
+        <RefData>
+          <FinInstrmGnlAttrbts><Id>SE0000000003</Id><FullNm>Old AB FRN 2020</FullNm><ClssfctnTp>DBVUFR</ClssfctnTp><NtnlCcy>SEK</NtnlCcy></FinInstrmGnlAttrbts>
+          <Issr>TESTLEI0000000000003</Issr>
+          <DebtInstrmAttrbts><TtlIssdNmnlAmt Ccy="SEK">100000000</TtlIssdNmnlAmt><MtrtyDt>2020-01-01</MtrtyDt></DebtInstrmAttrbts>
+        </RefData>
+        <!-- commercial paper: wrong CFI, filtered out -->
+        <RefData>
+          <FinInstrmGnlAttrbts><Id>SE0000000004</Id><FullNm>Paper</FullNm><ClssfctnTp>DYZXXR</ClssfctnTp><NtnlCcy>SEK</NtnlCcy></FinInstrmGnlAttrbts>
+          <Issr>TESTLEI0000000000004</Issr>
+          <DebtInstrmAttrbts><TtlIssdNmnlAmt Ccy="SEK">100000000</TtlIssdNmnlAmt><MtrtyDt>2027-01-01</MtrtyDt></DebtInstrmAttrbts>
+        </RefData>
+        <!-- US bond: not a Nordic candidate -->
+        <RefData>
+          <FinInstrmGnlAttrbts><Id>US0000000005</Id><FullNm>Other</FullNm><ClssfctnTp>DBFUFR</ClssfctnTp><NtnlCcy>USD</NtnlCcy></FinInstrmGnlAttrbts>
+          <Issr>TESTLEI0000000000005</Issr>
+          <DebtInstrmAttrbts><TtlIssdNmnlAmt Ccy="USD">100000000</TtlIssdNmnlAmt><MtrtyDt>2030-01-01</MtrtyDt></DebtInstrmAttrbts>
+        </RefData>
+      </FinInstrmRptgRefDataRpt>
+    </Document>
+  </Pyld>
+</BizData>

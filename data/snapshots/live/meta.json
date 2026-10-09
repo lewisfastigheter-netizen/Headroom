@@ -1,0 +1,59 @@
+{
+  "mode": "live",
+  "fictional": false,
+  "generated_at": "2026-10-08T19:22:20+00:00",
+  "as_of": {
+    "company": "2026-10-09",
+    "bond": "2026-10-03",
+    "rate": "2026-10-08",
+    "financials": "2026-06-30",
+    "event": "2026-10-09",
+    "price": "2026-10-05"
+  },
+  "notes": "Live snapshot. Bond universe from ESMA FIRDS and GLEIF; rates from Sveriges Riksbank; reports from MFN and Cision, read by an LLM; prices from Yahoo Finance.",
+  "sources": {
+    "firds_debt": {
+      "publication_date": "2026-10-03",
+      "files": [
+        "FULINS_D_20261003_01of04.zip",
+        "FULINS_D_20261003_02of04.zip",
+        "FULINS_D_20261003_03of04.zip",
+        "FULINS_D_20261003_04of04.zip"
+      ]
+    },
+    "firds_equity": {
+      "publication_date": "2026-10-03",
+      "files": [
+        "FULINS_E_20261003_01of02.zip",
+        "FULINS_E_20261003_02of02.zip"
+      ]
+    },
+    "fx": {
+      "SEK": {
+        "rate": 1.0,
+        "date": null,
+        "source_url": null
+      },
+      "EUR": {
+        "rate": 11.194,
+        "date": "2026-10-08",
+        "source_url": "https://api.riksbank.se/swea/v1/Observations/SEKEURPMI"
+      },
+      "NOK": {
+        "rate": 1.04451,
+        "date": "2026-10-08",
+        "source_url": "https://api.riksbank.se/swea/v1/Observations/SEKNOKPMI"
+      }
+    },
+    "issuers_swedish": 336,
+    "issuers_property": 70,
+    "reports": {
+      "feeds": 64,
+      "reports_extracted": 92,
+      "llm_available": true,
+      "events": 457,
+      "llm_errors": [],
+      "tickers": 33
+    }
+  }
+}
