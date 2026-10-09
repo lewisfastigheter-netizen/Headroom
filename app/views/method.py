@@ -199,7 +199,7 @@ ui.render(
     f"""<div class="hr-prose"><p>Candidates come from Bolagsverket's bulk file (active
 aktiebolag whose name or registered business description points to owning property). Each is
 checked at Bolagsverket: SNI code, then the latest digitally filed annual report. Companies with
-at least SEK 20m of property join the screen. The scan runs four times a day.</p>
+at least SEK 20m of property join the Companies list. The scan runs four times a day.</p>
 <p><b>{_pp["checked"]:,}</b> of <b>{_pp["candidates"]:,}</b> candidates checked
 ({_pct:.1f}%), last on {ui.fmt_date(_pp["last_checked"], "long")}.</p></div>"""
 )

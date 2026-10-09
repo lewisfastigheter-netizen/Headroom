@@ -1,0 +1,750 @@
+prefix,county,share,n
+000,Västra Götalands län,0.68,25
+036,Stockholms län,1.0,1
+061,Skåne län,1.0,1
+100,Stockholms län,1.0,5070
+101,Stockholms län,1.0,5838
+102,Stockholms län,1.0,20053
+103,Stockholms län,1.0,23476
+104,Stockholms län,1.0,16041
+105,Stockholms län,0.999,1042
+106,Stockholms län,1.0,4220
+107,Stockholms län,1.0,1638
+108,Stockholms län,1.0,1
+109,Stockholms län,1.0,7
+110,Stockholms län,0.818,11
+111,Stockholms län,1.0,38228
+112,Stockholms län,1.0,31824
+113,Stockholms län,1.0,38003
+114,Stockholms län,1.0,47446
+115,Stockholms län,1.0,18956
+116,Stockholms län,1.0,26419
+117,Stockholms län,1.0,16360
+118,Stockholms län,1.0,17317
+119,Stockholms län,1.0,9
+120,Stockholms län,1.0,7606
+121,Stockholms län,0.961,51
+122,Stockholms län,0.923,39
+123,Stockholms län,0.889,18
+124,Stockholms län,1.0,11
+125,Stockholms län,1.0,34
+126,Stockholms län,0.998,888
+127,Stockholms län,1.0,36
+128,Stockholms län,1.0,14
+129,Stockholms län,1.0,17
+130,Stockholms län,0.967,30
+131,Stockholms län,1.0,13474
+132,Stockholms län,0.941,17
+133,Stockholms län,0.905,21
+134,Stockholms län,0.889,18
+135,Stockholms län,1.0,13726
+136,Stockholms län,1.0,6767
+137,Stockholms län,1.0,10
+138,Stockholms län,0.875,8
+139,Stockholms län,1.0,5902
+140,Stockholms län,1.0,5
+141,Stockholms län,1.0,17099
+142,Stockholms län,1.0,14
+143,Stockholms län,0.8,5
+144,Stockholms län,1.0,10
+145,Stockholms län,0.953,85
+146,Stockholms län,0.714,7
+147,Stockholms län,1.0,5
+148,Stockholms län,1.0,3
+149,Stockholms län,1.0,3972
+150,Södermanlands län,0.582,55
+151,Stockholms län,1.0,12674
+152,Stockholms län,0.986,5732
+153,Stockholms län,0.571,7
+154,Södermanlands län,0.793,29
+155,Stockholms län,1.0,2546
+156,Stockholms län,0.5,2
+157,Stockholms län,1.0,2
+159,Stockholms län,1.0,3
+160,Stockholms län,1.0,3
+161,Stockholms län,1.0,29
+162,Stockholms län,0.981,54
+163,Stockholms län,1.0,26
+164,Stockholms län,0.987,149
+165,Stockholms län,1.0,16
+166,Stockholms län,1.0,5
+167,Stockholms län,1.0,6
+168,Stockholms län,1.0,12
+169,Stockholms län,1.0,11510
+170,Stockholms län,1.0,4010
+171,Stockholms län,1.0,19560
+172,Stockholms län,1.0,10483
+173,Stockholms län,0.964,28
+174,Stockholms län,1.0,4236
+175,Stockholms län,1.0,10421
+176,Stockholms län,1.0,2859
+177,Stockholms län,1.0,5694
+178,Stockholms län,1.0,4967
+179,Stockholms län,1.0,5
+180,Stockholms län,1.0,4
+181,Stockholms län,1.0,19438
+182,Stockholms län,1.0,6539
+183,Stockholms län,1.0,16581
+184,Stockholms län,0.944,18
+185,Stockholms län,1.0,20882
+186,Stockholms län,1.0,8851
+187,Stockholms län,1.0,10747
+188,Stockholms län,1.0,7
+189,Stockholms län,1.0,3
+190,Stockholms län,1.0,26
+191,Stockholms län,1.0,14564
+192,Stockholms län,1.0,7985
+193,Stockholms län,0.999,3525
+194,Stockholms län,1.0,9911
+195,Stockholms län,1.0,46
+196,Stockholms län,0.833,6
+197,Stockholms län,1.0,8
+198,Uppsala län,1.0,1
+199,Uppsala län,0.996,1004
+200,Skåne län,1.0,5195
+201,Skåne län,1.0,3293
+202,Skåne län,0.995,410
+203,Skåne län,0.999,2495
+204,Skåne län,1.0,1
+205,Skåne län,1.0,464
+208,Skåne län,1.0,1
+209,Skåne län,1.0,1
+210,Skåne län,1.0,3
+211,Skåne län,1.0,30362
+212,Skåne län,1.0,12439
+213,Skåne län,1.0,5492
+214,Skåne län,1.0,13454
+215,Skåne län,1.0,5377
+216,Skåne län,1.0,4376
+217,Skåne län,1.0,10448
+218,Skåne län,0.875,8
+219,Skåne län,1.0,8
+220,Skåne län,1.0,662
+221,Skåne län,1.0,28198
+222,Skåne län,1.0,7631
+223,Skåne län,1.0,5215
+224,Skåne län,1.0,4255
+225,Skåne län,1.0,563
+226,Skåne län,1.0,3165
+227,Skåne län,1.0,2291
+228,Skåne län,1.0,2
+229,Skåne län,1.0,1
+230,Skåne län,1.0,15
+231,Skåne län,1.0,7597
+232,Skåne län,1.0,8
+233,Skåne län,1.0,3537
+234,Skåne län,1.0,3447
+235,Skåne län,1.0,4227
+236,Skåne län,1.0,4
+237,Skåne län,1.0,2
+238,Skåne län,1.0,6
+239,Skåne län,1.0,4
+240,Skåne län,1.0,9
+241,Skåne län,1.0,4610
+242,Skåne län,1.0,3413
+243,Skåne län,1.0,3789
+244,Skåne län,1.0,2285
+245,Skåne län,1.0,4732
+246,Skåne län,1.0,1
+248,Skåne län,1.0,1
+249,Skåne län,1.0,2
+250,Skåne län,1.0,2480
+251,Skåne län,0.998,1833
+252,Skåne län,1.0,17115
+253,Skåne län,0.998,1844
+254,Skåne län,1.0,10026
+255,Skåne län,1.0,315
+256,Skåne län,1.0,2324
+257,Skåne län,1.0,3
+258,Skåne län,1.0,3
+259,Skåne län,1.0,1
+260,Skåne län,0.919,37
+261,Skåne län,1.0,8309
+262,Skåne län,1.0,7798
+263,Skåne län,1.0,3360
+264,Skåne län,1.0,2542
+265,Skåne län,1.0,2265
+266,Skåne län,1.0,3
+267,Skåne län,1.0,1456
+268,Skåne län,1.0,1076
+269,Skåne län,1.0,3868
+270,Skåne län,1.0,7
+271,Skåne län,1.0,6262
+272,Skåne län,0.999,2340
+273,Skåne län,1.0,2515
+274,Skåne län,1.0,2806
+275,Skåne län,1.0,2396
+276,Skåne län,1.0,2
+277,Skåne län,1.0,2
+278,Skåne län,1.0,1
+280,Skåne län,1.0,6
+281,Skåne län,1.0,5246
+282,Skåne län,0.667,6
+283,Skåne län,0.999,1971
+284,Skåne län,1.0,1358
+285,Kronobergs län,0.999,1597
+286,Skåne län,1.0,1726
+287,Kronobergs län,1.0,1
+289,Skåne län,0.75,4
+290,Skåne län,0.99,101
+291,Skåne län,1.0,10705
+292,Blekinge län,0.974,78
+293,Blekinge län,0.998,1639
+294,Blekinge län,0.999,4622
+295,Skåne län,0.999,1518
+296,Skåne län,0.75,8
+297,Skåne län,0.667,6
+299,Skåne län,1.0,1
+300,Hallands län,0.999,723
+301,Hallands län,0.999,1352
+302,Hallands län,1.0,16112
+303,Hallands län,1.0,1
+304,Hallands län,0.5,2
+305,Hallands län,1.0,905
+310,Hallands län,1.0,10
+311,Hallands län,0.998,7810
+312,Hallands län,0.999,3225
+313,Hallands län,0.333,6
+314,Hallands län,0.8,5
+317,Blekinge län,1.0,2
+320,Hallands län,1.0,2
+321,Hallands län,1.0,1
+322,Västra Götalands län,1.0,1
+323,Västra Götalands län,1.0,1
+328,Kalmar län,1.0,1
+330,Jönköpings län,0.8,10
+331,Jönköpings län,0.999,5527
+332,Jönköpings län,0.999,2094
+333,Jönköpings län,1.0,3
+334,Jönköpings län,1.0,1
+335,Jönköpings län,1.0,1269
+340,Kronobergs län,1.0,3
+341,Kronobergs län,0.999,3904
+342,Kronobergs län,0.999,1928
+343,Kronobergs län,1.0,2651
+344,Skåne län,1.0,1
+345,Skåne län,0.667,3
+347,Kronobergs län,1.0,1
+350,Kronobergs län,0.999,741
+351,Kronobergs län,1.0,2400
+352,Kronobergs län,1.0,13758
+353,Kronobergs län,0.667,3
+354,Kronobergs län,0.667,3
+355,Kronobergs län,1.0,755
+359,Kronobergs län,1.0,1
+360,Kronobergs län,0.994,342
+361,Kalmar län,0.996,779
+362,Kronobergs län,0.998,1032
+363,Kalmar län,1.0,2
+364,Skåne län,1.0,1
+365,Kronobergs län,0.996,230
+370,Blekinge län,1.0,8
+371,Blekinge län,1.0,6853
+372,Blekinge län,1.0,3029
+373,Blekinge län,1.0,3
+374,Blekinge län,1.0,3323
+375,Blekinge län,0.5,2
+378,Kalmar län,1.0,1
+380,Kalmar län,0.997,363
+381,Kalmar län,0.962,52
+382,Kalmar län,0.998,2768
+383,Kalmar län,0.998,1140
+384,Kalmar län,0.5,2
+385,Kalmar län,1.0,606
+386,Kalmar län,1.0,369
+387,Kalmar län,0.999,1933
+388,Kalmar län,1.0,3
+389,Kalmar län,1.0,1
+390,Kalmar län,1.0,417
+391,Kalmar län,0.998,1867
+392,Kalmar län,1.0,6393
+393,Kalmar län,1.0,3376
+394,Kalmar län,1.0,904
+395,Kalmar län,1.0,217
+396,Örebro län,1.0,1
+397,Kalmar län,1.0,1
+400,Västra Götalands län,1.0,8614
+401,Västra Götalands län,1.0,3561
+402,Västra Götalands län,1.0,36853
+403,Västra Götalands län,0.999,4115
+404,Västra Götalands län,1.0,4788
+405,Västra Götalands län,1.0,940
+406,Västra Götalands län,1.0,1
+407,Västra Götalands län,1.0,3
+410,Västra Götalands län,1.0,5
+411,Västra Götalands län,1.0,28757
+412,Västra Götalands län,1.0,16986
+413,Västra Götalands län,1.0,14698
+414,Västra Götalands län,1.0,11840
+415,Västra Götalands län,1.0,9575
+416,Västra Götalands län,1.0,12377
+417,Västra Götalands län,1.0,15570
+418,Västra Götalands län,1.0,4944
+419,Västra Götalands län,1.0,7
+420,Västra Götalands län,1.0,4
+421,Västra Götalands län,0.972,71
+422,Västra Götalands län,0.933,45
+423,Västra Götalands län,0.786,14
+424,Västra Götalands län,0.923,39
+425,Västra Götalands län,1.0,5
+426,Västra Götalands län,1.0,12
+427,Västra Götalands län,1.0,3
+428,Västra Götalands län,1.0,1
+429,Hallands län,1.0,1
+430,Västra Götalands län,0.982,489
+431,Västra Götalands län,1.0,13738
+432,Hallands län,0.999,10918
+433,Västra Götalands län,1.0,6134
+434,Hallands län,1.0,10353
+435,Västra Götalands län,0.778,9
+436,Västra Götalands län,0.875,8
+437,Västra Götalands län,0.667,6
+438,Västra Götalands län,1.0,851
+439,Hallands län,0.8,5
+440,Västra Götalands län,1.0,13
+441,Västra Götalands län,1.0,9840
+442,Västra Götalands län,1.0,6427
+443,Västra Götalands län,1.0,5003
+444,Västra Götalands län,1.0,4569
+445,Västra Götalands län,1.0,2
+446,Västra Götalands län,1.0,4
+447,Västra Götalands län,1.0,2204
+448,Västra Götalands län,1.0,1
+449,Västra Götalands län,1.0,2
+450,Västra Götalands län,0.979,48
+451,Västra Götalands län,1.0,12037
+452,Västra Götalands län,0.999,4062
+453,Västra Götalands län,0.999,2081
+454,Västra Götalands län,1.0,2
+455,Västra Götalands län,1.0,1304
+456,Uppsala län,1.0,2
+457,Västra Götalands län,1.0,3
+458,Västra Götalands län,1.0,667
+459,Västra Götalands län,1.0,1
+460,Västra Götalands län,1.0,15
+461,Västra Götalands län,0.999,10504
+462,Västra Götalands län,1.0,5046
+463,Västra Götalands län,0.999,1530
+464,Västra Götalands län,1.0,1764
+465,Jönköpings län,1.0,1
+466,Västra Götalands län,1.0,2
+467,Västra Götalands län,0.999,1211
+468,Västra Götalands län,1.0,2
+469,Västra Götalands län,1.0,1
+471,Uppsala län,0.5,2
+472,Västra Götalands län,1.0,1
+474,Västra Götalands län,1.0,1
+475,Västra Götalands län,1.0,648
+477,Västra Götalands län,1.0,2
+481,Västra Götalands län,0.75,4
+482,Värmlands län,0.5,2
+484,Hallands län,1.0,1
+486,Stockholms län,1.0,1
+487,Stockholms län,1.0,1
+491,Västra Götalands län,1.0,2
+492,Västra Götalands län,0.5,2
+493,Dalarnas län,0.667,3
+495,Dalarnas län,1.0,1
+500,Västra Götalands län,1.0,637
+501,Västra Götalands län,1.0,2118
+502,Västra Götalands län,0.999,4078
+503,Västra Götalands län,0.999,3778
+504,Västra Götalands län,1.0,6496
+505,Västra Götalands län,0.99,201
+506,Västra Götalands län,1.0,2222
+507,Västra Götalands län,1.0,1645
+509,Västra Götalands län,1.0,1
+510,Västra Götalands län,1.0,16
+511,Västra Götalands län,0.5,8
+512,Västra Götalands län,1.0,1533
+513,Västra Götalands län,1.0,5
+514,Västra Götalands län,0.999,866
+515,Västra Götalands län,0.6,5
+516,Skåne län,1.0,1
+517,Västra Götalands län,0.999,1715
+518,Västra Götalands län,1.0,1
+520,Västra Götalands län,0.75,4
+521,Västra Götalands län,1.0,4294
+522,Västra Götalands län,1.0,2333
+523,Västra Götalands län,1.0,3285
+524,Västra Götalands län,0.999,1391
+525,Skåne län,1.0,4
+530,Västra Götalands län,1.0,2
+531,Västra Götalands län,0.999,7669
+532,Västra Götalands län,0.998,3389
+533,Västra Götalands län,0.994,1549
+534,Västra Götalands län,0.999,2264
+535,Jönköpings län,1.0,1
+537,Västmanlands län,1.0,1
+539,Västra Götalands län,1.0,1
+540,Västra Götalands län,1.0,4
+541,Västra Götalands län,1.0,8813
+542,Västra Götalands län,1.0,4040
+543,Västra Götalands län,0.999,2255
+544,Västra Götalands län,1.0,2093
+545,Västra Götalands län,0.998,1254
+546,Västra Götalands län,1.0,1073
+547,Västra Götalands län,1.0,355
+548,Västra Götalands län,1.0,1
+549,Västra Götalands län,1.0,951
+550,Jönköpings län,0.999,1749
+551,Jönköpings län,1.0,2290
+552,Jönköpings län,0.999,1257
+553,Jönköpings län,1.0,8559
+554,Jönköpings län,1.0,4701
+555,Jönköpings län,1.0,822
+556,Jönköpings län,1.0,1507
+557,Kalmar län,0.333,3
+558,Jönköpings län,1.0,1
+559,Jönköpings län,1.0,1
+560,Jönköpings län,0.947,19
+561,Jönköpings län,0.875,8
+562,Jönköpings län,0.833,6
+563,Skåne län,0.5,2
+564,Västra Götalands län,0.333,3
+565,Jönköpings län,1.0,1460
+566,Jönköpings län,1.0,2038
+567,Jönköpings län,1.0,1109
+570,Östergötlands län,0.478,46
+571,Jönköpings län,0.999,3927
+572,Kalmar län,0.999,3698
+573,Jönköpings län,0.936,4659
+574,Jönköpings län,1.0,5858
+575,Jönköpings län,1.0,2619
+576,Jönköpings län,1.0,1329
+577,Kalmar län,0.999,1047
+578,Jönköpings län,1.0,1234
+579,Kalmar län,0.996,468
+580,Östergötlands län,0.999,939
+581,Östergötlands län,0.999,3273
+582,Östergötlands län,1.0,15645
+583,Östergötlands län,0.999,1758
+584,Östergötlands län,0.999,694
+585,Östergötlands län,1.0,1835
+586,Östergötlands län,1.0,962
+587,Östergötlands län,0.999,1910
+589,Östergötlands län,1.0,2100
+590,Östergötlands län,0.992,524
+591,Östergötlands län,0.999,6988
+592,Östergötlands län,0.997,1832
+593,Kalmar län,0.999,4680
+594,Östergötlands län,0.5,4
+595,Östergötlands län,1.0,3381
+596,Östergötlands län,0.75,4
+597,Östergötlands län,1.0,2115
+598,Kalmar län,1.0,2535
+599,Östergötlands län,1.0,1132
+600,Östergötlands län,1.0,3468
+601,Östergötlands län,0.999,1513
+602,Östergötlands län,1.0,12333
+603,Östergötlands län,0.999,7148
+604,Östergötlands län,0.5,2
+605,Östergötlands län,1.0,1981
+606,Västra Götalands län,1.0,1
+608,Östergötlands län,1.0,2
+609,Östergötlands län,1.0,2
+610,Södermanlands län,0.583,12
+611,Södermanlands län,1.0,10375
+612,Östergötlands län,0.999,2279
+613,Södermanlands län,0.998,1783
+614,Östergötlands län,0.999,3068
+615,Östergötlands län,1.0,1312
+616,Östergötlands län,1.0,2
+617,Östergötlands län,0.333,3
+618,Östergötlands län,0.5,2
+619,Södermanlands län,1.0,2461
+621,Gotlands län,0.4,5
+622,Södermanlands län,0.5,6
+624,Södermanlands län,1.0,1
+625,Värmlands län,1.0,2
+628,Södermanlands län,1.0,1
+629,Örebro län,1.0,1
+630,Södermanlands län,1.0,882
+631,Södermanlands län,0.998,1023
+632,Södermanlands län,1.0,7738
+633,Södermanlands län,1.0,6795
+634,Örebro län,1.0,1
+635,Södermanlands län,1.0,2471
+636,Örebro län,1.0,1
+639,Södermanlands län,1.0,1
+640,Södermanlands län,0.889,9
+641,Södermanlands län,0.999,5320
+642,Södermanlands län,0.999,1656
+643,Södermanlands län,1.0,1618
+644,Södermanlands län,0.8,5
+645,Södermanlands län,1.0,5687
+646,Södermanlands län,1.0,2090
+647,Västra Götalands län,0.5,2
+648,Södermanlands län,1.0,1
+650,Värmlands län,0.998,1245
+651,Värmlands län,1.0,2189
+652,Värmlands län,0.999,7465
+653,Värmlands län,1.0,5463
+654,Värmlands län,1.0,3388
+655,Värmlands län,0.999,1317
+656,Värmlands län,1.0,802
+658,Värmlands län,1.0,1
+659,Örebro län,1.0,2
+660,Värmlands län,0.875,16
+661,Värmlands län,1.0,2449
+662,Västra Götalands län,1.0,2203
+663,Värmlands län,0.999,1851
+664,Värmlands län,1.0,1109
+665,Värmlands län,1.0,2769
+666,Västra Götalands län,1.0,1038
+667,Värmlands län,1.0,1276
+668,Västra Götalands län,1.0,4
+670,Värmlands län,0.9,10
+671,Värmlands län,1.0,4012
+672,Värmlands län,0.999,1866
+673,Värmlands län,1.0,1
+674,Södermanlands län,1.0,1
+679,Värmlands län,1.0,1
+680,Värmlands län,0.929,14
+681,Värmlands län,1.0,4613
+682,Värmlands län,0.998,1606
+683,Värmlands län,1.0,1335
+684,Värmlands län,1.0,711
+685,Värmlands län,1.0,1910
+686,Värmlands län,1.0,2036
+688,Värmlands län,1.0,796
+690,Örebro län,1.0,6
+691,Örebro län,0.999,6004
+692,Örebro län,1.0,3966
+693,Örebro län,1.0,1403
+694,Örebro län,1.0,1697
+695,Örebro län,1.0,836
+696,Örebro län,0.999,1138
+697,Örebro län,1.0,1
+700,Örebro län,0.998,883
+701,Örebro län,1.0,3004
+702,Örebro län,1.0,14144
+703,Örebro län,1.0,11891
+704,Stockholms län,0.333,3
+705,Örebro län,1.0,2060
+706,Västerbottens län,0.667,3
+707,Örebro län,1.0,1
+708,Dalarnas län,1.0,1
+709,Örebro län,1.0,1
+710,Örebro län,1.0,5
+711,Örebro län,1.0,2243
+712,Örebro län,0.999,1053
+713,Örebro län,0.999,2450
+714,Örebro län,0.8,5
+715,Örebro län,0.667,3
+717,Västra Götalands län,1.0,1
+719,Dalarnas län,0.5,2
+720,Västmanlands län,0.999,751
+721,Västmanlands län,1.0,7840
+722,Västmanlands län,1.0,11116
+723,Västmanlands län,1.0,5639
+724,Västmanlands län,1.0,6551
+725,Västmanlands län,0.999,3665
+726,Västmanlands län,0.8,5
+728,Västmanlands län,1.0,2
+729,Västmanlands län,0.667,3
+730,Västmanlands län,0.778,9
+731,Västmanlands län,0.999,4463
+732,Västmanlands län,0.999,2996
+733,Västmanlands län,1.0,3713
+734,Västmanlands län,1.0,2018
+735,Västmanlands län,0.998,1137
+736,Västmanlands län,0.999,1578
+737,Västmanlands län,1.0,1934
+738,Västmanlands län,1.0,967
+739,Västmanlands län,0.998,472
+740,Uppsala län,1.0,148
+741,Uppsala län,0.999,4849
+742,Uppsala län,0.999,1662
+743,Uppsala län,1.0,43
+744,Uppsala län,0.994,716
+745,Uppsala län,1.0,5218
+746,Uppsala län,1.0,9
+747,Uppsala län,0.667,3
+748,Dalarnas län,1.0,1
+749,Uppsala län,1.0,1540
+750,Uppsala län,1.0,2075
+751,Uppsala län,0.999,5520
+752,Uppsala län,1.0,9138
+753,Uppsala län,1.0,13760
+754,Uppsala län,1.0,8593
+755,Uppsala län,0.999,3727
+756,Uppsala län,1.0,4910
+757,Uppsala län,1.0,1508
+758,Uppsala län,1.0,2
+760,Stockholms län,1.0,12
+761,Stockholms län,0.999,8364
+762,Uppsala län,0.667,3
+763,Stockholms län,0.5,2
+764,Uppsala län,1.0,1
+765,Uppsala län,1.0,2
+766,Dalarnas län,1.0,1
+770,Dalarnas län,0.846,13
+771,Dalarnas län,1.0,3873
+772,Dalarnas län,0.333,3
+773,Västmanlands län,0.998,413
+774,Dalarnas län,1.0,3042
+775,Dalarnas län,0.8,5
+776,Dalarnas län,1.0,2408
+777,Dalarnas län,1.0,1306
+778,Västmanlands län,0.99,202
+779,Västmanlands län,1.0,37
+780,Dalarnas län,1.0,922
+781,Dalarnas län,1.0,5318
+782,Dalarnas län,1.0,3
+783,Dalarnas län,0.999,1171
+784,Dalarnas län,1.0,5795
+785,Dalarnas län,1.0,256
+786,Dalarnas län,0.996,271
+790,Dalarnas län,1.0,17
+791,Dalarnas län,1.0,63235
+792,Dalarnas län,1.0,3833
+793,Dalarnas län,1.0,2644
+794,Dalarnas län,0.999,1645
+795,Dalarnas län,1.0,2144
+796,Dalarnas län,1.0,1035
+797,Dalarnas län,1.0,1
+799,Dalarnas län,1.0,1
+800,Gävleborgs län,1.0,1054
+801,Gävleborgs län,1.0,2211
+802,Gävleborgs län,1.0,7044
+803,Gävleborgs län,1.0,4889
+804,Gävleborgs län,1.0,1232
+805,Gävleborgs län,1.0,1414
+806,Gävleborgs län,0.999,2460
+807,Västra Götalands län,0.5,2
+809,Gävleborgs län,1.0,1
+810,Uppsala län,0.972,141
+811,Gävleborgs län,1.0,4537
+812,Gävleborgs län,0.833,6
+813,Gävleborgs län,0.999,1257
+814,Uppsala län,1.0,385
+815,Uppsala län,1.0,1844
+816,Gävleborgs län,1.0,1134
+817,Västernorrlands län,0.5,2
+818,Gävleborgs län,1.0,4
+820,Gävleborgs län,0.857,14
+821,Gävleborgs län,1.0,3975
+823,Gävleborgs län,0.75,4
+824,Gävleborgs län,1.0,5229
+825,Västmanlands län,0.5,2
+826,Gävleborgs län,1.0,3845
+827,Gävleborgs län,1.0,2349
+828,Gävleborgs län,1.0,1
+830,Jämtlands län,0.998,903
+831,Jämtlands län,1.0,12145
+832,Jämtlands län,0.75,4
+833,Jämtlands län,0.999,1235
+834,Gävleborgs län,1.0,3
+835,Jämtlands län,0.996,500
+836,Gävleborgs län,1.0,2
+837,Jämtlands län,1.0,1134
+840,Jämtlands län,0.985,392
+841,Västernorrlands län,0.997,770
+842,Västernorrlands län,0.75,4
+843,Jämtlands län,0.995,202
+850,Västernorrlands län,1.0,823
+851,Västernorrlands län,1.0,14709
+852,Västernorrlands län,1.0,6511
+853,Västernorrlands län,0.995,1155
+854,Västernorrlands län,0.997,1249
+855,Västernorrlands län,1.0,403
+856,Västernorrlands län,0.999,2680
+857,Västernorrlands län,0.999,1483
+859,Östergötlands län,0.5,2
+860,Västernorrlands län,1.0,2
+861,Västernorrlands län,0.999,1390
+862,Västernorrlands län,0.333,6
+863,Västernorrlands län,1.0,227
+864,Västernorrlands län,1.0,1
+865,Västernorrlands län,1.0,4
+866,Gävleborgs län,1.0,1
+867,Västernorrlands län,1.0,1
+870,Västernorrlands län,1.0,5
+871,Västernorrlands län,0.999,4763
+872,Västernorrlands län,0.999,1437
+873,Jönköpings län,1.0,1
+874,Blekinge län,1.0,1
+875,Skåne län,1.0,1
+876,Gävleborgs län,1.0,2
+877,Gävleborgs län,1.0,2
+879,Västernorrlands län,1.0,1
+881,Västernorrlands län,0.999,2302
+882,Västernorrlands län,1.0,2
+883,Jämtlands län,1.0,1
+890,Västernorrlands län,1.0,2
+891,Västernorrlands län,1.0,4611
+892,Västernorrlands län,0.75,4
+894,Blekinge län,1.0,1
+895,Västernorrlands län,1.0,2
+900,Västerbottens län,1.0,242
+901,Västerbottens län,1.0,8733
+902,Västerbottens län,1.0,2415
+903,Västerbottens län,1.0,9533
+904,Västerbottens län,1.0,3910
+905,Västerbottens län,1.0,2578
+906,Västerbottens län,1.0,2522
+907,Västerbottens län,1.0,2401
+910,Västerbottens län,1.0,716
+911,Västerbottens län,1.0,1332
+912,Västerbottens län,0.999,1239
+913,Västerbottens län,0.75,4
+914,Västerbottens län,1.0,834
+915,Västerbottens län,0.997,663
+916,Västerbottens län,0.995,402
+917,Västerbottens län,0.997,340
+919,Västerbottens län,1.0,301
+920,Västerbottens län,1.0,315
+921,Västerbottens län,0.999,2541
+922,Västerbottens län,0.998,906
+923,Västerbottens län,0.999,714
+924,Västerbottens län,1.0,202
+926,Norrbottens län,1.0,1
+927,Norrbottens län,1.0,1
+930,Västerbottens län,0.506,731
+931,Västerbottens län,0.999,9576
+932,Västerbottens län,0.667,6
+933,Norrbottens län,0.997,999
+934,Västerbottens län,1.0,2
+935,Västerbottens län,1.0,622
+937,Västerbottens län,1.0,1
+938,Norrbottens län,1.0,258
+939,Västerbottens län,1.0,224
+940,Norrbottens län,0.8,5
+941,Norrbottens län,1.0,4602
+942,Norrbottens län,1.0,1497
+943,Norrbottens län,1.0,7
+944,Norrbottens län,1.0,291
+945,Uppsala län,1.0,2
+946,Norrbottens län,1.0,1
+950,Norrbottens län,0.992,131
+951,Norrbottens län,1.0,2653
+952,Norrbottens län,1.0,2347
+953,Norrbottens län,0.999,1863
+954,Norrbottens län,0.75,4
+955,Norrbottens län,1.0,3
+956,Norrbottens län,0.999,855
+957,Norrbottens län,1.0,668
+960,Norrbottens län,1.0,174
+961,Norrbottens län,1.0,5409
+962,Norrbottens län,1.0,849
+963,Örebro län,1.0,1
+964,Norrbottens län,1.0,2
+965,Norrbottens län,1.0,1
+967,Norrbottens län,1.0,1
+970,Norrbottens län,0.991,114
+971,Norrbottens län,0.996,1035
+972,Norrbottens län,1.0,4702
+973,Norrbottens län,1.0,1815
+974,Norrbottens län,1.0,2021
+975,Norrbottens län,1.0,2083
+976,Norrbottens län,1.0,783
+977,Norrbottens län,1.0,650
+978,Västerbottens län,0.5,2
+980,Norrbottens län,1.0,1
+981,Norrbottens län,1.0,4092
+982,Norrbottens län,1.0,2111
+983,Norrbottens län,1.0,1
+984,Norrbottens län,1.0,648
+987,Norrbottens län,1.0,1
+999,Västerbottens län,0.5,2

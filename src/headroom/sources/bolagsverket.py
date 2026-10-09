@@ -177,6 +177,16 @@ def proceedings(org: dict | None) -> str | None:
     return json.dumps(val, ensure_ascii=False).lower()
 
 
+def address(org: dict | None) -> tuple[str | None, str | None]:
+    """(postal town, postcode) of the registered address."""
+    if not org:
+        return None, None
+    items = org.get("organisationer") if isinstance(org, dict) else None
+    rec = items[0] if items else org
+    pa = ((rec or {}).get("postadressOrganisation") or {}).get("postadress") or {}
+    return pa.get("postort"), pa.get("postnummer")
+
+
 PROCEEDING_TYPES = (
     ("konkurs", "bankruptcy_in_group"),
     ("rekonstruktion", "reconstruction"),

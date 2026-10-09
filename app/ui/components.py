@@ -76,28 +76,35 @@ def marker(state: str) -> str:
     return f'<span class="hr-mk {state}"></span>'
 
 
+def flag(label: str, tip: str, kind: str = "watch") -> str:
+    """Small label shown under a figure; hovering it explains what it means."""
+    return f'<span class="hr-flag {kind}" data-tip="{esc(tip)}">{esc(label)}</span>'
+
+
 def unverified(
     value_html: str, conf: float | None, min_conf: float, source: str | None = None
 ) -> str:
     if conf is None or conf >= min_conf:
         return value_html
-    title = f"Extraction confidence {conf:.2f}"
+    tip = (
+        f"Read from the report with low confidence ({conf:.0%}). The figure may be misread "
+        "or derived from an ambiguous table; check the source before relying on it."
+    )
     if source:
-        title += f" · {source}"
-    return f'<span class="hr-unverified" title="{esc(title)}">{value_html}</span>'
+        tip += f" Source: {source}."
+    return value_html + flag("Unverified", tip)
 
 
 def basis_tag(basis: str | None, short: bool = False) -> str:
-    """Small label saying whether a property value (and the LTV on it) is market or book value."""
+    """Flag saying a property value (and the LTV on it) is book value, not market value.
+    `short` (dense tables) shows only the book-value case; otherwise every basis is shown."""
     from headroom.model import valuation
 
-    if not basis:
+    if not basis or (short and basis != valuation.BOOK):
         return ""
-    label = "book" if short and basis == valuation.BOOK else valuation.LABEL.get(basis, basis)
-    if short and basis != valuation.BOOK:
-        return ""  # market value is the norm; only book value needs a flag in dense tables
-    cls = "hr-basis book" if basis == valuation.BOOK else "hr-basis"
-    return f'<span class="{cls}" title="{esc(valuation.NOTE.get(basis, ""))}">{esc(label)}</span>'
+    label = "Book" if short else valuation.LABEL.get(basis, basis)
+    kind = "high" if basis == valuation.BOOK else "neutral"
+    return flag(label, valuation.NOTE.get(basis, ""), kind)
 
 
 # --------------------------------------------------------------------------- layout blocks
@@ -156,13 +163,10 @@ def hero(
     )
 
 
-def section(n: int | str, title: str, desc: str = "") -> None:
-    num = f"{n:02d}" if isinstance(n, int) else n
+def section(n: int | str | None, title: str, desc: str = "") -> None:
+    """Section heading. `n` is accepted for old call sites but no longer shown."""
     d = f'<p class="d">{desc}</p>' if desc else ""
-    render(
-        f'<div class="hr-section"><span class="n">{num}</span>'
-        f'<span class="t">{esc(title)}</span>{d}</div>'
-    )
+    render(f'<div class="hr-section"><span class="t">{esc(title)}</span>{d}</div>')
 
 
 def news(items: Sequence[dict]) -> None:

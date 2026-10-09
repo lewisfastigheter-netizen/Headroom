@@ -26,10 +26,12 @@ data = get_data()
 
 pages = [
     st.Page("views/market.py", title="Market", url_path="market", default=True),
-    st.Page("views/screen.py", title="Screen", url_path="screen"),
-    st.Page("views/issuer.py", title="Issuer", url_path="issuer"),
-    st.Page("views/bonds.py", title="Bonds", url_path="bonds"),
+    st.Page("views/companies.py", title="Companies", url_path="companies"),
+    st.Page("views/search.py", title="Search", url_path="search"),
+    st.Page("views/locations.py", title="Locations", url_path="locations"),
     st.Page("views/method.py", title="Method", url_path="method"),
+    # Company pages open from the tables; they are not a menu item.
+    st.Page("views/issuer.py", title="Company", url_path="issuer", visibility="hidden"),
 ]
 nav = st.navigation(pages, position="top")
 

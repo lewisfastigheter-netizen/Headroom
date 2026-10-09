@@ -11,7 +11,7 @@ MODES = ["demo"] + (["live"] if (ROOT / "data/snapshots/live/bond.parquet").exis
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("page", ["market", "screen", "issuer", "bonds", "method"])
+@pytest.mark.parametrize("page", ["market", "companies", "locations", "issuer", "method"])
 def test_page_renders(page, mode, monkeypatch):
     monkeypatch.setenv("HEADROOM_MODE", mode)
     at = AppTest.from_file(str(APP), default_timeout=90)
@@ -20,3 +20,11 @@ def test_page_renders(page, mode, monkeypatch):
     if page != "market":
         at.switch_page(f"views/{page}.py").run()
     assert not at.exception, at.exception
+
+
+def test_header_search_lists_companies():
+    at = AppTest.from_file(str(APP), default_timeout=90)
+    at.session_state["mode"] = "demo"
+    at.run()
+    box = next(s for s in at.selectbox if s.key == "company_search")
+    assert len(box.options) > 10 and box.value is None

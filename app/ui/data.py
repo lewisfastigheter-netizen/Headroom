@@ -11,6 +11,7 @@ import streamlit as st
 
 from headroom.config import resolve_mode
 from headroom.config import weights as load_weights
+from headroom.model import geo
 from headroom.model.scoring import ScoreCard, reference_date, score_all, score_frame
 from headroom.store import private
 from headroom.store.db import TABLES, open_snapshot
@@ -52,9 +53,29 @@ def _load(
     t = {name: snap.table(name) for name in TABLES}
     if "value_basis" not in t["financials"].columns:  # snapshots written before the field
         t["financials"] = t["financials"].with_columns(pl.lit(None, pl.Utf8).alias("value_basis"))
+    for c in ("county", "city"):  # snapshots written before location was recorded
+        if c not in t["company"].columns:
+            t["company"] = t["company"].with_columns(pl.lit(None, pl.Utf8).alias(c))
     if mode == "live":  # private companies from the daily Bolagsverket job
         t = private.merge(t)
+    t["company"] = _place(t["company"])
     return snap.meta, t
+
+
+def _place(company: pl.DataFrame) -> pl.DataFrame:
+    """Listed companies and bond issuers sit where most of their portfolio is, when the
+    report names a Swedish place; otherwise at their registered address."""
+    placed = [geo.from_regions(m) for m in company["region_mix"].to_list()]
+    return company.with_columns(
+        pl.Series(
+            "county",
+            [p[0] or c for p, c in zip(placed, company["county"], strict=True)],
+            dtype=pl.Utf8,
+        ),
+        pl.Series(
+            "city", [p[1] or c for p, c in zip(placed, company["city"], strict=True)], dtype=pl.Utf8
+        ),
+    )
 
 
 def available_modes() -> list[str]:

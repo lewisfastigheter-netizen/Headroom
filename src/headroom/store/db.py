@@ -23,7 +23,8 @@ TABLES: dict[str, str] = {
     "company": """
         org_nr VARCHAR PRIMARY KEY, lei VARCHAR, name VARCHAR, tier VARCHAR,
         listed_ticker VARCHAR, sni VARCHAR, segment_mix VARCHAR, region_mix VARCHAR,
-        size DOUBLE, universe_rule VARCHAR, source_url VARCHAR, as_of DATE""",
+        size DOUBLE, universe_rule VARCHAR, source_url VARCHAR, as_of DATE,
+        county VARCHAR, city VARCHAR""",
     "bond": """
         isin VARCHAR PRIMARY KEY, org_nr VARCHAR, full_name VARCHAR, nominal DOUBLE,
         currency VARCHAR, nominal_sek DOUBLE,

@@ -179,3 +179,16 @@ table.hr-table { width: 100%; border-collapse: collapse; font-size: 15px; color:
 .hr-table .hr-unverified, table .hr-unverified { border-bottom: none; }
 .hr-table .hr-unverified::after, table .hr-unverified::after { display: block; margin: .15rem 0 0; }
 .hr-table .hr-unverified, table .hr-unverified { display: inline-block; text-decoration: underline dotted var(--watch); }
+
+/* Flags under figures (Unverified, Book) with an explanation on hover */
+.hr-flag { display: block; width: max-content; margin: .2rem 0 0 auto; position: relative; cursor: help;
+  font-size: 10.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; line-height: 1.2;
+  border-bottom: 1px dotted currentColor; }
+.hr-facts .hr-flag, .hr-fact .hr-flag { margin-left: 0; }
+.hr-flag.watch { color: var(--watch); }
+.hr-flag.high { color: var(--high); }
+.hr-flag.neutral { color: var(--graphite); }
+.hr-flag:hover::after { content: attr(data-tip); position: absolute; z-index: 50; top: 130%; right: 0;
+  width: 260px; padding: .6rem .75rem; background: var(--ink); color: #fff; font-size: 12px; font-weight: 400;
+  letter-spacing: 0; text-transform: none; line-height: 1.45; text-align: left; white-space: normal;
+  border-radius: 2px; box-shadow: 0 6px 18px rgba(0,0,0,.18); }

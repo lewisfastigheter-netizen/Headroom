@@ -19,9 +19,9 @@ def pages(mode: str) -> dict[str, str]:
     q = f"data={mode}"
     return {
         "market": f"?{q}",
-        "screen": f"screen?{q}",
+        "companies": f"companies?{q}",
+        "regions": f"regions?{q}",
         "issuer": f"issuer?org={ISSUER[mode]}&{q}",
-        "bonds": f"bonds?{q}",
         "method": f"method?{q}",
     }
 

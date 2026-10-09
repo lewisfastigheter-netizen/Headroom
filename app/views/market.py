@@ -1,4 +1,4 @@
-"""Market overview: maturity wall, events and rates."""
+"""Market overview: maturity wall and latest credit events."""
 
 from __future__ import annotations
 
@@ -213,68 +213,3 @@ if recent.height:
     ui.source_line(f"{d.source_label('event')}. All events are on each issuer's page.")
 else:
     ui.note("Press releases and trustee notices are connected in milestone 5.")
-
-# --------------------------------------------------------------------------- rates
-
-rates = d.t["rate"].sort("date")
-names = {"policy_rate": "Policy rate", "tbill_3m": "Treasury bill, 3 months"}
-with st.container(key="band_tint_rates"):
-    ui.section(3, "Rates")
-    cols = st.columns(3, gap="large")
-    for col, (s_key, label) in zip(cols, names.items(), strict=False):
-        last = rates.filter(pl.col("series") == s_key).tail(1).to_dicts()
-        if not last:
-            continue
-        r = last[0]
-        year_ago = (
-            rates.filter(
-                (pl.col("series") == s_key) & (pl.col("date") <= r["date"] - timedelta(days=365))
-            )
-            .tail(1)["value"]
-            .to_list()
-        )
-        chg = (
-            f", {r['value'] - year_ago[0]:+.2f} pp on a year".replace("-", "−") if year_ago else ""
-        )
-        with col:
-            ui.render(
-                ui.stats_html(
-                    [
-                        ui.Stat(
-                            f"{r['value']:.2f}",
-                            "%",
-                            f"{label}, {ui.fmt_date(r['date'], 'long')}{chg}",
-                            ink=(s_key == "policy_rate"),
-                        )
-                    ]
-                )
-            )
-    with cols[2]:
-        if with_icr:
-            third = ui.Stat(
-                str(len(breach)),
-                f"of {len(with_icr)}",
-                f"ICR covenant breaches if rates rise <b>{stress_bp}bp</b>",
-            )
-        else:
-            sw = rates.filter(pl.col("series") == "swestr").tail(1).to_dicts()
-            third = (
-                ui.Stat(
-                    f"{sw[0]['value']:.2f}",
-                    "%",
-                    f"SWESTR, overnight, {ui.fmt_date(sw[0]['date'], 'long')}",
-                )
-                if sw
-                else None
-            )
-        if third:
-            ui.render(ui.stats_html([third]))
-    if d.fictional:
-        ui.source_line(
-            "Illustrative rate series, fictional. Live mode reads the Riksbank SWEA API."
-        )
-    else:
-        ui.source_line(
-            "Sveriges Riksbank, SWEA and SWESTR APIs. STIBOR is not published there since 2020, "
-            f"so the 3-month treasury bill stands in for the floating base. {d.source_label('rate')}."
-        )

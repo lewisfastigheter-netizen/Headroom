@@ -22,6 +22,7 @@ from headroom.extract import events, kpi
 from headroom.extract.documents import fetch_pdf
 from headroom.extract.llm import LLMUnavailable
 from headroom.http import Fetcher
+from headroom.model import geo
 from headroom.model.universe import classify
 from headroom.sources import firds, gleif, newsfeeds, prices, riksbank
 from headroom.store.db import snapshot_dir, write_snapshot
@@ -408,11 +409,15 @@ def build_live(as_of: date | None = None, with_reports: bool = True) -> dict:
             priv = None
         if priv is not None:
             if priv["sni"] is not None:
+                cols = tables["company"].columns
                 tables["company"] = (
                     tables["company"]
-                    .drop("sni")
-                    .join(priv["sni"].select("org_nr", "sni"), on="org_nr", how="left")
-                    .select(tables["company"].columns)
+                    .drop([c for c in ("sni", "county", "city") if c in cols])
+                    .join(
+                        priv["sni"].select("org_nr", "sni", "county", "city"),
+                        on="org_nr",
+                        how="left",
+                    )
                 )
             for name in ("company", "financials", "event"):
                 extra = priv[name]
@@ -454,8 +459,29 @@ def update_private(as_of: date | None = None, max_new: int | None = None) -> dic
 
     as_of = as_of or date.today()
     listed = open_snapshot("live").table("company").filter(pl.col("tier") != "private")
-    priv = build_private(Fetcher(), listed, settings().bolagsverket_bulkfile, as_of, max_new)
+    f = Fetcher()
+    priv = build_private(f, listed, settings().bolagsverket_bulkfile, as_of, max_new)
+    _backfill_locations(f)
     return priv["meta"]
+
+
+def _backfill_locations(f: Fetcher) -> None:
+    """Companies found before county and city were recorded get them from the API."""
+    from headroom.sources import bolagsverket as bv
+
+    found = load_found()
+    todo = [o for o, r in found.items() if "county" not in r["company"]]
+    if not todo:
+        return
+    api = bv.Bolagsverket(f)
+    for org in todo:
+        try:
+            county, city = geo.from_address(*bv.address(api.organisation(org)))
+        except Exception as e:
+            log.warning("address %s: %s", org, e)
+            continue
+        found[org]["company"].update(county=county, city=city)
+    save_found(found)
 
 
 # How long a negative result stands before the company is looked at again.
@@ -581,11 +607,14 @@ def build_private(
                         "source_name": "Bolagsverket",
                     }
                 )
+        county, city = geo.from_address(*bv.address(rec))
         sni_rows.append(
             {
                 "org_nr": org,
                 "sni": ", ".join(codes) or None,
                 "sni_real_estate": bv.is_real_estate(codes),
+                "county": county,
+                "city": city,
             }
         )
 
@@ -666,9 +695,12 @@ def build_private(
                         "source_name": "Bolagsverket",
                     }
                 )
+        county, city = geo.from_address(*bv.address(rec))
         found[org] = {
             "company": {
                 "org_nr": org,
+                "county": county,
+                "city": city,
                 "lei": None,
                 "name": r["name"],
                 "tier": "private",
