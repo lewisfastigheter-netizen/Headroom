@@ -64,10 +64,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "private":
         import logging
 
+        import os
+
         from headroom.pipeline import update_private
+        from headroom.sources.bolagsverket import ServiceUnavailable
 
         logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-        stats = update_private()
+        try:
+            stats = update_private()
+        except ServiceUnavailable as e:
+            # Outage at Bolagsverket, not a bug: warn, keep progress, let the schedule retry.
+            print(f"::warning title=Bolagsverket unavailable::{e}")
+            if out := os.environ.get("GITHUB_OUTPUT"):
+                with open(out, "a") as fh:
+                    fh.write("outage=true\n")
+            return 0
         print(
             f"Private companies: {stats.get('private_new_lookups', 0)} checked this run, "
             f"{stats.get('private_kept', 0)} kept in total of "

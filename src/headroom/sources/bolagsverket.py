@@ -53,6 +53,15 @@ class BadCredentials(NoCredentials):
     """The token endpoint rejected the client id and secret (wrong or test-environment keys)."""
 
 
+class ServiceUnavailable(RuntimeError):
+    """Bolagsverket's token server or gateway kept answering 5xx (or not at all) after
+    retries. An outage on their side: stop the run and try again later."""
+
+
+# Waits (seconds) between retries when Bolagsverket answers 5xx or the connection fails.
+RETRY_5XX = (5, 20, 60, 120)
+
+
 @dataclass
 class Token:
     value: str
@@ -68,14 +77,37 @@ class Bolagsverket:
         self.cid, self.secret = s.bolagsverket_client_id, s.bolagsverket_client_secret
         self._token: Token | None = None
 
+    def _with_outage_retries(self, what: str, call) -> httpx.Response:
+        """Run `call()`; on 502/503/504 or a dropped connection wait and retry, and after
+        len(RETRY_5XX) retries raise ServiceUnavailable. Any other response is returned."""
+        for wait in (*RETRY_5XX, None):
+            try:
+                r = call()
+                if r.status_code not in (500, 502, 503, 504):
+                    return r
+                problem = f"{r.status_code} {r.reason_phrase}"
+            except httpx.TransportError as e:
+                problem = f"{type(e).__name__}: {e}"
+            if wait is None:
+                raise ServiceUnavailable(
+                    f"Bolagsverket {what} unavailable after {len(RETRY_5XX) + 1} attempts "
+                    f"({problem}). This is an outage on their side; the next run will retry."
+                )
+            log.info("Bolagsverket %s: %s, retrying in %ss", what, problem, wait)
+            time.sleep(wait)
+        raise AssertionError("unreachable")
+
     def token(self) -> str:
         if self._token and self._token.expires > time.time() + 60:
             return self._token.value
-        r = self.f.client.post(
-            TOKEN_URL,
-            data={"grant_type": "client_credentials", "scope": SCOPE},
-            auth=(self.cid, self.secret),
-            timeout=30,
+        r = self._with_outage_retries(
+            "token endpoint",
+            lambda: self.f.client.post(
+                TOKEN_URL,
+                data={"grant_type": "client_credentials", "scope": SCOPE},
+                auth=(self.cid, self.secret),
+                timeout=30,
+            ),
         )
         if r.status_code in (400, 401, 403):
             raise BadCredentials(
@@ -90,13 +122,18 @@ class Bolagsverket:
 
     def _send(self, method: str, url: str, **kw: Any) -> httpx.Response:
         """One API call, spaced by the host interval. On 429 (rate limit) wait and retry,
-        and slow down for the rest of the run: the gateway gives no rate-limit headers."""
+        and slow down for the rest of the run: the gateway gives no rate-limit headers.
+        On 5xx or a dropped connection retry a few times, then raise ServiceUnavailable."""
         host = "gw.api.bolagsverket.se"
-        for wait in (10, 30, 60, 120, None):
+
+        def call() -> httpx.Response:
             self.f._wait(host)
-            r = self.f.client.request(
+            return self.f.client.request(
                 method, url, headers={"Authorization": f"Bearer {self.token()}"}, **kw
             )
+
+        for wait in (10, 30, 60, 120, None):
+            r = self._with_outage_retries("gateway", call)
             if r.status_code != 429 or wait is None:
                 return r
             HOST_INTERVAL[host] = min(HOST_INTERVAL.get(host, 1.5) * 1.5, 6.0)

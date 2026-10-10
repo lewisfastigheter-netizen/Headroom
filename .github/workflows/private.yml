@@ -44,6 +44,7 @@ jobs:
           restore-keys: bolagsverket-
 
       - name: Check next batch of private companies
+        id: scan
         env:
           HTTP_CONTACT: ${{ secrets.HTTP_CONTACT }}
           BOLAGSVERKET_CLIENT_ID: ${{ secrets.BOLAGSVERKET_CLIENT_ID }}
@@ -70,7 +71,8 @@ jobs:
           fi
 
       - name: Start the next batch
-        if: success()
+        # not after a Bolagsverket outage: the 6-hourly schedule retries instead of a tight loop
+        if: success() && steps.scan.outputs.outage != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

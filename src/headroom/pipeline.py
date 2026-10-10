@@ -548,6 +548,9 @@ def _backfill_locations(f: Fetcher) -> None:
     for org in todo:
         try:
             county, city = geo.from_address(*bv.address(api.organisation(org)))
+        except bv.ServiceUnavailable as e:
+            log.warning("address backfill stopped: %s", e)
+            break
         except Exception as e:
             log.warning("address %s: %s", org, e)
             continue
@@ -660,6 +663,8 @@ def build_private(
     for org in company["org_nr"].to_list():
         try:
             rec = cached("org", org, api.organisation)
+        except bv.ServiceUnavailable:
+            raise
         except Exception as e:
             log.warning("bolagsverket %s: %s", org, e)
             continue
@@ -732,6 +737,11 @@ def build_private(
                 continue
             a = bv.annual_figures(bv.parse_ixbrl(xhtml))
         except bv.NoCredentials:
+            raise
+        except bv.ServiceUnavailable:
+            # Outage at Bolagsverket: keep what this run did and stop; the next run resumes.
+            ledger.save()
+            save_found(found)
             raise
         except Exception as e:
             log.warning("private %s: %s", org, e)
