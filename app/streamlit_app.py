@@ -29,8 +29,7 @@ st.logo(str(Path(__file__).parent / "static" / "wordmark.svg"), size="large")
 data = get_data()
 
 pages = [
-    st.Page("views/market.py", title="Market Overview", url_path="market", default=True),
-    st.Page("views/companies.py", title="Companies", url_path="companies"),
+    st.Page("views/companies.py", title="Companies", url_path="companies", default=True),
     st.Page("views/locations.py", title="Locations", url_path="locations"),
     st.Page("views/underwriting.py", title="Underwriting", url_path="underwriting"),
     st.Page("views/method.py", title="Method", url_path="method"),
@@ -69,8 +68,8 @@ SEARCH_STYLE = {
         "clearable": "always",
     },
 }
-companies_page = pages[1]
-locations_page = pages[2]
+companies_page = pages[0]
+locations_page = pages[1]
 nav = st.navigation(pages, position="top")
 
 
