@@ -211,7 +211,12 @@ def is_real_estate(snis: list[str]) -> bool:
 # --------------------------------------------------------------------------- iXBRL
 
 # Concepts in the Swedish annual-report taxonomy (se-gen-base) for K2/K3 reports.
-# Each target lists candidates in order of preference.
+# Each target lists candidates in order of preference (the first one found is used).
+# Concept names checked against Bolagsverket's taxonomy lists (taxonomier.se): K2 AB
+# 2024-09-12 and K3 AB 2021-10-31. On the balance sheet, debt to credit institutions is
+# `OvrigaLangfristigaSkulderKreditinstitut` / `OvrigaKortfristigaSkulderKreditinstitut`;
+# `SkulderKreditinstitut*` only exist in K3 notes, which is why reading only those left
+# most private companies without debt (and so without LTV) until parser version 2.
 IXBRL_MAP: dict[str, list[str]] = {
     "property_value": [
         "ForvaltningsfastigheterVerkligtVarde",
@@ -221,15 +226,48 @@ IXBRL_MAP: dict[str, list[str]] = {
     "total_assets": ["Tillgangar"],
     "equity": ["EgetKapital"],
     "cash": ["KassaBankExklRedovisningsmedel", "KassaBank", "LikvidaMedel"],
-    "debt_credit_long": ["SkulderKreditinstitutLangfristiga", "LangfristigaSkulderKreditinstitut"],
-    "debt_credit_short": ["SkulderKreditinstitutKortfristiga", "KortfristigaSkulderKreditinstitut"],
+    # interest-bearing debt, long term
+    "debt_credit_long": [
+        "OvrigaLangfristigaSkulderKreditinstitut",
+        "SkulderKreditinstitutLangfristiga",
+        "LangfristigaSkulderKreditinstitut",
+    ],
+    "overdraft_long": ["CheckrakningskreditLangfristig"],
+    "bonds_long": ["Obligationslan"],
     "debt_group_long": ["SkulderKoncernforetagLangfristiga"],
+    "debt_owner_long": ["SkulderOvrigaForetagAgarintresseLangfristiga"],
+    "debt_associate_long": ["SkulderIntresseforetagGemensamtStyrdaForetagLangfristiga"],
+    # interest-bearing debt, due within a year
+    "debt_credit_short": [
+        "OvrigaKortfristigaSkulderKreditinstitut",
+        "SkulderKreditinstitutKortfristiga",
+        "KortfristigaSkulderKreditinstitut",
+    ],
+    "overdraft_short": ["CheckrakningskreditKortfristig"],
+    "bonds_short": ["ObligationslanKortfristiga"],
+    # used only when none of the above is reported but there is interest expense:
+    # small companies often book bank and shareholder loans as "other long-term debt"
+    "other_long": ["OvrigaLangfristigaSkulder"],
     "operating_profit": ["Rorelseresultat"],
     "interest_expense": ["RantekostnaderLiknandeResultatposter", "Rantekostnader"],
     "revenue": ["Nettoomsattning"],
     "depreciation": ["AvskrivningarNedskrivningarMateriellaImmateriellaAnlaggningstillgangar"],
     "equity_ratio_pct": ["Soliditet"],
 }
+
+DEBT_LONG = (
+    "debt_credit_long",
+    "overdraft_long",
+    "bonds_long",
+    "debt_group_long",
+    "debt_owner_long",
+    "debt_associate_long",
+)
+DEBT_SHORT = ("debt_credit_short", "overdraft_short", "bonds_short")
+
+# Bump when the mapping changes: kept companies parsed by an older version are re-read
+# (from the cached annual report) by the daily job.
+PARSER_VERSION = 2
 
 
 @dataclass
@@ -323,46 +361,56 @@ def annual_figures(facts: list[Fact]) -> dict[str, float | date | None]:
 def to_financials(org_nr: str, a: dict, source_url: str) -> dict:
     """Map annual-report figures to the financials table (private ABs).
 
-    Debt to credit institutions due within a year is reported as short-term:
-    that is the refinancing need. Property is at fair value when the report
+    Interest-bearing debt is debt to credit institutions, overdraft facilities, bonds
+    and long-term loans from group, owner and associated companies. The part due within
+    a year (short-term credit institution debt, overdraft and bonds) is the refinancing
+    need. If none of these is reported but the company pays interest, other long-term
+    debt is used instead, at lower confidence. Property is at fair value when the report
     discloses it in a note, otherwise at book value; `value_basis` says which.
     """
-    debt = sum(
-        x or 0
-        for x in (a.get("debt_credit_long"), a.get("debt_credit_short"), a.get("debt_group_long"))
-    )
+    long = sum(a.get(k) or 0 for k in DEBT_LONG)
+    short = sum(a.get(k) or 0 for k in DEBT_SHORT)
+    debt = long + short
     cash = a.get("cash")
     pv = a.get("property_value")
     ebitda = None
     if a.get("operating_profit") is not None:
         ebitda = a["operating_profit"] + abs(a.get("depreciation") or 0)
     interest = abs(a["interest_expense"]) if a.get("interest_expense") else None
+    confidence = 0.95
+    if debt <= 0 and interest and (a.get("other_long") or 0) > 0:
+        debt = a["other_long"]
+        confidence = 0.8
+    avg_rate = (interest / debt) if interest and debt > 0 else None
+    if avg_rate is not None and avg_rate > 0.2:
+        confidence = min(confidence, 0.6)  # interest far above any market rate: debt incomplete
     eq = a.get("equity_ratio_pct")
     if eq is None and a.get("equity") is not None and a.get("total_assets"):
         eq = a["equity"] / a["total_assets"]
+    has_debt = debt > 0
     return {
         "org_nr": org_nr,
         "period_end": a.get("period_end"),
         "period_type": "FY",
         "property_value": pv,
         "value_basis": a.get("value_basis"),
-        "gross_debt": debt or None,
-        "net_debt": (debt - (cash or 0)) if debt else None,
-        "ltv": ((debt - (cash or 0)) / pv) if debt and pv else None,
+        "gross_debt": debt if has_debt else None,
+        "net_debt": (debt - (cash or 0)) if has_debt else None,
+        "ltv": ((debt - (cash or 0)) / pv) if has_debt and pv else None,
         "icr": (ebitda / interest) if ebitda is not None and interest else None,
         "ebitda": ebitda,
         "interest_expense": interest,
-        "avg_rate": (interest / debt) if interest and debt else None,
+        "avg_rate": avg_rate,
         "fixed_share": None,
         "fixed_period_years": None,
         "equity_ratio": eq,
         "cash": cash,
         "undrawn_facilities": None,
-        "debt_due_12m": a.get("debt_credit_short"),
+        "debt_due_12m": short if has_debt else None,
         "debt_due_24m": None,
         "source_url": source_url,
         "page": None,
-        "confidence": 0.95,
+        "confidence": confidence,
     }
 
 

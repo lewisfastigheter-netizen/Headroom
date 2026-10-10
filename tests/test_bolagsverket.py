@@ -15,8 +15,8 @@ IXBRL = b"""<?xml version="1.0" encoding="UTF-8"?>
 </ix:resources></ix:header>
 <ix:nonFraction name="se-gen-base:ByggnaderMark" contextRef="balans0" unitRef="SEK" scale="0" decimals="INF">250 000 000</ix:nonFraction>
 <ix:nonFraction name="se-gen-base:ByggnaderMark" contextRef="balans1" unitRef="SEK" scale="0">240 000 000</ix:nonFraction>
-<ix:nonFraction name="se-gen-base:SkulderKreditinstitutLangfristiga" contextRef="balans0" unitRef="SEK" scale="3">120 000</ix:nonFraction>
-<ix:nonFraction name="se-gen-base:SkulderKreditinstitutKortfristiga" contextRef="balans0" unitRef="SEK" scale="3">60 000</ix:nonFraction>
+<ix:nonFraction name="se-gen-base:OvrigaLangfristigaSkulderKreditinstitut" contextRef="balans0" unitRef="SEK" scale="3">120 000</ix:nonFraction>
+<ix:nonFraction name="se-gen-base:OvrigaKortfristigaSkulderKreditinstitut" contextRef="balans0" unitRef="SEK" scale="3">60 000</ix:nonFraction>
 <ix:nonFraction name="se-gen-base:KassaBankExklRedovisningsmedel" contextRef="balans0" unitRef="SEK">5 000 000</ix:nonFraction>
 <ix:nonFraction name="se-gen-base:Rorelseresultat" contextRef="period0" unitRef="SEK" scale="3">12 000</ix:nonFraction>
 <ix:nonFraction name="se-gen-base:RantekostnaderLiknandeResultatposter" contextRef="period0" unitRef="SEK" scale="3" sign="-">9 000</ix:nonFraction>
@@ -35,6 +35,47 @@ def test_parse_ixbrl_and_map():
     assert row["ltv"] == (180.0 - 5.0) / 250.0
     assert row["debt_due_12m"] == 60.0
     assert round(row["icr"], 2) == round(12 / 9, 2)
+
+
+def _facts(**kw):
+    return [
+        bv.Fact(concept=k, value=v * 1e6, context="c", period_end=date(2025, 12, 31))
+        for k, v in kw.items()
+    ]
+
+
+def test_debt_lines_summed():
+    """K2/K3 balance-sheet concepts: bank loans, overdraft and shareholder loans."""
+    a = bv.annual_figures(
+        _facts(
+            ByggnaderMark=100,
+            OvrigaLangfristigaSkulderKreditinstitut=50,
+            OvrigaKortfristigaSkulderKreditinstitut=4,
+            CheckrakningskreditKortfristig=1,
+            SkulderKoncernforetagLangfristiga=10,
+            KassaBank=5,
+            RantekostnaderLiknandeResultatposter=-2.6,
+            Rorelseresultat=6,
+        )
+    )
+    row = bv.to_financials("556000-0000", a, "src")
+    assert row["gross_debt"] == 65
+    assert row["ltv"] == 0.6
+    assert row["debt_due_12m"] == 5
+    assert row["confidence"] == 0.95
+
+
+def test_other_long_term_debt_as_fallback():
+    a = bv.annual_figures(
+        _facts(
+            ByggnaderMark=40, OvrigaLangfristigaSkulder=30, RantekostnaderLiknandeResultatposter=-1
+        )
+    )
+    row = bv.to_financials("556000-0000", a, "src")
+    assert row["gross_debt"] == 30 and row["ltv"] == 0.75 and row["confidence"] == 0.8
+    # without interest expense it is not taken as debt
+    a = bv.annual_figures(_facts(ByggnaderMark=40, OvrigaLangfristigaSkulder=30))
+    assert bv.to_financials("556000-0000", a, "src")["ltv"] is None
 
 
 def test_sni_codes_found_anywhere():

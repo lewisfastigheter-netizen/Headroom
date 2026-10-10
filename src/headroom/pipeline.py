@@ -697,7 +697,10 @@ def build_private(
         if fresh >= limit or time.monotonic() > deadline:
             break
         org = r["org_nr"]
-        if ledger.skip(org) or (ledger.kept(org) and org in found):
+        if ledger.skip(org):
+            continue
+        # kept companies are re-read only if an older mapping parsed them (report is cached)
+        if ledger.kept(org) and found.get(org, {}).get("parser", 1) >= bv.PARSER_VERSION:
             continue
         fresh += 1
         if fresh % 500 == 0:  # keep progress if the run is stopped early
@@ -786,6 +789,7 @@ def build_private(
             },
             "financials": bv.to_financials(org, a, src),
             "events": ev,
+            "parser": bv.PARSER_VERSION,
         }
     if fresh:
         ledger.save()
