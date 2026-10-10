@@ -11,15 +11,13 @@ MODES = ["demo"] + (["live"] if (ROOT / "data/snapshots/live/bond.parquet").exis
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize(
-    "page", ["market", "companies", "locations", "underwriting", "issuer", "method"]
-)
+@pytest.mark.parametrize("page", ["companies", "locations", "underwriting", "issuer", "method"])
 def test_page_renders(page, mode, monkeypatch):
     monkeypatch.setenv("HEADROOM_MODE", mode)
     at = AppTest.from_file(str(APP), default_timeout=90)
     at.session_state["mode"] = mode
     at.run()
-    if page != "market":
+    if page != "companies":
         at.switch_page(f"views/{page}.py").run()
     assert not at.exception, at.exception
 

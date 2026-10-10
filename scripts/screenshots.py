@@ -18,8 +18,7 @@ ISSUER = {"demo": "DEMO-009", "live": "559286-6809"}  # live: Holmström Fastigh
 def pages(mode: str) -> dict[str, str]:
     q = f"data={mode}"
     return {
-        "market": f"?{q}",
-        "companies": f"companies?{q}",
+        "companies": f"?{q}",
         "locations": f"locations?{q}",
         "location": f"locations?level=kommun&code=0380&{q}",
         "issuer": f"issuer?org={ISSUER[mode]}&{q}",
