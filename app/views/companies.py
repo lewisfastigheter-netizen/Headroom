@@ -9,6 +9,7 @@ import polars as pl
 import streamlit as st
 
 from headroom.model import geo, valuation
+from headroom.store.private import group_of
 from ui import components as ui
 from ui.data import get_data
 from ui.labels import SEGMENT, TIER
@@ -83,6 +84,14 @@ df = df.with_columns(
     .alias("accounting"),
 )
 
+# Single-asset subsidiaries of listed groups (named after the parent) are not owners a
+# buyer can approach on their own: tagged with the group and hidden unless asked for.
+df = df.with_columns(
+    pl.when(pl.col("tier") == "private")
+    .then(pl.col("name").map_elements(group_of, return_dtype=pl.Utf8))
+    .otherwise(None)
+    .alias("group")
+)
 n_high = df.filter(pl.col("score") >= bands["high"]).height
 ui.hero(
     "Companies",
@@ -123,8 +132,13 @@ county = state.get("f_county", "All counties")
 city = state.get(f"city_{county}", "All cities")
 
 
+show_groups = bool(state.get("f_groups"))
+
+
 def apply(frame: pl.DataFrame, skip: str = "") -> pl.DataFrame:
     """Filter by every current choice except `skip` (used to count each option)."""
+    if not show_groups:
+        frame = frame.filter(pl.col("group").is_null())
     if type_sel and skip != "type":
         frame = frame.filter(pl.col("tier").is_in(type_sel))
     if acc_sel and skip != "acc":
@@ -209,6 +223,14 @@ grey_empty(f"city_{county}".replace(" ", "-"), city_options, present(apply(df, "
 if styles:
     ui.render("<style>" + "\n".join(styles) + "</style>")
 
+n_sub = df.filter(pl.col("group").is_not_null()).height
+if n_sub:
+    st.checkbox(
+        f"Show {n_sub} single-asset subsidiaries of listed groups",
+        key="f_groups",
+        help="Private companies named after a listed parent (config/groups.yaml). They are "
+        "hidden by default: the parent decides whether they are sold.",
+    )
 f = apply(df)
 nb = (
     d.t["bond"]
@@ -228,23 +250,63 @@ def ratio(a: float | None, b: float | None, fmt) -> str:
     return fmt(a / b) if a is not None and b else "–"
 
 
+CHECK = "Outside the range a property company's accounts can produce; the figure is probably misread. Check the source."
+
+
+def checked() -> str:
+    return "–" + ui.flag("Check", CHECK)
+
+
+def icr_html(v: float | None, conf: float | None) -> str:
+    if v is not None and v > 20:  # tiny interest expense: the ratio says nothing
+        return ui.esc("> 20x")
+    if v is not None and v < -20:
+        return checked()
+    return ui.unverified(ui.fmt_x(v, 1), conf, min_conf)
+
+
+def rate_html(v: float | None) -> str:
+    if v is not None and not 0 <= v <= 0.15:
+        return checked()
+    return ui.fmt_pct(v, 1)
+
+
+def ltv_html(v: float | None, conf: float | None) -> str:
+    if v is not None and not 0 <= v <= 1.5:
+        return checked()
+    c = 0.0 if v is not None and v > 1 else conf
+    return ui.unverified(ui.fmt_pct(v), c, min_conf)
+
+
+def nd_html(nd: float | None, e: float | None) -> str:
+    if nd is None or not e:
+        return "–"
+    v = nd / e
+    if v > 50:
+        return ui.esc("> 50x")
+    if v < 0:
+        return checked()
+    return ui.fmt_x(v, 1)
+
+
 rows = []
 for i, r in enumerate(f.to_dicts(), start=1):
     sub = " · ".join(
         x for x in (TIER[r["tier"]], SEGMENT.get(r["main_segment"] or ""), r["city"]) if x
     )
-    ltv_conf = 0.0 if r["ltv"] is not None and not 0 <= r["ltv"] <= 1 else r["conf_ltv"]
+    if r.get("group"):
+        sub += f" · part of {r['group']}"
     rows.append(
         {
             "rank": i,
             "score": f"{r['score']:.0f}" if r["score"] is not None else "–",
             "name": f'<a href="issuer?org={r["org_nr"]}" target="_self">{ui.esc(r["name"])}</a>'
             f'<span class="sub">{ui.esc(sub)}</span>',
-            "ltv": ui.unverified(ui.fmt_pct(r["ltv"]), ltv_conf, min_conf)
+            "ltv": ltv_html(r["ltv"], r["conf_ltv"])
             + (ui.basis_tag(r["value_basis"], short=True) if show_basis else ""),
-            "icr": ui.unverified(ui.fmt_x(r["icr"], 1), r["conf_icr"], min_conf),
-            "nd_ebitda": ratio(r["net_debt"], r["ebitda"], lambda v: ui.fmt_x(v, 1)),
-            "rate": ui.fmt_pct(r["avg_rate"], 1),
+            "icr": icr_html(r["icr"], r["conf_icr"]),
+            "nd_ebitda": nd_html(r["net_debt"], r["ebitda"]),
+            "rate": rate_html(r["avg_rate"]),
             "due12": ratio(r["debt_due_12m"], r["gross_debt"], ui.fmt_pct),
             "pv": ui.fmt_num(r["property_value"]),
             "next": r["next_maturity"],
@@ -258,8 +320,8 @@ ui.table(
         ui.Col("name", "Company", "name", raw_html=True),
         ui.Col("ltv", "LTV", "num", raw_html=True),
         ui.Col("icr", "ICR", "num", raw_html=True),
-        ui.Col("nd_ebitda", "Net debt / EBITDA", "num"),
-        ui.Col("rate", "Avg. rate", "num"),
+        ui.Col("nd_ebitda", "Net debt / EBITDA", "num", raw_html=True),
+        ui.Col("rate", "Avg. rate", "num", raw_html=True),
         ui.Col("due12", "Debt due 12m", "num"),
         ui.Col("pv", "Property value, SEK m", "num"),
         ui.Col("next", "Next bond", "date", ui.fmt_date),

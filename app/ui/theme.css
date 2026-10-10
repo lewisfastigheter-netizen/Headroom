@@ -288,3 +288,9 @@ header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !import
   line-height: 1.5; letter-spacing: 0; text-transform: none; text-align: left; white-space: pre-line;
   border-radius: 2px; box-shadow: 0 6px 18px rgba(0,0,0,.18); pointer-events: none; }
 .st-key-hr_source_tips { display: none; }
+
+/* Underwriting: sub-headings inside a section */
+.hr-sub { font-size: 1.15rem !important; margin: 1.8rem 0 .5rem 0 !important; padding: 0 !important; }
+.hr-stats.row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 2rem; margin-top: 2rem; }
+.hr-stats.row .hr-stat .v { font-size: 2.8rem; }
+@media (max-width: 760px) { .hr-stats.row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -44,7 +44,8 @@ def test_riksbank_rates_shape(tmp_path):
     )
     with fetcher(tmp_path) as f:
         df = riksbank.fetch_rates(f, date(2026, 10, 1), date(2026, 10, 8))
-    assert set(df["series"]) == {"policy_rate", "tbill_3m", "swestr"}
+    assert set(df["series"]) == {*riksbank.SWEA_SERIES, "swestr"}
+    assert {"mb_5y", "gvb_10y"} <= set(df["series"])
     assert df.filter(df["series"] == "swestr")["value"][0] == 1.637
 
 

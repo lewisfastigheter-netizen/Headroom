@@ -306,6 +306,12 @@ def start_page() -> None:
     if "_loc_pick_kommun" in state:
         state["loc_kommun"] = state.pop("_loc_pick_kommun")
 
+    ui.render(
+        '<p class="hr-note" style="max-width:60rem;margin:0 0 1.6rem 0">Where to own rental '
+        "housing and logistics or light industrial property in Sweden: every county, municipality "
+        "and RegSO area scored on public statistics, every figure with its source. Pick places "
+        "on the left or on the map; open one for the full reading.</p>"
+    )
     left, right = st.columns([1, 2], gap="large")
     with left:
         go_to(place_search(index_for_session(), placeholder="Search län, kommun or area"))
@@ -373,6 +379,15 @@ def start_page() -> None:
             st.selectbox("Municipality group (SKR)", [ALL_GROUPS, *groups], key="loc_group")
             grey("loc_group", groups, set(apply(df, "group")["kommungrupp"].drop_nulls()))
         st.selectbox("Population", list(sizes), key=f"loc_size_{level}")
+        colour_by = (
+            st.segmented_control(
+                "Colour the map by",
+                ["Filters", "Residential", "Logistics"],
+                default="Residential",
+                key="loc_colour",
+            )
+            or "Filters"
+        )
         have = {
             s
             for s, v in sizes.items()
@@ -393,7 +408,7 @@ def start_page() -> None:
             )
 
     with right:
-        start_map(level, df, passing, selected, county, kommun_code)
+        start_map(level, df, passing, selected, county, kommun_code, colour_by)
 
     shown = passing.filter(pl.col("code").is_in(selected)) if selected else passing
     ranking_table(level, shown)
@@ -439,9 +454,11 @@ def start_map(
     selected: list[str],
     county: str,
     kommun_code: str | None,
+    colour_by: str = "Filters",
 ) -> None:
     """Sweden, a county or a municipality's RegSO; the places that pass the filters in light
-    blue, the chosen ones lit up in orange. A click opens the place."""
+    blue (or shaded by their Residential or Logistics score), the chosen ones lit up in
+    orange. A click opens the place."""
     height = 720
     pick_kommun = False
     if level == "regso":
@@ -477,23 +494,72 @@ def start_map(
     base = [r for r in rows if r["code"] not in selected]
     lit = [r for r in rows if r["code"] in selected]
     fig = go.Figure()
-    fig.add_trace(
-        go.Choroplethmap(
-            geojson=gj,
-            featureidkey="properties.code",
-            locations=[r["code"] for r in base],
-            z=[1 if r["code"] in passing_codes else 0 for r in base],
-            zmin=0,
-            zmax=1,
-            colorscale=[[0, "#ECECEC"], [0.5, "#ECECEC"], [0.5, "#BFDDE4"], [1, "#BFDDE4"]],
-            showscale=False,
-            marker_line_color="#FFFFFF",
-            marker_line_width=0.7 if level_geo != "regso" else 0.9,
-            marker_opacity=0.9,
-            customdata=[_hover(r) for r in base],
-            hovertemplate="%{customdata}<extra></extra>",
+    kind = colour_by.lower() if colour_by in ("Residential", "Logistics") else None
+    if kind == "logistics" and level_geo == "regso":
+        kind = None  # areas have no logistics score
+    line_w = 0.7 if level_geo != "regso" else 0.9
+    if kind:
+        scored = [r for r in base if r["code"] in passing_codes and r.get(kind) is not None]
+        rest = [r for r in base if r not in scored]
+        if rest:
+            fig.add_trace(
+                go.Choroplethmap(
+                    geojson=gj,
+                    featureidkey="properties.code",
+                    locations=[r["code"] for r in rest],
+                    z=[0] * len(rest),
+                    colorscale=[[0, "#ECECEC"], [1, "#ECECEC"]],
+                    showscale=False,
+                    marker_line_color="#FFFFFF",
+                    marker_line_width=line_w,
+                    marker_opacity=0.9,
+                    customdata=[_hover(r) for r in rest],
+                    hovertemplate="%{customdata}<extra></extra>",
+                )
+            )
+        fig.add_trace(
+            go.Choroplethmap(
+                geojson=gj,
+                featureidkey="properties.code",
+                locations=[r["code"] for r in scored],
+                z=[r[kind] for r in scored],
+                zmin=0,
+                zmax=100,
+                colorscale=BLUE_RAMP,
+                colorbar=dict(
+                    title=dict(text=f"{colour_by} score", side="right"),
+                    thickness=10,
+                    len=0.45,
+                    x=0.99,
+                    y=0.5,
+                    tickfont=dict(size=11),
+                    outlinewidth=0,
+                ),
+                marker_line_color="#FFFFFF",
+                marker_line_width=line_w,
+                marker_opacity=0.92,
+                customdata=[_hover(r) for r in scored],
+                hovertemplate="%{customdata}<extra></extra>",
+            )
         )
-    )
+    else:
+        fig.add_trace(
+            go.Choroplethmap(
+                geojson=gj,
+                featureidkey="properties.code",
+                locations=[r["code"] for r in base],
+                z=[1 if r["code"] in passing_codes else 0 for r in base],
+                zmin=0,
+                zmax=1,
+                colorscale=[[0, "#ECECEC"], [0.5, "#ECECEC"], [0.5, "#BFDDE4"], [1, "#BFDDE4"]],
+                showscale=False,
+                marker_line_color="#FFFFFF",
+                marker_line_width=line_w,
+                marker_opacity=0.9,
+                customdata=[_hover(r) for r in base],
+                hovertemplate="%{customdata}<extra></extra>",
+            )
+        )
     if lit:
         fig.add_trace(
             go.Choroplethmap(
@@ -546,7 +612,12 @@ def start_map(
     hint = (
         "Choose a kommun (or click one) to draw its RegSO areas. "
         if pick_kommun
-        else "Orange: your choice. Light blue: matches the filters. Click a place to open it. "
+        else (
+            f"Orange: your choice. Shade: {kind} score (0–100) of the places that match the "
+            "filters; grey: filtered out or not scored. Click a place to open it. "
+            if kind
+            else "Orange: your choice. Light blue: matches the filters. Click a place to open it. "
+        )
     )
     ui.source_line(
         hint
@@ -1138,7 +1209,6 @@ def logistics_section(level: str, code: str, name: str) -> None:
         ("dist_port", "Nearest port", km, "dist_port_name"),
         ("dist_terminal", "Nearest intermodal terminal", km, "dist_terminal_name"),
         ("dist_airport", "Nearest cargo airport", km, "dist_airport_name"),
-        ("dist_motorway", "Nearest junction, E4/E6/E18/E20", km, "dist_motorway_name"),
     ]
     if level != "regso":
         items += [
@@ -1219,7 +1289,6 @@ def logistics_section(level: str, code: str, name: str) -> None:
         [
             "catchment_100km",
             "dist_port",
-            "dist_motorway",
             "emp_work_H",
             "commuters_in",
             "grp",
@@ -1232,10 +1301,6 @@ def logistics_section(level: str, code: str, name: str) -> None:
         "Ports, terminals and airports: config/geo/logistics_nodes.yaml (Wikidata, OpenStreetMap); the terminal list is not complete.",
         level=level,
     )
-    if f.get("dist_motorway") is None:
-        ui.note(
-            "Motorway junctions are not in this snapshot yet (config/geo/motorway_junctions.csv is built from OpenStreetMap by scripts/motorway_junctions.py), so that component is left out of the score."
-        )
     rk = L.ranking_for(level, code)
     if rk:
         txt = "; ".join(

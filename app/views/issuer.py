@@ -93,6 +93,23 @@ ui.hero(
     ],
 )
 
+# Where the seller is in a process: a sale agreed or under way, a bondholder process with no
+# sale announced yet, or nothing announced. Read from the dated events and their titles.
+SALE_WORDS = r"(?i)dispos|divest|sale of|sells|sold|agreement to sell|avyttr|försälj|säljer|sålt"
+recent_ev = events.filter(pl.col("date") >= pl.lit(d.ref) - pl.duration(days=365))
+sale_ev = recent_ev.filter(pl.col("title").str.contains(SALE_WORDS))
+bond_ev = recent_ev.filter(
+    pl.col("type").is_in(["written_procedure", "waiver", "interest_deferral", "reconstruction"])
+)
+if sale_ev.height:
+    e = sale_ev.row(0, named=True)
+    status = ("Sale agreed or under way", "high", e)
+elif bond_ev.height:
+    e = bond_ev.row(0, named=True)
+    status = ("Bondholder process, no sale announced", "watch", e)
+else:
+    status = ("No process announced", None, None)
+
 nxt = live_bonds.head(1).to_dicts()
 next_txt = (
     f"{ui.fmt_date(nxt[0]['maturity'], 'long')}<br>"
@@ -100,6 +117,13 @@ next_txt = (
     if nxt
     else "No listed bonds"
 )
+if nxt and bond_ev.height:
+    wp_date = bond_ev["date"][0]
+    next_txt += ui.flag(
+        "Terms amended",
+        f"Bond terms were changed by written procedure or waiver on {wp_date}; the "
+        "maturity registered in FIRDS may no longer apply. Check the latest notice.",
+    )
 period = (
     f'<br><span style="color:var(--muted)">{ui.fmt_date(fin["period_end"], "long")}</span>'
     if fin
@@ -120,6 +144,19 @@ ui.facts(
         ("Interest cover", fv("icr", lambda v: ui.fmt_x(v, 2)) + period),
         ("Next bond maturity", next_txt),
     ]
+)
+label, st_state, ev = status
+ev_html = (
+    f" Latest: {ui.esc(ev['title'])} ({ui.fmt_date(ev['date'])}, "
+    f"{ui.source_link(ev['source_url'], ev['source_name'] or 'source')})."
+    if ev
+    else ""
+)
+ui.render(
+    f'<div class="hr-note" style="margin-top:1.4rem">{ui.marker(st_state) if st_state else ""}'
+    f"<b>Process: {ui.esc(label)}.</b>{ev_html} "
+    f'<a href="underwriting?org={org}" target="_self">Underwrite this company</a> against '
+    "market yields and the cost of debt.</div>"
 )
 
 # --------------------------------------------------------------------------- 01 why

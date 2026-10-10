@@ -9,11 +9,14 @@ refresh never write the same file, so their commits never conflict.
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
+from functools import lru_cache
 
 import polars as pl
+import yaml
 
-from headroom.config import DATA_DIR
+from headroom.config import CONFIG_DIR, DATA_DIR
 
 PRIVATE_FOUND = DATA_DIR / "private_found.jsonl"
 PRIVATE_CANDIDATES = DATA_DIR / "private_candidates.parquet"
@@ -78,13 +81,53 @@ def save_found(found: dict[str, dict]) -> None:
     PRIVATE_FOUND.write_text("\n".join(lines) + ("\n" if lines else ""), "utf-8")
 
 
+_PROPERTY_NAME = re.compile(r"fastig|fast\b|fastighets|bostad|bostäder|hyreshus", re.I)
+
+
+def is_property_company(sni: str | None, name: str | None) -> bool:
+    """True when the company's main business is property.
+
+    Bolagsverket lists a company's SNI codes with the main activity first. A company whose
+    main code is not 68 (real estate) keeps property on its balance sheet for its own
+    business (a gravel pit, a forestry company, a care home, a marina) and is not a
+    property owner a buyer would approach; it is dropped unless its name says it is a
+    property company. With no SNI code at all, the name decides."""
+    codes = [c.strip() for c in (sni or "").split(",") if c.strip()]
+    if codes and codes[0].startswith("68"):
+        return True
+    return bool(_PROPERTY_NAME.search(name or ""))
+
+
+@lru_cache(maxsize=1)
+def _groups() -> list[tuple[re.Pattern, str]]:
+    p = CONFIG_DIR / "groups.yaml"
+    if not p.exists():
+        return []
+    rows = yaml.safe_load(p.read_text("utf-8")).get("groups") or []
+    return [(re.compile(r["pattern"], re.I), r["parent"]) for r in rows]
+
+
+def group_of(name: str | None) -> str | None:
+    """The listed group a private company belongs to, read from its name (an SPV named
+    after its parent, such as 'Balder Sundsbron AB'). None when no rule matches."""
+    for pat, parent in _groups():
+        if pat.search(name or ""):
+            return parent
+    return None
+
+
 def _dates(d: dict, *keys: str) -> dict:
     return {**d, **{k: date.fromisoformat(str(d[k])[:10]) for k in keys if d.get(k)}}
 
 
 def found_tables(exclude: set[str]) -> dict[str, pl.DataFrame | None]:
     """company, financials and event rows for every kept private company."""
-    recs = [r for org, r in load_found().items() if org not in exclude]
+    recs = [
+        r
+        for org, r in load_found().items()
+        if org not in exclude
+        and is_property_company(r["company"].get("sni"), r["company"].get("name"))
+    ]
     companies = [_dates(r["company"], "as_of") for r in recs]
     fins = [_dates(r["financials"], "period_end") for r in recs]
     evs = [_dates(e, "date") for r in recs for e in r.get("events") or []]

@@ -1,0 +1,236 @@
+# Market evidence for the Underwriting page, entered by hand from published research.
+#
+# Every figure has a source id (below), the period it describes and, where the source
+# gives one, the page. Figures are quoted as published: yields and vacancy in per cent,
+# rents in SEK per sq m and year (net, as the source states), volumes in SEK m unless the
+# unit says otherwise. Nothing here is estimated by Headroom.
+#
+# Broker research is published for marketing; the figures are facts quoted with
+# attribution, not reproduced reports. Update when the next quarter is out: Cushman &
+# Wakefield MarketBeat (quarterly, mid-month after quarter end), Newsec Property Outlook
+# (spring, autumn), JLL Nordic Outlook (spring, autumn), Colliers (half-year), and the
+# listed companies' interim reports (valuation yields).
+
+as_of: 2026-10-10
+
+sources:
+  cw_logistics:
+    publisher: Cushman & Wakefield
+    title: "MarketBeat Sweden Logistics Q2 2026"
+    period: 2026Q2
+    url: https://assets.cushmanwakefield.com/-/media/cw/emea/sweden/insight/mb/2026/2026_q2_sweden_marketbeat_logistics.pdf?rev=08bee8d2f7aa4e67a411b41d6625a2be
+  cw_residential:
+    publisher: Cushman & Wakefield
+    title: "MarketBeat Sweden Residential Q2 2026"
+    period: 2026Q2
+    url: https://assets.cushmanwakefield.com/-/media/cw/emea/sweden/insight/mb/2026/2026_q2_sweden_marketbeat_residential.pdf?rev=806583fb019940e19d212eaf245553c3
+  cw_investment:
+    publisher: Cushman & Wakefield
+    title: "MarketBeat Sweden Investment Q2 2026"
+    period: 2026Q2
+    url: https://assets.cushmanwakefield.com/-/media/cw/emea/sweden/insight/mb/2026/2026_q2_sweden_marketbeat_investment.pdf?rev=bc52e7fe0b79491a98efb8a7dffc9af1
+  cw_office:
+    publisher: Cushman & Wakefield
+    title: "MarketBeat Sweden Office Q2 2026"
+    period: 2026Q2
+    url: https://assets.cushmanwakefield.com/-/media/cw/emea/sweden/insight/mb/2026/2026_q2_sweden_marketbeat_office.pdf?rev=5a5f3429b68c499fa190956dd08c6cb2
+  cw_retail:
+    publisher: Cushman & Wakefield
+    title: "MarketBeat Sweden Retail Q2 2026"
+    period: 2026Q2
+    url: https://assets.cushmanwakefield.com/-/media/cw/emea/sweden/insight/mb/2026/2026_q2_sweden_marketbeat_retail.pdf?rev=34055b0d67334abeb00ee52048ac9282
+  cw_nordic:
+    publisher: Cushman & Wakefield
+    title: "Nordics Investment Market Update H1 2026"
+    period: 2026H1
+    url: https://content.cushmanwakefield.com/api/public/content/174be9790876477ab9551f5fd6672d04?v=5cc375a6
+  newsec:
+    publisher: Newsec
+    title: "Newsec Property Outlook, Autumn 2026"
+    period: 2026H1
+    url: https://storage.mfn.se/dbaf6eff-3e05-42d9-96b4-fb3d002dab5b/npo-autumn2026.pdf
+  jll_autumn:
+    publisher: JLL
+    title: "Nordic Outlook Autumn 2026 (press release, 18 September 2026)"
+    period: 2026H1
+    url: https://www.jll.com/en-us/newsroom/jll-nordic-outlook-autumn-26
+  jll_spring:
+    publisher: JLL
+    title: "Nordic Outlook Spring 2026"
+    period: 2025Q4
+    url: https://s3.eu-north-1.amazonaws.com/akershuseiendom/Nordic-Outlook-Spring-2026_2026-02-18-150721_fmmf.pdf?v=1771427241
+  colliers:
+    publisher: Colliers
+    title: "Nordic property investment market continues to recover in H1 2026"
+    period: 2026H1
+    url: https://nyheter.colliers.se/pressreleases/nordic-property-investment-market-continues-to-recover-in-h1-2026-3456760
+  svefa:
+    publisher: Svefa
+    title: "Svensk Fastighetsmarknad 2026"
+    period: 2025
+    url: https://www.svefa.se/kunskapsbank/nyhet-svensk-fastighetsmarknad-2026
+  ncr:
+    publisher: Nordic Credit Rating
+    title: "Swedish real estate snapshot (Q1 2026)"
+    period: 2026Q1
+    url: https://nordiccreditrating.com/insight/swedish-real-estate-snapshot-q1-2026-stable-fundamentals-amid-rising-uncertainty?language_content_entity=en
+  sagax:
+    publisher: Sagax
+    title: "Delårsrapport januari–juni 2026"
+    period: 2026-06-30
+    url: https://storage.mfn.se/ec5f61d0-40d5-4ff1-bb74-0d7a7f9e527d/delarsrapport-q2-2026.pdf
+  np3:
+    publisher: NP3 Fastigheter
+    title: "Delårsrapport januari–juni 2026"
+    period: 2026-06-30
+    url: https://storage.mfn.se/3f79279e-edb1-486d-89ca-ecc3e2f67c7a/delarsrapport-januari-juni-2026.pdf
+  stenhus:
+    publisher: Stenhus Fastigheter
+    title: "Delårsrapport Q2 2026"
+    period: 2026-06-30
+    url: https://storage.mfn.se/0a7a2e46-9f83-4533-a871-93db79bc122b/delarsrapport-q2-2026.pdf
+  catena:
+    publisher: Catena
+    title: "Delårsrapport januari–juni 2026"
+    period: 2026-06-30
+    url: https://mb.cision.com/Main/191/4371043/4181610.pdf
+  hemso:
+    publisher: Hemsö
+    title: "Halvårsrapport 2026"
+    period: 2026-06-30
+    url: https://mb.cision.com/Main/2534/4373167/4190028.pdf
+  wallenstam:
+    publisher: Wallenstam
+    title: "Delårsrapport 1 januari–30 juni 2026"
+    period: 2026-06-30
+    url: https://mb.cision.com/Main/590/4371382/4182217.pdf
+  sveafastigheter:
+    publisher: Sveafastigheter
+    title: "Delårsrapport januari–juni 2026"
+    period: 2026-06-30
+    url: https://mb.cision.com/Main/20026/4372656/4187111.pdf
+  pandox:
+    publisher: Pandox
+    title: "Interim report January–June 2026"
+    period: 2026-06-30
+    url: https://www.pandox.se/files/mfn/30b8eaa7-033a-4424-8ada-757d3aa82187/pandox-ab-publ-interim-report-januaryjune-2026.pdf
+
+# Markets as the brokers define them. `market_of` in model/underwriting.py maps a
+# municipality to one of these by SCB's metropolitan areas: Stockholm = Greater Stockholm
+# (Stockholms län); Gothenburg = Greater Gothenburg; Malmö = Greater Malmö for housing,
+# offices and retail; Öresund = Skåne for logistics and light industrial; Regional =
+# everything else.
+
+# Prime yields, per cent. `segment` uses the app's segment keys.
+prime_yields:
+  - {segment: residential, market: stockholm, value: 3.75, note: "Stockholm A, new production; −5 bp in Q2", source: cw_residential}
+  - {segment: residential, market: gothenburg, value: 4.30, note: "Gothenburg A, new production; −5 bp in Q2", source: cw_residential}
+  - {segment: residential, market: malmo, value: 4.50, note: "Malmö A, new production; unchanged in Q2", source: cw_residential}
+  - {segment: logistics, market: stockholm, value: 4.85, note: "−5 bp y/y", source: cw_logistics}
+  - {segment: logistics, market: gothenburg, value: 4.85, note: "−5 bp y/y", source: cw_logistics}
+  - {segment: logistics, market: oresund, value: 5.20, note: "−5 bp y/y", source: cw_logistics}
+  - {segment: logistics, market: regional, value: 5.35, note: "Regional cities; −15 bp y/y", source: cw_logistics}
+  - {segment: office, market: stockholm, value: 3.75, note: "CBD; −15 bp y/y", source: cw_office}
+  - {segment: office, market: gothenburg, value: 4.50, note: "CBD; −5 bp y/y", source: cw_office}
+  - {segment: office, market: malmo, value: 4.80, note: "CBD; −5 bp y/y", source: cw_office}
+  - {segment: retail, market: stockholm, value: 3.85, note: "High street", source: cw_retail}
+  - {segment: retail, market: gothenburg, value: 4.90, note: "High street", source: cw_retail}
+  - {segment: retail, market: malmo, value: 5.95, note: "High street", source: cw_retail}
+  - {segment: retail_park, market: stockholm, value: 5.75, note: "Retail park", source: cw_retail}
+  - {segment: retail_park, market: gothenburg, value: 6.00, note: "Retail park", source: cw_retail}
+  - {segment: shopping_centre, market: stockholm, value: 4.45, note: "Shopping centre", source: cw_retail}
+  - {segment: shopping_centre, market: gothenburg, value: 5.35, note: "Shopping centre", source: cw_retail}
+  - {segment: shopping_centre, market: malmo, value: 6.20, note: "Shopping centre", source: cw_retail}
+
+# Valuation yields of listed owners (weighted average direktavkastningskrav in the
+# external or internal valuation at 30 June 2026). These are portfolio averages, not
+# prime: they show where an owner of comparable stock is marked. `markets` (optional)
+# limits which broker markets an owner is the reference for when no prime yield exists.
+valuation_yields:
+  - {company: Wallenstam, segment: residential, markets: [stockholm, gothenburg], value: 3.7, focus: "Residential in Stockholm, Gothenburg and Uppsala", page: 8, source: wallenstam}
+  - {company: Sveafastigheter, segment: residential, markets: [regional], value: 5.9, focus: "Residential in regional growth towns; all assets valued by Newsec", page: 16, source: sveafastigheter}
+  - {company: Catena, segment: logistics, value: 5.8, focus: "Nordic logistics (exit yield); EPRA NIY 5.4%", page: 8, source: catena}
+  - {company: Stenhus Fastigheter, segment: light_industrial, value: 6.04, focus: "Light industrial, retail and offices, Sweden; range 4.15–8.50%", page: 22, source: stenhus}
+  - {company: Sagax, segment: light_industrial, value: 6.3, focus: "Warehouse and light industrial, Nordics and Europe (Sweden 21% of value)", page: 12, source: sagax}
+  - {company: NP3 Fastigheter, segment: light_industrial, markets: [regional], value: 7.04, focus: "Industrial and logistics, northern and central Sweden", page: 14, source: np3}
+  - {company: Hemsö, segment: community, value: 5.0, focus: "Community service properties, Sweden (group 5.1%)", page: 7, source: hemso}
+  - {company: Pandox, segment: hotel, value: 6.29, focus: "Leased hotel properties, Nordics and Europe (own operations 6.78%)", page: 9, source: pandox}
+
+# Market rents, SEK per sq m and year.
+rents:
+  - {segment: residential, market: stockholm, value: 2950, note: "Regulated rent, new production, Stockholm A", source: cw_residential}
+  - {segment: residential, market: gothenburg, value: 2450, note: "Regulated rent, new production, Gothenburg A", source: cw_residential}
+  - {segment: residential, market: malmo, value: 2350, note: "Regulated rent, new production, Malmö A", source: cw_residential}
+  - {segment: logistics, market: stockholm, value: 1050, note: "Prime, net asking; unchanged since Q2 2025", source: cw_logistics}
+  - {segment: logistics, market: gothenburg, value: 1000, note: "Prime, net asking", source: cw_logistics}
+  - {segment: logistics, market: oresund, value: 850, note: "Prime, net asking", source: cw_logistics}
+  - {segment: logistics, market: regional, value: 675, note: "Prime, net asking, regional cities", source: cw_logistics}
+  - {segment: light_industrial, market: sweden, value: 1085, note: "Stenhus valuation: market rent, weighted average (range 94–5,838)", source: stenhus}
+  - {segment: light_industrial, market: regional, value: 1082, note: "NP3 rental value per sq m (2,778m on 2,568k sq m), northern Sweden", source: np3}
+  - {segment: office, market: stockholm, value: 9850, note: "Prime, CBD", source: cw_office}
+  - {segment: office, market: gothenburg, value: 4500, note: "Prime, CBD", source: cw_office}
+  - {segment: office, market: malmo, value: 3800, note: "Prime, CBD", source: cw_office}
+  - {segment: retail, market: stockholm, value: 22000, note: "Prime, high street", source: cw_retail}
+  - {segment: retail, market: gothenburg, value: 7500, note: "Prime, high street", source: cw_retail}
+  - {segment: retail, market: malmo, value: 5700, note: "Prime, high street", source: cw_retail}
+
+# Vacancy, per cent of stock.
+vacancy:
+  - {segment: logistics, market: stockholm, value: 12.0, note: "+50 bp q/q; stock 3.0m sq m", source: cw_logistics}
+  - {segment: logistics, market: gothenburg, value: 6.5, note: "+50 bp q/q; stock 2.85m sq m", source: cw_logistics}
+  - {segment: logistics, market: oresund, value: 5.5, note: "−100 bp q/q; stock 2.65m sq m", source: cw_logistics}
+  - {segment: logistics, market: regional, value: 11.0, note: "+100 bp q/q; stock 8.6m sq m", source: cw_logistics}
+  - {segment: light_industrial, market: sweden, value: 5.3, note: "Stenhus valuation: long-term vacancy, weighted average", source: stenhus}
+  - {segment: office, market: stockholm, value: 18.5, note: "Greater Stockholm; CBD 8.0%", source: cw_office}
+  - {segment: office, market: gothenburg, value: 15.0, note: "Greater Gothenburg; CBD 17.0%", source: cw_office}
+  - {segment: office, market: malmo, value: 17.0, note: "Greater Malmö; CBD 9.0%", source: cw_office}
+
+# Operating margin (NOI over rental income, H1 2026) of listed owners: a sourced default
+# for property costs when no rent roll is at hand.
+noi_margins:
+  - {company: Wallenstam, segment: residential, value: 75.0, note: "Residential and commercial, Stockholm and Gothenburg, Jan–Jun 2026", page: 6, source: wallenstam}
+  - {company: Catena, segment: logistics, value: 83.9, note: "Logistics, most costs re-invoiced to tenants, Jan–Jun 2026", page: 24, source: catena}
+  - {company: NP3 Fastigheter, segment: light_industrial, value: 74.0, note: "Industrial and logistics, northern Sweden, Jan–Jun 2026", page: 3, source: np3}
+
+# Swedish transaction volume.
+volumes:
+  quarter:
+    period: 2026Q2
+    source: cw_investment
+    note: "Closed transactions over SEK 40m"
+    rows:
+      - {segment: residential, deals: 59, sek_m: 17845, prime_yield: 3.75}
+      - {segment: logistics, label: "Industrial and logistics", deals: 46, sek_m: 12899, prime_yield: 4.85}
+      - {segment: office, deals: 11, sek_m: 10381, prime_yield: 3.75}
+      - {segment: retail, deals: 21, sek_m: 7891, prime_yield: 4.45, note: "Shopping centre yield"}
+      - {segment: other, label: "Other (community, hotel, mixed)", deals: 42, sek_m: 22585}
+  totals:
+    - {period: "H1 2026", value: "SEK 148bn", note: "Q1 the strongest in over 20 years", source: newsec}
+    - {period: "H1 2026", value: "SEK ~122bn", note: "+74% y/y, just over 160 deals; 91% domestic buyers", source: jll_autumn}
+    - {period: "H1 2026", value: "EUR 11.2bn", note: "+63% y/y; residential 25%, industrial 22%, office 13%", source: cw_nordic}
+    - {period: "H1 2026", value: "EUR 9.7bn", note: "+43% y/y, 180 deals over EUR 5m; foreign buyers 18%", source: colliers}
+    - {period: "2026 forecast", value: "SEK 300bn", note: "Would be the second-strongest year on record", source: newsec}
+    - {period: "2025", value: "SEK 166bn", note: "Full year", source: newsec}
+    - {period: "2025", value: "SEK ~150bn", note: "Full year, +6% y/y", source: svefa}
+
+# Recent sales with a disclosed price (closed deals over SEK 40m) and the largest deals.
+deals:
+  - {period: 2026Q2, segment: residential, place: Uppsala, asset: "Portfolio, 4 properties", seller: Niam, buyer: John Mattson, sqm: 14000, price_sek_m: 800, sek_per_sqm: 57500, source: cw_residential}
+  - {period: 2026Q2, segment: residential, place: Sollentuna, asset: "Traktören 20", seller: Skanska, buyer: KPA Pension, sqm: 8000, price_sek_m: 570, sek_per_sqm: 65500, source: cw_residential}
+  - {period: 2026Q2, segment: logistics, place: Gothenburg, asset: "Sörred 8:15", seller: Catena JV, buyer: Platzer, sqm: 29500, price_sek_m: 570, sek_per_sqm: 19000, source: cw_logistics}
+  - {period: 2026Q2, segment: logistics, place: Several cities, asset: "Portfolio, 4 properties", seller: "–", buyer: Altra, sqm: 20500, price_sek_m: 236, sek_per_sqm: 11500, source: cw_logistics}
+  - {period: 2026H1, segment: other, place: "Malmö, Lund, Helsingborg", asset: "Commercial portfolio", seller: Castellum, buyer: Wihlborgs, price_sek_m: 13300, source: colliers}
+  - {period: 2026H1, segment: logistics, place: Nordics, asset: "Logistics portfolio", seller: Urban Partners, buyer: Catena, price_sek_m: 8800, source: colliers}
+  - {period: 2026H1, segment: residential, place: Sweden, asset: "Residential portfolio", seller: SBB, buyer: KlaraBo, price_sek_m: 6800, source: colliers}
+  - {period: 2026H1, segment: community, place: Sweden, asset: "Public-sector portfolio", seller: Castellum, buyer: Secura Fastigheter, price_sek_m: 5600, source: colliers}
+
+# Financing evidence. Live rates (Riksbank, SCB) and bond margins (ESMA FIRDS) come from
+# the snapshot; these are the published points that the data cannot give.
+financing:
+  - {topic: "Bank appetite", text: "Nordic banks are cautious above 60% LTV/LTC.", source: jll_spring, page: 6}
+  - {topic: "Alternative lenders", text: "Bullet loans at 65–75% LTV, margins from the mid-200s to low-300s bp.", source: jll_spring, page: 6}
+  - {topic: "5-year SEK swap", text: "About 2.50% in early 2026.", source: jll_spring, page: 6}
+  - {topic: "Bond market", text: "Real estate companies issued about SEK 114bn of SEK bonds in 2025 (SEK 90bn in 2024); A-rated share about 26%.", source: jll_spring, page: 6}
+  - {topic: "New bond margins", text: "Svenska Handelsfastigheter 3y 90 bp and 5y 122 bp; Platzer 4y 138 bp and 5y 150 bp (unsecured); Vacse 5y 78 bp; Stenvalvet 3y 110 bp (unsecured); Stendörren hybrid 375 bp. April–May 2026.", source: ncr}
+  - {topic: "Coverage", text: "Average ICR 2.9x and debt maturity 2.9 years across NCR's rated Swedish property issuers at 31 March 2026.", source: ncr}
+  - {topic: "Bank financing conditions", text: "Bank competition and capital-market pressure on margins keep improving financing conditions; expectations of a near-term Riksbank hike have grown.", source: jll_autumn}

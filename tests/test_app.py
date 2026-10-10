@@ -11,7 +11,9 @@ MODES = ["demo"] + (["live"] if (ROOT / "data/snapshots/live/bond.parquet").exis
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("page", ["market", "companies", "locations", "issuer", "method"])
+@pytest.mark.parametrize(
+    "page", ["market", "companies", "locations", "underwriting", "issuer", "method"]
+)
 def test_page_renders(page, mode, monkeypatch):
     monkeypatch.setenv("HEADROOM_MODE", mode)
     at = AppTest.from_file(str(APP), default_timeout=90)
@@ -75,3 +77,25 @@ def test_tatort_is_not_a_page(monkeypatch):
     assert not at.exception, at.exception
     html = " ".join(str(getattr(e, "proto", "")) for e in at.get("html"))
     assert "No place with code" in html
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        {"uw_kommun": "1480", "uw_segment": "logistics"},
+        {"uw_kommun": "0380", "uw_segment": "light_industrial"},
+        {"uw_kommun": "1280", "uw_segment": "hotel"},
+        {"uw_kommun": "0180", "uw_segment": "retail"},
+        {"uw_org": "559286-6809", "uw_segment": "residential"},
+    ],
+)
+def test_underwriting_states(state, monkeypatch):
+    mode = MODES[-1]
+    monkeypatch.setenv("HEADROOM_MODE", mode)
+    at = AppTest.from_file(str(APP), default_timeout=120)
+    at.session_state["mode"] = mode
+    for k, v in state.items():
+        at.session_state[k] = v
+    at.run()
+    at.switch_page("views/underwriting.py").run()
+    assert not at.exception, at.exception

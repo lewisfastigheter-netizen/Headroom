@@ -24,7 +24,8 @@ from headroom.extract.llm import LLMUnavailable
 from headroom.http import Fetcher
 from headroom.model import geo
 from headroom.model.universe import classify, seed
-from headroom.sources import firds, gleif, newsfeeds, prices, riksbank
+from headroom.sources import firds, gleif, lending, newsfeeds, prices, riksbank
+from headroom.sources.scb import SCB
 from headroom.store.db import snapshot_dir, write_snapshot
 from headroom.store.private import PRIVATE_CANDIDATES, PRIVATE_LEDGER, load_found, save_found
 
@@ -436,6 +437,10 @@ def build_live(as_of: date | None = None, with_reports: bool = True) -> dict:
     as_of = as_of or date.today()
     with Fetcher() as f:
         rates = riksbank.fetch_rates(f, as_of - timedelta(days=3 * 365), as_of)
+        try:  # bank lending rates to companies, for the Underwriting page
+            rates = pl.concat([rates, lending.fetch_lending_rates(SCB(f))])
+        except Exception as e:
+            log.warning("SCB lending rates unavailable: %s", e)
         company, bond, audit, meta = build_bond_universe(f, as_of)
         tables: dict[str, pl.DataFrame] = {"company": company, "bond": bond, "rate": rates}
         as_of_map = {

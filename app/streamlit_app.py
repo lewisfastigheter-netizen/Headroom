@@ -32,6 +32,7 @@ pages = [
     st.Page("views/market.py", title="Market Overview", url_path="market", default=True),
     st.Page("views/companies.py", title="Companies", url_path="companies"),
     st.Page("views/locations.py", title="Locations", url_path="locations"),
+    st.Page("views/underwriting.py", title="Underwriting", url_path="underwriting"),
     st.Page("views/method.py", title="Method", url_path="method"),
     # Company pages open from the tables; they are not a menu item.
     st.Page("views/issuer.py", title="Company", url_path="issuer", visibility="hidden"),

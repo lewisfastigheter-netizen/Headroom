@@ -156,18 +156,16 @@ location:
 
   logistics:              # municipalities and counties
     weights:
-      catchment_100km: 0.25    # residents within 100 km, straight line
+      catchment_100km: 0.30    # residents within 100 km, straight line
       logistics_lq: 0.20       # transport and warehousing (SNI H) share of local jobs / Sweden's share
       logistics_growth: 0.10   # growth per year in SNI H jobs at workplaces in the municipality
-      node_distance: 0.15      # nearest port, intermodal terminal or cargo airport, km
-      motorway_distance: 0.10  # nearest junction on E4, E6, E18 or E20, km
+      node_distance: 0.20      # nearest port, intermodal terminal or cargo airport, km
       job_hub: 0.10            # in-commuters / out-commuters
       industrial_cluster: 0.10 # employees in business areas (verksamhetsområden) per 1,000 residents
     catchment_100km:    {zero: 300000, full: 3000000, scale: log}
     logistics_lq:       {zero: 0.8,  full: 2.0}
     logistics_growth:   {zero: 0.0,  full: 0.04}
     node_distance:      {zero: 80.0, full: 10.0}
-    motorway_distance:  {zero: 40.0, full: 3.0}
     job_hub:            {zero: 0.7,  full: 1.3}
     industrial_cluster: {zero: 50.0, full: 250.0}
 

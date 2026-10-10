@@ -22,6 +22,13 @@ SWESTR = "https://api.riksbank.se/swestr/v1"
 SWEA_SERIES = {
     "policy_rate": "SECBREPOEFF",  # Policy rate
     "tbill_3m": "SETB3MBENCH",  # SE TB 3 Months, benchmark
+    # Fixed-rate references for underwriting: government bonds and covered (mortgage)
+    # bonds. The 5-year mortgage bond is the closest free proxy for a 5-year swap.
+    "gvb_2y": "SEGVB2YC",
+    "gvb_5y": "SEGVB5YC",
+    "gvb_10y": "SEGVB10YC",
+    "mb_2y": "SEMB2YCACOMB",
+    "mb_5y": "SEMB5YCACOMB",
 }
 
 

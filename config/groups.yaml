@@ -1,0 +1,41 @@
+# Private companies that are subsidiaries (SPVs) of a listed property group, matched on
+# the name. Listed groups name their single-asset companies after themselves
+# ("Balder Sundsbron AB", "Logistea Transformatorn 2 AB"); such a company is not an owner
+# a buyer can approach on its own, so Companies shows the parent and hides it from the
+# ranking by default. Patterns are case-insensitive regular expressions on the full name,
+# anchored at the start so a brand word inside another name does not match.
+
+groups:
+  - {pattern: "^Balder\\b", parent: "Fastighets AB Balder"}
+  - {pattern: "^Logistea\\b", parent: "Logistea AB"}
+  - {pattern: "^Emilshus\\b", parent: "Fastighetsbolaget Emilshus AB"}
+  - {pattern: "^Fortinova\\b", parent: "Fortinova Fastigheter AB"}
+  - {pattern: "^Stenhus\\b", parent: "Stenhus Fastigheter i Norden AB"}
+  - {pattern: "^Castellum\\b", parent: "Castellum AB"}
+  - {pattern: "^Sagax\\b", parent: "AB Sagax"}
+  - {pattern: "^Catena\\b", parent: "Catena AB"}
+  - {pattern: "^Corem\\b", parent: "Corem Property Group AB"}
+  - {pattern: "^Klövern\\b", parent: "Corem Property Group AB"}
+  - {pattern: "^Wihlborgs\\b", parent: "Wihlborgs Fastigheter AB"}
+  - {pattern: "^Platzer\\b", parent: "Platzer Fastigheter Holding AB"}
+  - {pattern: "^NP3\\b", parent: "NP3 Fastigheter AB"}
+  - {pattern: "^Nivika\\b", parent: "Nivika Fastigheter AB"}
+  - {pattern: "^Stendörren\\b", parent: "Stendörren Fastigheter AB"}
+  - {pattern: "^Fastpartner\\b", parent: "Fastpartner AB"}
+  - {pattern: "^Diös\\b", parent: "Diös Fastigheter AB"}
+  - {pattern: "^Heimstaden\\b", parent: "Heimstaden AB"}
+  - {pattern: "^Wallenstam\\b", parent: "Wallenstam AB"}
+  - {pattern: "^Akelius\\b", parent: "Akelius Residential Property AB"}
+  - {pattern: "^Hemsö\\b", parent: "Hemsö Fastighets AB"}
+  - {pattern: "^Rikshem\\b", parent: "Rikshem AB"}
+  - {pattern: "^Vasakronan\\b", parent: "Vasakronan AB"}
+  - {pattern: "^Fabege\\b", parent: "Fabege AB"}
+  - {pattern: "^Atrium Ljungberg\\b", parent: "Atrium Ljungberg AB"}
+  - {pattern: "^Hufvudstaden\\b", parent: "Hufvudstaden AB"}
+  - {pattern: "^Intea\\b", parent: "Intea Fastigheter AB"}
+  - {pattern: "^Cibus\\b", parent: "Cibus Nordic Real Estate AB"}
+  - {pattern: "^K2A\\b", parent: "K2A Knaust & Andersson Fastigheter AB"}
+  - {pattern: "^Sveafastigheter\\b", parent: "Sveafastigheter AB"}
+  - {pattern: "^KlaraBo\\b", parent: "KlaraBo Sverige AB"}
+  - {pattern: "^John Mattson\\b", parent: "John Mattson Fastighetsföretagen AB"}
+  - {pattern: "^Pandox\\b", parent: "Pandox AB"}
