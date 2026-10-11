@@ -208,11 +208,13 @@ def news(items: Sequence[dict]) -> None:
     render(f'<div class="hr-news">{"".join(arts)}</div>')
 
 
-def facts(items: Sequence[tuple[str, str]]) -> None:
+def facts(items: Sequence[tuple[str, str]], cols: int | None = None, cls: str = "") -> None:
+    """Key figures in a row; `cols` cells per row (four by default)."""
     cells = "".join(
         f'<div><div class="k">{esc(k)}</div><div class="v">{v}</div></div>' for k, v in items
     )
-    render(f'<div class="hr-facts">{cells}</div>')
+    style = f' style="--hr-facts-cols:{cols}"' if cols else ""
+    render(f'<div class="hr-facts {cls}"{style}>{cells}</div>')
 
 
 def source_line(text: str) -> None:

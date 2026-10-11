@@ -811,6 +811,195 @@ def headline(name: str, f: dict, nat: dict) -> str:
     return max(cands)[1]
 
 
+# Keys the profile compares, with the theme each belongs to and how much it counts. Only
+# one sentence per theme is used, so the profile reads as three different points.
+PROFILE_KEYS: dict[str, tuple[str, float]] = {
+    "growth_5y": ("growth", 1.0),
+    "housing_pressure": ("housing", 1.0),
+    "pipeline": ("housing", 0.8),
+    "young_inflow": ("young", 1.0),
+    "share_20_34": ("young", 0.8),
+    "int_net_per_1000": ("migration", 0.7),
+    "rental_share": ("tenure", 1.0),
+    "income_median": ("income", 0.9),
+    "education": ("income", 0.7),
+    "unemployment": ("labour", 0.9),
+    "job_hub": ("labour", 0.8),
+    "logistics_lq": ("logistics", 1.0),
+    "industrial_share": ("logistics", 0.8),
+    "catchment_100km": ("logistics", 0.8),
+    "grp_growth_5y": ("economy", 0.6),
+}
+
+
+def _cmp(x: float, n: float, close: float = 0.1) -> str:
+    """'twice', '40% above', 'about the same as' for a ratio x / n."""
+    if not n:
+        return ""
+    k = x / n
+    if abs(k - 1) < close:
+        return "about the same as"
+    if k >= 1.8:
+        return "twice" if k < 2.3 else f"{k:.1f} times"
+    return f"{abs(k - 1):.0%} {'above' if k > 1 else 'below'}"
+
+
+def _profile_sentence(
+    key: str, name: str, f: dict, n, med, peer: str = "municipality"
+) -> str | None:
+    x = f.get(key)
+    if x is None:
+        return None
+    if key == "growth_5y" and n is not None:
+        if x < 0:
+            return (
+                f"The population has shrunk {_pct(abs(x))} a year over five years while "
+                f"Sweden grew {_pct(n)}: rental demand rests on turnover, not on new households."
+            )
+        word = "faster than" if x > n * 1.2 else "slower than" if x < n * 0.8 else "in step with"
+        return (
+            f"The population has grown {_pct(x)} a year over five years, {word} Sweden's {_pct(n)}."
+        )
+    if key == "housing_pressure" and n is not None:
+        if x < 0:
+            return (
+                f"Homes are still being completed while the population falls: over three years "
+                f"{name} lost residents against {n:.1f} new residents per new home in Sweden."
+            )
+        if x > n:
+            return (
+                f"Housing is getting scarcer: {x:.1f} new residents for every home completed "
+                f"over three years, against {n:.1f} for Sweden."
+            )
+        return (
+            f"Building has run ahead of demand: only {x:.1f} new residents per completed home "
+            f"over three years, against {n:.1f} for Sweden."
+        )
+    if key == "pipeline" and n is not None:
+        word = "more" if x > n else "fewer"
+        tail = "new supply is on its way" if x > n else "little new supply is coming"
+        return (
+            f"{x:.1f} homes per 1,000 residents were started over the last four quarters, "
+            f"{word} than Sweden's {n:.1f}: {tail}."
+        )
+    if key == "young_inflow":
+        if x >= 0:
+            return (
+                f"Young adults move in: {x:.1f} more 20–34-year-olds per 1,000 residents arrive "
+                "from the rest of Sweden each year than leave, the core renter cohort."
+            )
+        return (
+            f"Young adults move out: {abs(x):.1f} more 20–34-year-olds per 1,000 residents "
+            "leave for the rest of Sweden each year than arrive."
+        )
+    if key == "share_20_34" and n is not None:
+        lead = "A young population" if x > n else "An older population"
+        return f"{lead}: {_pct(x, 0)} of residents are aged 20–34, against {_pct(n, 0)} for Sweden."
+    if key == "int_net_per_1000" and n is not None:
+        return f"Immigration adds {x:.1f} residents per 1,000 a year, against {n:.1f} for Sweden."
+    if key == "rental_share" and n is not None:
+        depth = (
+            "a deep rental market"
+            if x > n + 0.04
+            else "an owner-dominated market"
+            if x < n - 0.04
+            else "close to the national mix"
+        )
+        return (
+            f"{_pct(x, 0)} of dwellings are rental flats, against {_pct(n, 0)} for Sweden: {depth}."
+        )
+    if key == "income_median" and n:
+        return (
+            f"Median income is SEK {x:,.0f}k, {_cmp(x, n, 0.03)} Sweden's SEK {n:,.0f}k."
+        ).replace("about the same as Sweden's", "about Sweden's")
+    if key == "education" and n is not None:
+        lead = "Highly educated" if x > n else "Fewer graduates"
+        return (
+            f"{lead}: {_pct(x, 0)} of 25–65-year-olds have three or more years of higher "
+            f"education, against {_pct(n, 0)} for Sweden."
+        )
+    if key == "unemployment" and n is not None:
+        lead = "Unemployment is low" if x < n else "Unemployment is high"
+        return (
+            f"{lead}: {x:.1f}% of 18–65-year-olds are openly unemployed, against {n:.1f}% "
+            "for Sweden."
+        )
+    if key == "job_hub":
+        if x >= 1:
+            return (
+                f"{x:.1f} people commute in for every one who commutes out: {name} is a "
+                "regional job centre."
+            )
+        return (
+            f"Only {x:.1f} people commute in for every one who commutes out: {name} is largely "
+            "a place people live in and work elsewhere."
+        )
+    if key == "logistics_lq" and f.get("logistics_share") is not None:
+        tail = (
+            "an existing labour pool and tenant base for logistics"
+            if x >= 1
+            else "logistics is not a local specialty"
+        )
+        return (
+            f"Transport and warehousing hold {_pct(f['logistics_share'])} of jobs, "
+            f"{x:.1f} times Sweden's share: {tail}."
+        )
+    if key == "industrial_share" and n is not None:
+        lead = "An industrial labour market" if x > n else "Little industry"
+        return (
+            f"{lead}: manufacturing and construction hold {_pct(x, 0)} of jobs, against "
+            f"{_pct(n, 0)} for Sweden."
+        )
+    if key == "catchment_100km" and med:
+        lead = "A large market within reach" if x > med else "A thin market within reach"
+        return (
+            f"{lead}: {_num(x)} people live within 100 km, against {_num(med)} for the median "
+            f"{peer}."
+        )
+    if key == "grp_growth_5y" and n is not None:
+        word = f"grown {_pct(x)}" if x >= 0 else f"shrunk {_pct(abs(x))}"
+        return (
+            f"The local economy (GRP) has {word} a year over five years in current prices, "
+            f"against growth of {_pct(n)} for Sweden."
+        )
+    return None
+
+
+def profile(name: str, f: dict, nat: dict, n: int = 3, peer: str = "municipality") -> str:
+    """A short rule-based reading of a place: the `n` indicators, from different themes,
+    where it differs most from Sweden, in plain sentences, the largest difference first
+    (one more when the three are short).
+
+    Differences are measured in units of the spread across places of the same level
+    (`nat['_sd_<key>']`); a key Sweden has no figure for (catchment, commuting) is compared
+    with the median `peer` (`nat['_med_<key>']`, or 1 for the commuting ratio)."""
+    cands: list[tuple[float, str, str]] = []
+    for key, (theme, weight) in PROFILE_KEYS.items():
+        x, sd = f.get(key), nat.get(f"_sd_{key}")
+        if x is None or not sd:
+            continue
+        ref = nat.get(key)
+        if key == "job_hub":
+            ref = 1.0
+        elif ref is None:
+            ref = nat.get(f"_med_{key}")
+        if ref is None:
+            continue
+        text = _profile_sentence(key, name, f, nat.get(key), nat.get(f"_med_{key}"), peer)
+        if text:
+            cands.append((abs(x - ref) / sd * weight, theme, text))
+    cands.sort(key=lambda c: -c[0])
+    out, themes = [], set()
+    for _, theme, text in cands:
+        if theme in themes:
+            continue
+        themes.add(theme)
+        out.append(text)
+        if len(out) > n or (len(out) == n and sum(map(len, out)) >= 200):
+            break
+    return " ".join(out) if out else headline(name, f, nat)
+
+
 # --------------------------------------------------------------------------- search index
 
 

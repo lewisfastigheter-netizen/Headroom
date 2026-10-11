@@ -5,8 +5,9 @@ No place selected: a single search box over the municipalities (kommuner); a pic
 the municipality.
 A municipality (?level=kommun&code=0380): first its areas (a map of its RegSO areas, each
 one clickable, and a table of them below), then what is happening there, how it compares
-with its neighbours, similar municipalities and Sweden, what that means for housing and
+with its county, similar municipalities and Sweden, what that means for housing and
 for logistics, and the property companies that hold most of their portfolio there.
+The search box is on the start page only; a place page has none of its own.
 Counties and areas open from the search box in the top-right corner and from the maps.
 
 All figures come from data/snapshots/locations (public statistics, the same in live and
@@ -472,9 +473,9 @@ def residential_section(level: str, code: str, name: str) -> None:
         peers = kolada_peers(code) if level == "kommun" else []
         items = [
             ("population", "Population", ui.fmt_num, "population_year"),
-            ("growth_1y", "Growth, last year", ui.fmt_delta, "population_year"),
-            ("growth_5y", "Growth per year, 5 years", ui.fmt_delta, None),
-            ("growth_10y", "Growth per year, 10 years", ui.fmt_delta, None),
+            ("growth_1y", "Population growth, last year", ui.fmt_delta, "population_year"),
+            ("growth_5y", "Population growth per year, 5 years", ui.fmt_delta, None),
+            ("growth_10y", "Population growth per year, 10 years", ui.fmt_delta, None),
             (
                 "housing_pressure",
                 "New residents per completed home",
@@ -868,7 +869,7 @@ def areas_section(level: str, code: str, name: str, highlight: str | None = None
                 ui.Col("log", "Logistics", "big", raw_html=True),
                 ui.Col("name", "Municipality", "name", raw_html=True),
                 ui.Col("pop", "Population", "num", raw_html=True),
-                ui.Col("g5", "Growth / yr, 5y", "num", raw_html=True),
+                ui.Col("g5", "Population growth / yr, 5y", "num", raw_html=True),
                 ui.Col("hp", "Residents per new home", "num", raw_html=True),
                 ui.Col("bme", "Housing market", raw_html=True),
             ],
@@ -959,7 +960,7 @@ def areas_section(level: str, code: str, name: str, highlight: str | None = None
             ui.Col("res", "Residential", "big", raw_html=True),
             ui.Col("name", "Area", "name", raw_html=True),
             ui.Col("pop", "Population", "num", raw_html=True),
-            ui.Col("g", "Growth / yr", "num", raw_html=True),
+            ui.Col("g", "Population growth / yr", "num", raw_html=True),
             ui.Col("y", "Aged 20–34", "num", raw_html=True),
             ui.Col("rent", "Rental share", "num", raw_html=True),
             ui.Col("inc", "Income vs municipality", "num", raw_html=True),
@@ -970,7 +971,7 @@ def areas_section(level: str, code: str, name: str, highlight: str | None = None
     )
     src_line(
         ["pop", "dwellings_rental", "net_income_mean", "sei"],
-        "Growth per year since 2020 where the area kept its borders, otherwise last year. SEI improvement: fall in SCB's socio-economic "
+        "Population growth per year since 2020 where the area kept its borders, otherwise last year. SEI improvement: fall in SCB's socio-economic "
         "index (higher index = more challenges), percentage points. Flags: Polisen, Lägesbild över utsatta områden 2025.",
         level="regso",
     )
@@ -1150,94 +1151,6 @@ def county_map(lan: str) -> None:
         go_to(f"kommun:{pts[0]['location']}")
 
 
-def peers_section(level: str, code: str, name: str) -> None:
-    ui.section(
-        None,
-        "Peers",
-        "The place against its neighbours, similar places and Sweden, on the same rows.",
-    )
-    rows_spec: list[tuple[str, str, str]] = [(code, "This place", "")]
-    if level in ("kommun", "lan"):
-        sets = {"kolada": "Similar (Kolada)", "nearest": "Neighbour", "twin": "Statistical twin"}
-        p = D.peers.filter(pl.col("code") == code).sort("peer_set", "rank")
-        seen = {code}
-        for ps in ("kolada", "nearest", "twin"):
-            for r in p.filter(pl.col("peer_set") == ps).to_dicts():
-                if r["peer_code"] in seen:
-                    continue
-                seen.add(r["peer_code"])
-                reason = ""
-                if ps == "nearest" and r["distance"] is not None:
-                    reason = f"{r['distance']:.0f} km" + (
-                        " · same labour market"
-                        if "same local labour market" in (r["reason"] or "")
-                        else ""
-                    )
-                rows_spec.append((r["peer_code"], sets[ps], reason))
-        if level == "kommun":
-            rows_spec.append((code[:2], "County", ""))
-    elif level == "regso":
-        k = code[:4]
-        rows_spec.append((k, "Municipality", ""))
-    rows_spec.append(("00", "", ""))
-    res_key = "growth" if level == "regso" else "growth_5y"
-    out = []
-    for c, kind, reason in rows_spec:
-        p = D.place(c)
-        if not p:
-            continue
-        f = D.feat(c)
-        lvl = p["level"]
-        nm = p["name"]
-        name_html = link(lvl, c, nm) if lvl != "riket" and c != code else ui.esc(nm)
-        sub = kind + (f" · {reason}" if reason else "")
-        out.append(
-            {
-                "_class": "me" if c == code else None,
-                "res": score_cell(D.score(c, "residential")) if lvl != "riket" else "",
-                "log": (score_cell(D.score(c, "logistics")) if lvl != "riket" else "")
-                if level != "regso"
-                else "",
-                "name": name_html + f'<span class="sub">{ui.esc(sub)}</span>',
-                "pop": sv(
-                    ui.fmt_num(f.get("population")), "population", lvl, f.get("population_year")
-                ),
-                "g": sv(
-                    ui.fmt_delta(f.get(res_key) if lvl == "regso" else f.get("growth_5y")),
-                    "growth" if lvl == "regso" else "growth_5y",
-                    lvl,
-                ),
-                "hp": ui.fmt_num(num(f.get("housing_pressure")), 1)
-                if level != "regso"
-                else ui.fmt_pct(f.get("rental_share"), 0),
-                "y": ui.fmt_pct(f.get("share_20_34"), 1),
-                "inc": ui.fmt_x(f.get("income_rel"), 2)
-                if level != "regso"
-                else ui.fmt_x(f.get("income_rel_kommun"), 2),
-                "lq": ui.fmt_pct(f.get("logistics_share"), 1)
-                if level != "regso"
-                else ui.fmt_people(f.get("catchment_100km")),
-            }
-        )
-    cols = [
-        ui.Col("res", "Residential", "big", raw_html=True),
-        *([ui.Col("log", "Logistics", "big", raw_html=True)] if level != "regso" else []),
-        ui.Col("name", "Place", "name", raw_html=True),
-        ui.Col("pop", "Population", "num", raw_html=True),
-        ui.Col("g", "Growth / yr, 5y", "num", raw_html=True),
-        ui.Col("hp", "Residents per new home" if level != "regso" else "Rental share", "num"),
-        ui.Col("y", "Aged 20–34", "num"),
-        ui.Col("inc", "Income vs Sweden" if level != "regso" else "Income vs municipality", "num"),
-        ui.Col("lq", "Logistics jobs" if level != "regso" else "People within 100 km", "num"),
-    ]
-    ui.table(out, cols)
-    src_line(
-        ["pop", "completions_q", "income_median", "emp_work_H"],
-        "Similar: Kolada's group 'Liknande kommuner socioekonomi'. Neighbours: nearest by population-weighted centre, same local labour market "
-        "(SCB LA 2018) first. Statistical twins: nearest on standardised log population, five-year growth, median income, rental share and logistics share.",
-    )
-
-
 def companies_section(level: str, code: str, name: str) -> None:
     d = get_data()
     ui.section(
@@ -1317,6 +1230,42 @@ def companies_section(level: str, code: str, name: str) -> None:
     )
 
 
+def profile_ref(level: str) -> dict:
+    """Sweden's figures plus the spread and median of each profile key across the places of
+    this level (municipalities for a municipality, counties for a county)."""
+    ref = dict(NAT)
+    frame = level_feats(level)
+    for key in L.PROFILE_KEYS:
+        if key not in frame.columns:
+            continue
+        vals = frame[key].drop_nulls()
+        if vals.dtype.is_float():
+            vals = vals.drop_nans()
+        if vals.len() > 1:
+            ref[f"_sd_{key}"] = float(vals.std())
+            ref[f"_med_{key}"] = float(vals.median())
+    for key in ("growth_1y", "housing_pressure", "young_inflow", "logistics_lq", "growth_5y"):
+        if f"_sd_{key}" not in ref and key in frame.columns:  # for L.headline's fallback
+            vals = frame[key].drop_nulls()
+            ref[f"_sd_{key}"] = float(vals.std()) if vals.len() > 1 else None
+    return ref
+
+
+def score_fact(label: str, v: float | None) -> tuple[str, str]:
+    """A score as a cell of the facts row: '30/100', hover for how it is made."""
+    if v is None:
+        return label, "–"
+    return label, (
+        f'<span class="score" data-src="{ui.esc(SCORE_TIP)}">{v:.0f}</span>'
+        '<span class="of">/100</span>'
+    )
+
+
+def place_facts(items: list[tuple[str, str]]) -> None:
+    """The key figures of a place in one horizontal row, scores first."""
+    ui.facts(items, cols=len(items), cls="big")
+
+
 def place_page(p: dict) -> None:
     level, code = p["level"], p["code"]
     name = p["name"]
@@ -1327,51 +1276,25 @@ def place_page(p: dict) -> None:
         kicker = f"Municipality · {D.name(code[:2])}"
     else:
         kicker = f"Area · {D.name(code[:4])} municipality"
-    nat = dict(NAT)
-    for key in ("growth_1y", "housing_pressure", "young_inflow", "logistics_lq", "growth_5y"):
-        if key in D.feats.columns:
-            vals = level_feats("kommun")[key].drop_nulls()
-            nat[f"_sd_{key}"] = float(vals.std()) if vals.len() > 1 else None
     if level == "regso":
-        headline = regso_headline(name, f, D.feat(code[:4]))
+        reading = regso_headline(name, f, D.feat(code[:4]))
     else:
-        headline = L.headline(name, f, nat)
-    res = D.score(code, "residential")
-    stats = [
-        ui.Stat(
-            score_txt(res),
-            "/100" if res is not None else "",
-            "Residential score",
-            tip=SCORE_TIP if res is not None else "",
+        reading = L.profile(
+            name, f, profile_ref(level), peer="county" if level == "lan" else "municipality"
         )
-    ]
-    if level != "regso":
-        lg = D.score(code, "logistics")
-        stats.append(
-            ui.Stat(
-                score_txt(lg),
-                "/100" if lg is not None else "",
-                "Logistics score",
-                ink=True,
-                tip=SCORE_TIP if lg is not None else "",
-            )
-        )
-    stats.append(
-        ui.Stat(
-            ui.fmt_num(f.get("population")),
-            "",
-            f"Residents, {ui.esc(str(f.get('population_year') or ''))}",
-            ink=True,
-            tip=tip("population", level, str(f.get("population_year") or "") or None),
-        )
+    ui.render(
+        f'<div class="hr-place-head">{ui.eyebrow(kicker)}<h1>{ui.esc(name)}</h1>'
+        f'<p class="lede">{ui.esc(reading)}</p></div>'
     )
-    ui.hero(kicker, ui.esc(headline), "", stats)
-    go_to(place_search(kommun_index(), key="place_search_top", placeholder="Search kommun"))
+    score_facts = [score_fact("Residential score", D.score(code, "residential"))]
+    if level != "regso":
+        score_facts.append(score_fact("Logistics score", D.score(code, "logistics")))
     if level == "regso":
-        ui.facts(
+        place_facts(
             [
+                *score_facts,
                 (
-                    "Population",
+                    "Residents",
                     sv(
                         ui.fmt_num(f.get("population")),
                         "population",
@@ -1381,7 +1304,7 @@ def place_page(p: dict) -> None:
                     + period_txt(f.get("population_year")),
                 ),
                 (
-                    "Growth per year",
+                    "Population growth / yr",
                     sv(ui.fmt_delta(f.get("growth")), "growth", level, f.get("growth_basis"))
                     + period_txt(f.get("growth_basis")),
                 ),
@@ -1410,19 +1333,19 @@ def place_page(p: dict) -> None:
         regso_section(code, name, f)
         areas_section("regso", code, name, highlight=code)
         logistics_section("regso", code, name)
-        peers_section("regso", code, name)
         companies_section("regso", code, name)
         return
     py = f.get("population_year")
     g_per = f"{int(py) - 5}–{py}" if py else None
-    ui.facts(
+    place_facts(
         [
+            *score_facts,
             (
-                "Population",
+                "Residents",
                 sv(ui.fmt_num(f.get("population")), "population", level, py) + period_txt(py),
             ),
             (
-                "Growth per year, 5 years",
+                "Population growth / yr",
                 sv(ui.fmt_delta(f.get("growth_5y")), "growth_5y", level, g_per) + period_txt(g_per),
             ),
             (
@@ -1458,11 +1381,11 @@ def place_page(p: dict) -> None:
         residential_section(level, code, name)
         logistics_section(level, code, name)
         areas_section(level, code, name)
-    peers_section(level, code, name)
     companies_section(level, code, name)
 
 
 def regso_headline(name: str, f: dict, k: dict) -> str:
+    """Up to three sentences on how the area differs from its municipality, largest first."""
     cands = []
     g, gk = f.get("growth"), k.get("growth_5y")
     if g is not None and gk is not None and f.get("growth_basis", "").startswith("2020"):
@@ -1470,7 +1393,7 @@ def regso_headline(name: str, f: dict, k: dict) -> str:
         cands.append(
             (
                 abs(g - gk) / 0.015,
-                f"{name} has {word} {ui.fmt_pct(abs(g), 1)} a year since 2020; the municipality {ui.fmt_pct(gk, 1)}.",
+                f"The area has {word} {ui.fmt_pct(abs(g), 1)} a year since 2020; the municipality {ui.fmt_pct(gk, 1)}.",
             )
         )
     si = f.get("sei_improvement")
@@ -1483,14 +1406,14 @@ def regso_headline(name: str, f: dict, k: dict) -> str:
         cands.append(
             (
                 si / 1.5 + 0.5,
-                f"{name} is improving from a weak base: SCB's socio-economic index fell {si:.1f} points in ten years.",
+                f"The area is improving from a weak base: SCB's socio-economic index fell {si:.1f} points in ten years.",
             )
         )
     elif si is not None and si <= -1.5:
         cands.append(
             (
                 abs(si) / 1.5,
-                f"{name} is weakening: SCB's socio-economic index rose {abs(si):.1f} points in ten years.",
+                f"The area is weakening: SCB's socio-economic index rose {abs(si):.1f} points in ten years.",
             )
         )
     rs = f.get("rental_share")
@@ -1499,7 +1422,7 @@ def regso_headline(name: str, f: dict, k: dict) -> str:
         cands.append(
             (
                 abs(rs - rk) / 0.2,
-                f"{ui.fmt_pct(rs)} of homes in {name} are rented, against {ui.fmt_pct(rk)} across the municipality.",
+                f"{ui.fmt_pct(rs)} of homes in the area are rented, against {ui.fmt_pct(rk)} across the municipality.",
             )
         )
     y = f.get("share_20_34")
@@ -1508,12 +1431,12 @@ def regso_headline(name: str, f: dict, k: dict) -> str:
         cands.append(
             (
                 abs(y - yk) / 0.06,
-                f"{ui.fmt_pct(y)} of residents in {name} are aged 20–34; the municipality {ui.fmt_pct(yk)}.",
+                f"{ui.fmt_pct(y)} of residents in the area are aged 20–34; the municipality {ui.fmt_pct(yk)}.",
             )
         )
     if not cands:
         return f"{name} has {ui.fmt_num(f.get('population'))} residents."
-    return max(cands)[1]
+    return " ".join(t for _, t in sorted(cands, key=lambda c: -c[0])[:3])
 
 
 REGSO_PCT_TIP = ui.esc("Share of Sweden's RegSO areas with a lower value")
@@ -1586,7 +1509,7 @@ def regso_section(code: str, name: str, f: dict) -> None:
 
         rows = [
             r("population", "Population", ui.fmt_num, "population_year"),
-            r("growth", "Growth per year", ui.fmt_delta, "growth_basis"),
+            r("growth", "Population growth per year", ui.fmt_delta, "growth_basis"),
             r("share_20_34", "Share aged 20–34", lambda v: ui.fmt_pct(v, 1), "population_year"),
             r(
                 "rental_share",

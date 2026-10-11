@@ -145,7 +145,7 @@ table.hr-table { width: 100%; border-collapse: collapse; font-size: 15px; color:
 .hr-bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); }
 
 /* issuer facts */
-.hr-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 2rem; border-top: 1px solid var(--rule); margin: 3rem 0 0 0; padding: 0; }
+.hr-facts { display: grid; grid-template-columns: repeat(var(--hr-facts-cols, 4), minmax(0, 1fr)); column-gap: 2rem; border-top: 1px solid var(--rule); margin: 3rem 0 0 0; padding: 0; }
 .hr-facts > div { padding: 1.1rem 0 1.2rem 0; margin: 0; border-bottom: 1px solid var(--rule); }
 .hr-facts .k { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--graphite); margin-bottom: .4rem; }
 .hr-facts .v { margin: 0; font-size: 15px; color: var(--ink); line-height: 1.45; }
@@ -237,13 +237,25 @@ header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !import
 @media (max-width: 900px) { .hr-table-wrap.bleed { overflow-x: auto; } }
 
 /* ---------- Locations ---------- */
+/* Place pages: the name, a short reading of how the place differs from Sweden, then the key
+   figures (scores first) in one row */
+.hr-place-head { margin: 0; max-width: 64rem; }
+.hr-place-head h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2.8rem, 5vw, 4.4rem); line-height: 1.04;
+  letter-spacing: -.01em; color: var(--ink); margin: .5rem 0 1.4rem 0; padding: 0; }
+.hr-place-head .lede { font-family: var(--display); font-weight: 400; font-size: clamp(1.25rem, 1.75vw, 1.6rem); line-height: 1.45;
+  color: var(--ink); margin: 0; }
+.hr-facts.big { margin-top: 2.6rem; }
+.hr-facts.big .v { font-size: 22px; line-height: 1.3; }
+.hr-facts.big .v > span[style] { font-size: 13.5px; }
+.hr-facts.big .score { font-family: var(--display); font-size: 2.4rem; line-height: 1; color: var(--blue); }
+.hr-facts.big > div:nth-child(2) .score { color: var(--ink); }
+.hr-facts.big .of { font-size: 14px; color: var(--muted); margin-left: .2rem; }
+@media (max-width: 1100px) { .hr-facts.big { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .hr-facts.big { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* Large place search (components v2, mounted in the page, not an iframe) */
 /* start page: the only thing on it, a search over the municipalities */
 .st-key-kommun_search { width: 50%; position: relative; z-index: 60; margin: 3rem 0 24rem 0; }
 @media (max-width: 900px) { .st-key-kommun_search { width: 100%; } }
-/* place pages: under the opening, a third of the page */
-.st-key-place_search_top { width: 33%; position: relative; z-index: 60; margin: 2.25rem 0 0 0; }
-@media (max-width: 900px) { .st-key-place_search_top { width: 100%; } }
 .hr-psearch { position: relative; }
 .hr-psearch input {
   width: 100%; height: 60px; box-sizing: border-box; border: none; border-bottom: 1px solid var(--ink); border-radius: 0;

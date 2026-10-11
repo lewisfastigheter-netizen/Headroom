@@ -481,3 +481,23 @@ def test_place_search_finds_regso_by_inner_name_and_ranks_tiers():
     )
     assert search_tiered("Bolstanäs", entries)[0][1] == "regso:0114R001"  # one typo
     assert search_tiered("xyzq", entries) == []
+
+
+def test_profile_reads_three_themes_largest_first():
+    from headroom.model import location as L
+
+    nat = {
+        "growth_5y": 0.004,
+        "rental_share": 0.39,
+        "unemployment": 3.1,
+        "share_20_34": 0.19,
+        "_sd_growth_5y": 0.005,
+        "_sd_rental_share": 0.08,
+        "_sd_unemployment": 1.0,
+        "_sd_share_20_34": 0.02,
+    }
+    f = {"growth_5y": -0.006, "rental_share": 0.55, "unemployment": 2.9, "share_20_34": 0.25}
+    text = L.profile("Exempelby", f, nat)
+    assert text.startswith("A young population")  # 3 spreads from Sweden, the largest
+    assert "shrunk" in text and "deep rental market" in text
+    assert text.count(". ") >= 2
