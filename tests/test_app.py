@@ -11,7 +11,7 @@ MODES = ["demo"] + (["live"] if (ROOT / "data/snapshots/live/bond.parquet").exis
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("page", ["companies", "locations", "underwriting", "issuer", "method"])
+@pytest.mark.parametrize("page", ["companies", "locations", "issuer", "method"])
 def test_page_renders(page, mode, monkeypatch):
     monkeypatch.setenv("HEADROOM_MODE", mode)
     at = AppTest.from_file(str(APP), default_timeout=90)
@@ -42,25 +42,26 @@ def test_location_place_renders(level, code, monkeypatch):
 
 
 @pytest.mark.skipif(not LOC.exists(), reason="no location snapshot")
-@pytest.mark.parametrize(
-    "state",
-    [
-        {"loc_level": "Kommun", "loc_areas_kommun": ["1480", "1481"]},
-        {"loc_level": "Län", "loc_areas_lan": ["12"]},
-        {"loc_level": "RegSO", "loc_kommun": "Göteborg"},
-        {"loc_level": "RegSO", "loc_areas_regso": ["0380R016"]},
-        {"loc_level": "RegSO"},
-    ],
-)
-def test_location_start_levels(state, monkeypatch):
+def test_location_start_is_only_a_kommun_search(monkeypatch):
     monkeypatch.setenv("HEADROOM_MODE", "demo")
     at = AppTest.from_file(str(APP), default_timeout=120)
     at.session_state["mode"] = "demo"
     at.run()
-    for k, v in state.items():
-        at.session_state[k] = v
     at.switch_page("views/locations.py").run()
     assert not at.exception, at.exception
+    assert not at.selectbox and not at.multiselect  # no filters left on the start page
+    assert not at.get("plotly_chart")
+
+
+def test_kommun_index_holds_only_municipalities():
+    from headroom.model import location as L
+    from headroom.store.db import open_snapshot
+
+    if not LOC.exists():
+        pytest.skip("no location snapshot")
+    idx = L.place_index(open_snapshot("locations").table("location"))
+    kommuner = [p for p in idx if p["value"].startswith("kommun:")]
+    assert len(kommuner) == 290
 
 
 @pytest.mark.skipif(not LOC.exists(), reason="no location snapshot")
@@ -75,25 +76,3 @@ def test_tatort_is_not_a_page(monkeypatch):
     assert not at.exception, at.exception
     html = " ".join(str(getattr(e, "proto", "")) for e in at.get("html"))
     assert "No place with code" in html
-
-
-@pytest.mark.parametrize(
-    "state",
-    [
-        {"uw_kommun": "1480", "uw_segment": "logistics"},
-        {"uw_kommun": "0380", "uw_segment": "light_industrial"},
-        {"uw_kommun": "1280", "uw_segment": "hotel"},
-        {"uw_kommun": "0180", "uw_segment": "retail"},
-        {"uw_org": "559286-6809", "uw_segment": "residential"},
-    ],
-)
-def test_underwriting_states(state, monkeypatch):
-    mode = MODES[-1]
-    monkeypatch.setenv("HEADROOM_MODE", mode)
-    at = AppTest.from_file(str(APP), default_timeout=120)
-    at.session_state["mode"] = mode
-    for k, v in state.items():
-        at.session_state[k] = v
-    at.run()
-    at.switch_page("views/underwriting.py").run()
-    assert not at.exception, at.exception

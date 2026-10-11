@@ -154,9 +154,7 @@ ev_html = (
 )
 ui.render(
     f'<div class="hr-note" style="margin-top:1.4rem">{ui.marker(st_state) if st_state else ""}'
-    f"<b>Process: {ui.esc(label)}.</b>{ev_html} "
-    f'<a href="underwriting?org={org}" target="_self">Underwrite this company</a> against '
-    "market yields and the cost of debt.</div>"
+    f"<b>Process: {ui.esc(label)}.</b>{ev_html}</div>"
 )
 
 # --------------------------------------------------------------------------- 01 why

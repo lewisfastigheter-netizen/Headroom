@@ -1,13 +1,13 @@
 """Locations: how counties (län), municipalities (kommuner) and areas (RegSO) develop, read
 for a value-add investor in rental housing and logistics / light industrial property.
 
-No place selected: the place search and the filters on the left (level, the places of
-that level, county, municipality, group, population), a map on the right that lights up
-the chosen places, and a table of them below.
-A place selected (?level=kommun&code=0380): what is happening there, how it compares with
-its neighbours, similar municipalities and Sweden, what that means for housing and for
-logistics, the areas inside it, and the property companies that hold most of their
-portfolio there.
+No place selected: a single search box over the municipalities (kommuner); a pick opens
+the municipality.
+A municipality (?level=kommun&code=0380): first its areas (a map of its RegSO areas, each
+one clickable, and a table of them below), then what is happening there, how it compares
+with its neighbours, similar municipalities and Sweden, what that means for housing and
+for logistics, and the property companies that hold most of their portfolio there.
+Counties and areas open from the search box in the top-right corner and from the maps.
 
 All figures come from data/snapshots/locations (public statistics, the same in live and
 demo mode). Missing values show as –; nothing is interpolated.
@@ -16,7 +16,6 @@ demo mode). Missing values show as –; nothing is interpolated.
 from __future__ import annotations
 
 import functools
-import io
 import json
 import math
 from urllib.parse import quote
@@ -258,160 +257,15 @@ if place is not None and (
 
 # ============================================================================ start
 
-LEVELS = {"Län": "lan", "Kommun": "kommun", "RegSO": "regso"}
-LEVEL_PLURAL = {"lan": "län", "kommun": "kommuner", "regso": "RegSO areas"}
-SIZES = {
-    "lan": {"Any size": 0, "250,000+": 250_000, "500,000+": 500_000, "1,000,000+": 1_000_000},
-    "kommun": {
-        "Any size": 0,
-        "10,000+": 10_000,
-        "25,000+": 25_000,
-        "50,000+": 50_000,
-        "100,000+": 100_000,
-    },
-    "regso": {"Any size": 0, "1,000+": 1_000, "2,000+": 2_000, "3,000+": 3_000, "5,000+": 5_000},
-}
-ALL_COUNTIES, ALL_KOMMUNER, ALL_GROUPS = "All län", "All kommuner", "All groups"
-SELECTED = HIGH  # selected areas light up in the theme's orange
-SELECTED_LINE = "#8A3A07"
 
-
-_FRAMES: dict[str, pl.DataFrame] = {}  # this run's frames; the page script reruns from the top
-
-
-def level_frame(level: str) -> pl.DataFrame:
-    """One row per place at a level, with its names, features and scores."""
-    if level not in _FRAMES:
-        names = dict(zip(D.loc["code"], D.loc["name"], strict=True))
-        _FRAMES[level] = (
-            D.loc.filter(pl.col("level") == level)
-            .select("code", "name", "parent_lan", "parent_kommun", "kommungrupp")
-            .join(D.feats.drop("level"), on="code", how="left")
-            .join(D.scores.select("code", "residential", "logistics"), on="code", how="left")
-            .with_columns(
-                pl.col("parent_lan").replace_strict(names, default=None).alias("county"),
-                pl.col("parent_kommun").replace_strict(names, default=None).alias("kommun"),
-            )
-        )
-    return _FRAMES[level]
-
-
-def area_label(level: str, r: dict) -> str:
-    return f"{r['name']} · {r['kommun']}" if level == "regso" and r.get("kommun") else r["name"]
+def kommun_index() -> list[dict]:
+    """The place index, municipalities only: the start page searches kommuner."""
+    return [p for p in index_for_session() if p["value"].startswith("kommun:")]
 
 
 def start_page() -> None:
-    state = st.session_state
-    # a click on a municipality in the RegSO map: becomes the Kommun filter before it is drawn
-    if "_loc_pick_kommun" in state:
-        state["loc_kommun"] = state.pop("_loc_pick_kommun")
-
-    ui.render(
-        '<p class="hr-note" style="max-width:60rem;margin:0 0 1.6rem 0">Where to own rental '
-        "housing and logistics or light industrial property in Sweden: every county, municipality "
-        "and RegSO area scored on public statistics, every figure with its source. Pick places "
-        "on the left or on the map; open one for the full reading.</p>"
-    )
-    left, right = st.columns([1, 2], gap="large")
-    with left:
-        go_to(place_search(index_for_session(), placeholder="Search län, kommun or area"))
-        level = LEVELS[st.selectbox("Level", list(LEVELS), index=1, key="loc_level")]
-        df = level_frame(level)
-        lans = level_frame("lan").sort("code")
-        kommuner = level_frame("kommun")
-        counties = lans["name"].to_list()
-        sizes = SIZES[level]
-        county = state.get("loc_county", ALL_COUNTIES)
-        if county not in (ALL_COUNTIES, *counties):
-            county = state["loc_county"] = ALL_COUNTIES
-        in_county = (
-            kommuner if county == ALL_COUNTIES else kommuner.filter(pl.col("county") == county)
-        )
-        knames = sorted(in_county["name"].to_list())
-        kommun = state.get("loc_kommun", ALL_KOMMUNER)
-        if kommun not in (ALL_KOMMUNER, *knames):
-            kommun = state["loc_kommun"] = ALL_KOMMUNER
-        kommun_code = dict(zip(kommuner["name"], kommuner["code"], strict=True)).get(kommun)
-        group = state.get("loc_group", ALL_GROUPS)
-        size = state.get(f"loc_size_{level}", "Any size")
-
-        def apply(frame: pl.DataFrame, skip: str = "") -> pl.DataFrame:
-            if level != "lan" and county != ALL_COUNTIES and skip != "county":
-                frame = frame.filter(pl.col("county") == county)
-            if level == "regso" and kommun_code and skip != "kommun":
-                frame = frame.filter(pl.col("parent_kommun") == kommun_code)
-            if level == "kommun" and group != ALL_GROUPS and skip != "group":
-                frame = frame.filter(pl.col("kommungrupp") == group)
-            if sizes.get(size) and skip != "size":
-                frame = frame.filter(pl.col("population") >= sizes[size])
-            return frame
-
-        passing = apply(df)
-        options = passing.sort("name")
-        labels = {r["code"]: area_label(level, r) for r in options.to_dicts()}
-        key = f"loc_areas_{level}"
-        if key in state:  # keep picks that the other filters still allow
-            state[key] = [c for c in state[key] if c in labels]
-        selected = st.multiselect(
-            {"lan": "Län", "kommun": "Kommun", "regso": "RegSO"}[level],
-            list(labels),
-            format_func=lambda c: labels.get(c, c),
-            key=key,
-            placeholder=f"Choose {LEVEL_PLURAL[level]}",
-        )
-
-        styles: list[str] = []
-
-        def grey(key: str, options: list, have: set, offset: int = 1) -> None:
-            for i, o in enumerate(options):
-                if o not in have:
-                    styles.append(
-                        f'body:has(.st-key-{key} input:focus) [role="option"][data-key="{i + offset}"] {{ color: var(--muted) !important; }}'
-                    )
-
-        if level != "lan":
-            st.selectbox("Län", [ALL_COUNTIES, *counties], key="loc_county")
-            grey("loc_county", counties, set(apply(df, "county")["county"].drop_nulls()))
-        if level == "regso":
-            st.selectbox("Kommun", [ALL_KOMMUNER, *knames], key="loc_kommun")
-        if level == "kommun":
-            groups = sorted(df["kommungrupp"].drop_nulls().unique().to_list())
-            st.selectbox("Municipality group (SKR)", [ALL_GROUPS, *groups], key="loc_group")
-            grey("loc_group", groups, set(apply(df, "group")["kommungrupp"].drop_nulls()))
-        st.selectbox("Population", list(sizes), key=f"loc_size_{level}")
-        colour_by = (
-            st.segmented_control(
-                "Colour the map by",
-                ["Filters", "Residential", "Logistics"],
-                default="Residential",
-                key="loc_colour",
-            )
-            or "Filters"
-        )
-        have = {
-            s
-            for s, v in sizes.items()
-            if apply(df, "size").filter(pl.col("population") >= v).height
-        }
-        grey(f"loc_size_{level}", list(sizes), have, 0)
-        if styles:
-            ui.render("<style>" + "\n".join(styles) + "</style>")
-        if selected:
-            links = "".join(f"<li>{link(level, c, labels.get(c, c))}</li>" for c in selected[:12])
-            more = (
-                f'<li class="more">and {len(selected) - 12} more in the table below</li>'
-                if len(selected) > 12
-                else ""
-            )
-            ui.render(
-                f'<div class="hr-loc-open"><div class="hr-eyebrow">Open</div><ul>{links}{more}</ul></div>'
-            )
-
-    with right:
-        start_map(level, df, passing, selected, county, kommun_code, colour_by)
-
-    shown = passing.filter(pl.col("code").is_in(selected)) if selected else passing
-    ranking_table(level, shown)
+    """Only a search box over Sweden's municipalities; a pick opens the municipality."""
+    go_to(place_search(kommun_index(), key="kommun_search", placeholder="Search kommun"))
 
 
 def _bbox_of(features: list[dict]) -> tuple[list[float], list[float]]:
@@ -434,339 +288,6 @@ def fit_view(lats: list[float], lons: list[float], height: int, width: int = 780
     zoom = max(2.8, min(12.5, min(zh, zw)))
     lat = math.degrees(2 * math.atan(math.exp((y0 + y1) / 2)) - math.pi / 2)
     return dict(lat=lat, lon=(min(lons) + max(lons)) / 2), zoom
-
-
-def _hover(r: dict) -> str:
-    parts = [f"<b>{ui.esc(r['name'])}</b>"]
-    if r.get("residential") is not None:
-        parts.append(f"Residential {r['residential']:.0f}")
-    if r.get("logistics") is not None:
-        parts.append(f"Logistics {r['logistics']:.0f}")
-    if r.get("population") is not None:
-        parts.append(f"{r['population']:,.0f} residents")
-    return "<br>".join(parts)
-
-
-def start_map(
-    level: str,
-    df: pl.DataFrame,
-    passing: pl.DataFrame,
-    selected: list[str],
-    county: str,
-    kommun_code: str | None,
-    colour_by: str = "Filters",
-) -> None:
-    """Sweden, a county or a municipality's RegSO; the places that pass the filters in light
-    blue (or shaded by their Residential or Logistics score), the chosen ones lit up in
-    orange. A click opens the place."""
-    height = 720
-    pick_kommun = False
-    if level == "regso":
-        if kommun_code:
-            kommuner = [kommun_code]
-        elif selected:
-            kommuner = sorted({c[:4] for c in selected})
-        elif county != ALL_COUNTIES:
-            kommuner = sorted(passing["parent_kommun"].drop_nulls().unique().to_list())
-        else:
-            kommuner = []
-        feats = []
-        for k in kommuner:
-            gj_k = geojson(f"regso/{k}")
-            feats += gj_k["features"] if gj_k else []
-        if not feats:  # no municipality chosen yet: pick one on the map of Sweden
-            pick_kommun = True
-            level_geo, frame = "kommun", level_frame("kommun")
-            gj = geojson("kommun")
-            passing_codes, selected = set(frame["code"]), []
-        else:
-            level_geo, frame = "regso", df.filter(pl.col("parent_kommun").is_in(kommuner))
-            gj = {"type": "FeatureCollection", "features": feats}
-            passing_codes = set(passing["code"])
-    else:
-        level_geo, frame, gj = level, df, geojson(level)
-        passing_codes = set(passing["code"])
-    if gj is None:
-        ui.note("Map geometry is missing from the snapshot.")
-        return
-
-    rows = frame.select("code", "name", "residential", "logistics", "population").to_dicts()
-    base = [r for r in rows if r["code"] not in selected]
-    lit = [r for r in rows if r["code"] in selected]
-    fig = go.Figure()
-    kind = colour_by.lower() if colour_by in ("Residential", "Logistics") else None
-    if kind == "logistics" and level_geo == "regso":
-        kind = None  # areas have no logistics score
-    line_w = 0.7 if level_geo != "regso" else 0.9
-    if kind:
-        scored = [r for r in base if r["code"] in passing_codes and r.get(kind) is not None]
-        rest = [r for r in base if r not in scored]
-        if rest:
-            fig.add_trace(
-                go.Choroplethmap(
-                    geojson=gj,
-                    featureidkey="properties.code",
-                    locations=[r["code"] for r in rest],
-                    z=[0] * len(rest),
-                    colorscale=[[0, "#ECECEC"], [1, "#ECECEC"]],
-                    showscale=False,
-                    marker_line_color="#FFFFFF",
-                    marker_line_width=line_w,
-                    marker_opacity=0.9,
-                    customdata=[_hover(r) for r in rest],
-                    hovertemplate="%{customdata}<extra></extra>",
-                )
-            )
-        fig.add_trace(
-            go.Choroplethmap(
-                geojson=gj,
-                featureidkey="properties.code",
-                locations=[r["code"] for r in scored],
-                z=[r[kind] for r in scored],
-                zmin=0,
-                zmax=100,
-                colorscale=BLUE_RAMP,
-                colorbar=dict(
-                    title=dict(text=f"{colour_by} score", side="right"),
-                    thickness=10,
-                    len=0.45,
-                    x=0.99,
-                    y=0.5,
-                    tickfont=dict(size=11),
-                    outlinewidth=0,
-                ),
-                marker_line_color="#FFFFFF",
-                marker_line_width=line_w,
-                marker_opacity=0.92,
-                customdata=[_hover(r) for r in scored],
-                hovertemplate="%{customdata}<extra></extra>",
-            )
-        )
-    else:
-        fig.add_trace(
-            go.Choroplethmap(
-                geojson=gj,
-                featureidkey="properties.code",
-                locations=[r["code"] for r in base],
-                z=[1 if r["code"] in passing_codes else 0 for r in base],
-                zmin=0,
-                zmax=1,
-                colorscale=[[0, "#ECECEC"], [0.5, "#ECECEC"], [0.5, "#BFDDE4"], [1, "#BFDDE4"]],
-                showscale=False,
-                marker_line_color="#FFFFFF",
-                marker_line_width=line_w,
-                marker_opacity=0.9,
-                customdata=[_hover(r) for r in base],
-                hovertemplate="%{customdata}<extra></extra>",
-            )
-        )
-    if lit:
-        fig.add_trace(
-            go.Choroplethmap(
-                geojson=gj,
-                featureidkey="properties.code",
-                locations=[r["code"] for r in lit],
-                z=[1] * len(lit),
-                colorscale=[[0, SELECTED], [1, SELECTED]],
-                showscale=False,
-                marker_line_color=SELECTED_LINE,
-                marker_line_width=2.2,
-                marker_opacity=0.8,
-                customdata=[_hover(r) for r in lit],
-                hovertemplate="%{customdata}<extra></extra>",
-            )
-        )
-    by_code = {ft["properties"]["code"]: ft for ft in gj["features"]}
-    if selected:
-        focus = [by_code[c] for c in selected if c in by_code]
-    elif len(passing_codes & set(by_code)) < len(by_code):
-        focus = [by_code[c] for c in passing_codes if c in by_code]
-    else:
-        focus = list(by_code.values())
-    center, zoom = fit_view(*_bbox_of(focus), height=height)
-    fig.update_layout(
-        map=dict(style="carto-positron", zoom=zoom, center=center),
-        height=height,
-        margin=dict(l=0, r=0, t=0, b=0),
-        hovermode="closest",
-    )
-    ev = st.plotly_chart(
-        fig,
-        config=CONFIG,  # the page scrolls; the filters zoom
-        width="stretch",
-        on_select="rerun",
-        selection_mode="points",
-        key=f"map_start_{level}_{level_geo}_{kommun_code}",
-    )
-    pts = (
-        (ev or {}).get("selection", {}).get("points", [])
-        if isinstance(ev, dict)
-        else getattr(getattr(ev, "selection", None), "points", [])
-    )
-    code = pts[0].get("location") if pts else None
-    if code and pick_kommun:
-        st.session_state["_loc_pick_kommun"] = D.name(code)
-        st.rerun()
-    elif code:
-        go_to(f"{level_geo}:{code}")
-    hint = (
-        "Choose a kommun (or click one) to draw its RegSO areas. "
-        if pick_kommun
-        else (
-            f"Orange: your choice. Shade: {kind} score (0–100) of the places that match the "
-            "filters; grey: filtered out or not scored. Click a place to open it. "
-            if kind
-            else "Orange: your choice. Light blue: matches the filters. Click a place to open it. "
-        )
-    )
-    ui.source_line(
-        hint
-        + "Borders: SCB öppna geodata (RegSO 2025, joined to kommuner and län). Basemap © OpenStreetMap contributors, © CARTO."
-    )
-
-
-def ranking_table(level: str, f: pl.DataFrame) -> None:
-    noun = LEVEL_PLURAL[level]
-    ui.section(
-        None,
-        noun[0].upper() + noun[1:],
-        "Highest residential score first. Hover a figure for its source; click a name to open it.",
-    )
-    f = f.sort("residential", descending=True, nulls_last=True)
-    cap = 400
-    rows = []
-    for i, r in enumerate(f.head(cap).to_dicts(), start=1):
-        row = {"rank": i, "res": score_cell(r["residential"])}
-        pop = sv(ui.fmt_num(r["population"]), "population", level, r.get("population_year"))
-        if level == "regso":
-            flags = ""
-            if r.get("utsatt"):
-                lab = "Särskilt utsatt" if r["utsatt"] == "sarskilt_utsatt" else "Utsatt"
-                flags = ui.flag(
-                    lab,
-                    f"Polisen, Lägesbild över utsatta områden 2025: {r['utsatt_name']}. The police's borders do not follow RegSO; this link is approximate.",
-                    "high",
-                )
-            row |= {
-                "name": link("regso", r["code"], r["name"])
-                + f'<span class="sub">{ui.esc(r.get("kommun") or "")}</span>',
-                "pop": pop,
-                "g": sv(ui.fmt_delta(r["growth"]), "growth", level, r.get("growth_basis")),
-                "y": sv(ui.fmt_pct(r["share_20_34"], 0), "share_20_34", level),
-                "rent": sv(
-                    ui.fmt_pct(r["rental_share"], 0),
-                    "rental_share",
-                    level,
-                    r.get("rental_share_period"),
-                ),
-                "inc": sv(ui.fmt_x(r["income_rel_kommun"], 2), "income_rel_kommun", level),
-                "sei": sv(
-                    ui.fmt_num(num(r.get("sei_improvement")), 1),
-                    "sei_improvement",
-                    level,
-                    r.get("sei_improvement_period"),
-                ),
-                "flags": flags,
-            }
-        else:
-            row |= {
-                "log": score_cell(r["logistics"]),
-                "name": link(level, r["code"], r["name"])
-                + (
-                    f'<span class="sub">{ui.esc(r["county"] or "")}</span>'
-                    if level == "kommun"
-                    else ""
-                ),
-                "pop": pop,
-                "g5": sv(ui.fmt_delta(r["growth_5y"]), "growth_5y", level),
-                "hp": sv(
-                    ui.fmt_num(num(r["housing_pressure"]), 1),
-                    "housing_pressure",
-                    level,
-                    r.get("housing_pressure_period"),
-                ),
-                "bme": sv(bme_text(r["bme"], level == "kommun"), "bme", level, r.get("bme_period")),
-                "lq": sv(ui.fmt_pct(r["logistics_share"], 1), "logistics_share", level),
-                "c100": sv(ui.fmt_people(r["catchment_100km"]), "catchment_100km", level),
-            }
-        rows.append(row)
-    if level == "regso":
-        cols = [
-            ui.Col("rank", "", "dim"),
-            ui.Col("res", "Residential", "big", raw_html=True),
-            ui.Col("name", "Area", "name", raw_html=True),
-            ui.Col("pop", "Population", "num", raw_html=True),
-            ui.Col("g", "Growth / yr", "num", raw_html=True),
-            ui.Col("y", "Aged 20–34", "num", raw_html=True),
-            ui.Col("rent", "Rental share", "num", raw_html=True),
-            ui.Col("inc", "Income vs kommun", "num", raw_html=True),
-            ui.Col("sei", "SEI improvement, 10y", "num", raw_html=True),
-            ui.Col("flags", "", "html"),
-        ]
-    else:
-        cols = [
-            ui.Col("rank", "", "dim"),
-            ui.Col("res", "Residential", "big", raw_html=True),
-            ui.Col("log", "Logistics", "big", raw_html=True),
-            ui.Col("name", "Län" if level == "lan" else "Kommun", "name", raw_html=True),
-            ui.Col("pop", "Population", "num", raw_html=True),
-            ui.Col("g5", "Growth / yr, 5y", "num", raw_html=True),
-            ui.Col("hp", "Residents / new home", "num", raw_html=True),
-            ui.Col("bme", "Housing market", raw_html=True),
-            ui.Col("lq", "Logistics jobs", "num", raw_html=True),
-            ui.Col("c100", "Within 100 km", "num", raw_html=True),
-        ]
-    ui.table(rows, cols, max_height=620)
-    shown = f"{min(f.height, cap):,} of {f.height:,}" if f.height > cap else f"{f.height:,}"
-    src_line(
-        ["pop", "completions_q", "bme", "emp_work_H", "catchment_100km"]
-        if level != "regso"
-        else ["pop", "dwellings_rental", "net_income_mean", "sei"],
-        f"{shown} {noun}. Scores 0–100, method on the Method page."
-        + (" Narrow with the filters, or export all of them." if f.height > cap else ""),
-        level=level,
-    )
-    keep = [
-        "code",
-        "name",
-        *(["kommun"] if level == "regso" else []),
-        *(["county"] if level != "lan" else []),
-        *(["kommungrupp"] if level == "kommun" else []),
-        "population",
-        "residential",
-        *(["logistics"] if level != "regso" else []),
-        *(
-            ["growth", "share_20_34", "rental_share", "income_rel_kommun", "sei_improvement"]
-            if level == "regso"
-            else [
-                "growth_5y",
-                "housing_pressure",
-                "young_inflow",
-                "bme",
-                "logistics_share",
-                "catchment_100km",
-            ]
-        ),
-    ]
-    export = f.select(keep).with_columns(
-        pl.lit(D.meta.get("as_of", {}).get("generated", "")).alias("as_of")
-    )
-    st.write("")
-    b1, b2, _ = st.columns([1.2, 1.2, 8])
-    b1.download_button(
-        "Export CSV",
-        export.write_csv().encode("utf-8"),
-        file_name=f"headroom_locations_{level}.csv",
-        mime="text/csv",
-    )
-    buf = io.BytesIO()
-    export.write_excel(buf, worksheet="Locations", autofit=True)
-    b2.download_button(
-        "Export Excel",
-        buf.getvalue(),
-        file_name=f"headroom_locations_{level}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
 
 
 # ============================================================================ place pages
@@ -1845,7 +1366,7 @@ def place_page(p: dict) -> None:
         )
     )
     ui.hero(kicker, ui.esc(headline), "", stats)
-    go_to(place_search(index_for_session(), key="place_search_top"))
+    go_to(place_search(kommun_index(), key="place_search_top", placeholder="Search kommun"))
     if level == "regso":
         ui.facts(
             [
@@ -1929,9 +1450,14 @@ def place_page(p: dict) -> None:
             ),
         ]
     )
-    residential_section(level, code, name)
-    logistics_section(level, code, name)
-    areas_section(level, code, name)
+    if level == "kommun":  # the areas first: a map of the municipality's RegSO, then the table
+        areas_section(level, code, name)
+        residential_section(level, code, name)
+        logistics_section(level, code, name)
+    else:
+        residential_section(level, code, name)
+        logistics_section(level, code, name)
+        areas_section(level, code, name)
     peers_section(level, code, name)
     companies_section(level, code, name)
 

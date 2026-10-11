@@ -238,8 +238,9 @@ header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !import
 
 /* ---------- Locations ---------- */
 /* Large place search (components v2, mounted in the page, not an iframe) */
-/* start page: top of the left column, as wide as the column (a third of the page) */
-.st-key-place_search { width: 100%; position: relative; z-index: 60; margin: 1.25rem 0 1.25rem 0; }
+/* start page: the only thing on it, a search over the municipalities */
+.st-key-kommun_search { width: 50%; position: relative; z-index: 60; margin: 3rem 0 24rem 0; }
+@media (max-width: 900px) { .st-key-kommun_search { width: 100%; } }
 /* place pages: under the opening, a third of the page */
 .st-key-place_search_top { width: 33%; position: relative; z-index: 60; margin: 2.25rem 0 0 0; }
 @media (max-width: 900px) { .st-key-place_search_top { width: 100%; } }
@@ -289,8 +290,3 @@ header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !import
   border-radius: 2px; box-shadow: 0 6px 18px rgba(0,0,0,.18); pointer-events: none; }
 .st-key-hr_source_tips { display: none; }
 
-/* Underwriting: sub-headings inside a section */
-.hr-sub { font-size: 1.15rem !important; margin: 1.8rem 0 .5rem 0 !important; padding: 0 !important; }
-.hr-stats.row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 2rem; margin-top: 2rem; }
-.hr-stats.row .hr-stat .v { font-size: 2.8rem; }
-@media (max-width: 760px) { .hr-stats.row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
