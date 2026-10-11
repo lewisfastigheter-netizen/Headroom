@@ -265,7 +265,8 @@ def kommun_index() -> list[dict]:
 
 
 def start_page() -> None:
-    """Only a search box over Sweden's municipalities; a pick opens the municipality."""
+    """A title and a search box over Sweden's municipalities; a pick opens the municipality."""
+    ui.page_head("Locations")
     go_to(place_search(kommun_index(), key="kommun_search", placeholder="Search kommun"))
 
 
@@ -977,64 +978,99 @@ def areas_section(level: str, code: str, name: str, highlight: str | None = None
     )
 
 
+BAND_COLOR = {"high": "#006A7D", "watch": "#4FB0C2", "low": "#A9B4B7"}
+# Badge text is drawn by the map, not the page: it needs a glyph font the CARTO tile server has.
+BADGE_FONT = "Open Sans Bold"
+
+
+def score_band(v: float) -> str:
+    b = D.cfg["location"]["bands"]
+    return "high" if v >= b["high"] else "watch" if v >= b["watch"] else "low"
+
+
+def _ring_km2(ring) -> float:
+    """Area of one lon/lat ring in km² (local equirectangular; fine at RegSO size)."""
+    kx = 111.32 * math.cos(math.radians(sum(p[1] for p in ring) / len(ring)))
+    a = sum(
+        x1 * kx * y2 * 110.57 - x2 * kx * y1 * 110.57
+        for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1], strict=True)
+    )
+    return abs(a) / 2
+
+
+def _area_km2(geom: dict) -> float:
+    polys = [geom["coordinates"]] if geom["type"] == "Polygon" else geom["coordinates"]
+    return sum(_ring_km2(p[0]) - sum(_ring_km2(h) for h in p[1:]) for p in polys)
+
+
+def core_codes(gj: dict, pop: dict[str, float], share: float = 0.6) -> set[str]:
+    """The built-up heart of a municipality: the densest areas that together hold `share`
+    of its residents. The map opens on these, so the town fills the frame instead of the
+    forest and sea around it; scrolling zooms out to the rest."""
+    dens = []
+    for ft in gj["features"]:
+        code = ft["properties"]["code"]
+        if pop.get(code):
+            dens.append((pop[code] / max(_area_km2(ft["geometry"]), 0.05), code, pop[code]))
+    dens.sort(reverse=True)
+    total, acc, out = sum(p for _, _, p in dens), 0.0, set()
+    for _, code, p in dens:
+        out.add(code)
+        acc += p
+        if acc >= share * total:
+            break
+    return out
+
+
+def _outline(gj: dict, codes: list[str], color: str, width: float, **kw) -> go.Choroplethmap:
+    """Borders only: a transparent fill, so the map underneath stays readable. The fill
+    still takes clicks and hover."""
+    return go.Choroplethmap(
+        geojson=gj,
+        featureidkey="properties.code",
+        locations=codes,
+        z=[1] * len(codes),
+        colorscale=[[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
+        showscale=False,
+        marker_line_color=color,
+        marker_line_width=width,
+        below="",
+        **({"hoverinfo": "skip"} | kw),
+    )
+
+
 def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
-    """A municipality's RegSO by residential score. The open area is filled orange with a
-    dark outline; police-listed vulnerable areas get a thick orange outline and a light
-    orange fill."""
+    """A municipality's RegSO on a street map. Thin borders only; each area's residential
+    score sits in a small circle at its population-weighted centre, coloured by band
+    (location.bands in config/weights.yaml). The open area is outlined orange with an
+    orange circle; police-listed vulnerable areas get an orange outline."""
     gj = geojson(f"regso/{kommun}")
     if gj is None:
         ui.note("Area geometry is missing for this municipality.")
         return
-    lats, lons = _bbox_of(gj["features"])
-    # police-listed and open areas are drawn in orange only, so the blue does not muddy it
-    lit = {r["code"] for r in df.to_dicts() if r.get("utsatt")} | {highlight}
-    base = df.filter(~pl.col("code").is_in(list(lit - {None})))
+    df = df.join(D.loc.select("code", "lat", "lon"), on="code", how="left")
+    rows = df.to_dicts()
+    bands = D.cfg["location"]["bands"]
+
+    def hover(r: dict) -> str:
+        return f"<b>{ui.esc(r['name'])}</b><br>Residential {score_txt(r.get('residential'))}"
+
+    others = [r for r in rows if r["code"] != highlight]
+    ut = [r for r in others if r.get("utsatt")]
     fig = go.Figure()
     fig.add_trace(
-        go.Choroplethmap(
-            geojson=gj,
-            featureidkey="properties.code",
-            locations=base["code"].to_list(),
-            z=base["residential"].to_list(),
-            zmin=0,
-            zmax=100,
-            colorscale=BLUE_RAMP,
-            marker_line_color="#FFFFFF",
-            marker_line_width=0.8,
-            marker_opacity=0.82,
-            customdata=base["name"].to_list(),
-            hovertemplate="%{customdata}: %{z:.0f}<extra></extra>",
-            colorbar=dict(
-                thickness=8,
-                len=0.45,
-                x=0.01,
-                xanchor="left",
-                outlinewidth=0,
-                tickfont=dict(size=11, color=GRAPHITE),
-                title=dict(text="Residential", font=dict(size=11, color=GRAPHITE)),
-            ),
+        _outline(
+            gj,
+            [r["code"] for r in others],
+            "#006A7D",
+            1.0,
+            customdata=[[r["code"], hover(r)] for r in others],
+            hovertemplate="%{customdata[1]}<extra></extra>",
+            hoverinfo=None,
         )
     )
-    ut = [r for r in df.to_dicts() if r.get("utsatt") and r["code"] != highlight]
     if ut:
-        fig.add_trace(
-            go.Choroplethmap(
-                geojson=gj,
-                featureidkey="properties.code",
-                locations=[r["code"] for r in ut],
-                z=[1] * len(ut),
-                colorscale=[[0, "rgba(225,110,29,0.42)"], [1, "rgba(225,110,29,0.42)"]],
-                showscale=False,
-                marker_line_color=HIGH,
-                marker_line_width=3.5,
-                customdata=[
-                    f"{ui.esc(r['name'])}: {score_txt(r['residential'])}"
-                    f"<br>Police-listed: {ui.esc(r.get('utsatt_name') or '')}"
-                    for r in ut
-                ],
-                hovertemplate="%{customdata}<extra></extra>",
-            )
-        )
+        fig.add_trace(_outline(gj, [r["code"] for r in ut], HIGH, 2.2))
     if highlight:
         fig.add_trace(
             go.Choroplethmap(
@@ -1042,24 +1078,93 @@ def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
                 featureidkey="properties.code",
                 locations=[highlight],
                 z=[1],
-                colorscale=[[0, HIGH], [1, HIGH]],
+                colorscale=[[0, "rgba(225,110,29,0.14)"], [1, "rgba(225,110,29,0.14)"]],
                 showscale=False,
-                marker_opacity=0.88,
-                marker_line_color=INK,
+                marker_line_color=HIGH,
                 marker_line_width=3.5,
-                customdata=[
-                    f"{ui.esc(D.name(highlight))}: {score_txt(D.score(highlight, 'residential'))}"
-                ],
-                hovertemplate="%{customdata}<extra></extra>",
+                below="",
+                hoverinfo="skip",
             )
         )
+
+    def badges(sel: list[dict], color: str, size: int, font: float) -> None:
+        if sel:
+            fig.add_trace(
+                go.Scattermap(
+                    lat=[r["lat"] for r in sel],
+                    lon=[r["lon"] for r in sel],
+                    mode="markers+text",
+                    marker=dict(size=size, color=color),
+                    text=[f"{r['residential']:.0f}" for r in sel],
+                    textfont=dict(family=BADGE_FONT, size=font, color="#FFFFFF"),
+                    textposition="middle center",
+                    customdata=[[r["code"], hover(r)] for r in sel],
+                    hovertemplate="%{customdata[1]}<extra></extra>",
+                    showlegend=False,
+                )
+            )
+
+    scored = [r for r in others if r.get("lat") is not None and r.get("residential") is not None]
+    for b in ("low", "watch", "high"):  # strongest drawn last, on top
+        badges([r for r in scored if score_band(r["residential"]) == b], BAND_COLOR[b], 21, 9.5)
+    me = [
+        r
+        for r in rows
+        if r["code"] == highlight and r.get("lat") is not None and r.get("residential") is not None
+    ]
+    badges(me, HIGH, 25, 10.5)
+
+    legend = [
+        (f"Strong · {bands['high']}+", BAND_COLOR["high"]),
+        (f"Watch · {bands['watch']}–{bands['high'] - 1}", BAND_COLOR["watch"]),
+        (f"Weak · under {bands['watch']}", BAND_COLOR["low"]),
+    ] + ([("This area", HIGH)] if highlight else [])
+    for label, color in legend:  # legend keys only; they draw nothing
+        fig.add_trace(
+            go.Scattermap(
+                lat=[None],
+                lon=[None],
+                mode="markers",
+                name=label,
+                marker=dict(size=11, color=color),
+                hoverinfo="skip",
+                showlegend=True,
+            )
+        )
+
+    pop = {r["code"]: r.get("population") or 0 for r in rows}
+    # frame the circles of the built-up heart (their centres, not their outer borders, which
+    # can run far into the countryside), plus the whole of the open area
+    core = core_codes(gj, pop)
+    lats = [r["lat"] for r in rows if r["code"] in core and r.get("lat") is not None]
+    lons = [r["lon"] for r in rows if r["code"] in core and r.get("lon") is not None]
+    if highlight:
+        h_lats, h_lons = _bbox_of(
+            [f for f in gj["features"] if f["properties"]["code"] == highlight]
+        )
+        lats, lons = lats + h_lats, lons + h_lons
+    if len(lats) < 2:
+        lats, lons = _bbox_of(gj["features"])
     center, zoom = fit_view(lats, lons, height=600, width=1150)
-    zoom += 0.5  # RegSO run out over the sea; the land deserves the room
     fig.update_layout(
-        map=dict(style="carto-positron", zoom=zoom, center=center),
+        map=dict(style="carto-voyager", zoom=zoom, center=center),
         height=600,
         margin=dict(l=0, r=0, t=0, b=0),
         hovermode="closest",
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            x=0.012,
+            y=0.025,
+            xanchor="left",
+            yanchor="bottom",
+            bgcolor="rgba(255,255,255,0.94)",
+            borderwidth=0,
+            font=dict(size=11.5, color=GRAPHITE),
+            itemclick=False,
+            itemdoubleclick=False,
+            title=dict(text="Residential score", font=dict(size=11.5, color=INK)),
+        ),
     )
     ev = st.plotly_chart(
         fig,
@@ -1074,13 +1179,25 @@ def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
         if isinstance(ev, dict)
         else getattr(getattr(ev, "selection", None), "points", [])
     )
+    at = {(round(r["lat"], 5), round(r["lon"], 5)): r["code"] for r in scored}
     for p in pts:
-        loc_code = p.get("location")
+        cd = p.get("customdata")
+        loc_code = (
+            p.get("location")
+            or (cd[0] if isinstance(cd, (list, tuple)) and cd else None)
+            or (
+                at.get((round(p["lat"], 5), round(p["lon"], 5)))
+                if p.get("lat") is not None
+                else None
+            )
+        )
         if loc_code and loc_code != highlight:
             go_to(f"regso:{loc_code}")
     ui.source_line(
-        ("Solid orange: this area. " if highlight else "")
+        "Circles: residential score at each area's population-weighted centre. "
+        + ("Orange: this area. " if highlight else "")
         + "Orange outline: police-listed vulnerable area (approximate). "
+        "The map opens on the built-up part of the municipality; scroll to zoom out. "
         "Borders: SCB öppna geodata, RegSO 2025 (simplified). Basemap © OpenStreetMap contributors, © CARTO."
     )
 
@@ -1654,9 +1771,4 @@ else:
     st.write("")
     ui.render('<p class="hr-note"><a href="locations" target="_self">← All locations</a></p>')
 
-gen = (D.meta.get("as_of") or {}).get("generated")
-ui.source_line(
-    f"Location statistics: SCB, Kolada, Polisen, OpenStreetMap, Wikidata; built {ui.fmt_date(gen, 'long') if gen else '–'}. "
-    "Public data, the same in live and demo mode."
-)
 source_tips()

@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import io
 import json
+import math
 
 import polars as pl
 import streamlit as st
 
 from headroom.model import geo, valuation
+from headroom.store import private
 from headroom.store.private import group_of
 from ui import components as ui
 from ui.data import get_data
 from ui.labels import SEGMENT, TIER
 
 d = get_data()
-bands = d.cfg["motivated_seller"]["bands"]
 min_conf = d.cfg["extraction"]["min_confidence"]
 
 ACCOUNTING = {
@@ -92,12 +93,49 @@ df = df.with_columns(
     .otherwise(None)
     .alias("group")
 )
-n_high = df.filter(pl.col("score") >= bands["high"]).height
-ui.hero(
-    "Companies",
-    f"{n_high} of {df.height} companies show the balance sheet of a motivated seller.",
-    "Ranked on a 0–100 seller score. Method on the Method page.",
-)
+
+if d.fictional:
+    ui.page_head(
+        "Companies",
+        "Property companies, ranked on a 0–100 seller score: how likely the owner is to have to "
+        "sell. Method on the Method page.",
+    )
+else:
+    # The private-company scan: how far it has come and what it has found.
+    scan = private.progress()
+    found = scan["by_status"].get("kept", 0)
+    left = max(scan["candidates"] - scan["checked"], 0)
+    pct = scan["checked"] / scan["candidates"] if scan["candidates"] else 0.0
+    tiers = {r["tier"]: r["count"] for r in df["tier"].value_counts().to_dicts()}
+    lede = [
+        f"Checked {ui.fmt_num(scan['checked'])} of {ui.fmt_num(scan['candidates'])} candidates "
+        f"({pct:.1%}) at Bolagsverket. Last checked {ui.fmt_date(scan['last_checked'], 'long')}."
+    ]
+    if left and scan["per_day"]:
+        days = math.ceil(left / scan["per_day"])
+        lede.append(
+            f"At about {ui.fmt_num(round(scan['per_day'], -2))} a day, the rest takes "
+            f"{days} more day{'s' if days != 1 else ''}"
+            + (
+                f" and should find about {ui.fmt_num(round(found + found / scan['checked'] * left, -2))} "
+                "property companies in all."
+                if scan["checked"]
+                else "."
+            )
+        )
+    lede.append(
+        f"All {tiers.get('listed', 0)} listed companies and {tiers.get('bond', 0)} bond issuers "
+        "are in, ranked on a 0–100 seller score."
+    )
+    ui.page_head("Companies", ui.esc(" ".join(lede)))
+    ui.facts(
+        [
+            (label, ui.fmt_num(scan["by_status"].get(k, 0)))
+            for k, label in private.STATUS_LABEL.items()
+            if scan["by_status"].get(k) or k != "no_ixbrl"
+        ],
+        cls="big",
+    )
 
 # --------------------------------------------------------------------------- filters
 

@@ -39,14 +39,24 @@ def progress() -> dict:
         else 0
     )
     if not PRIVATE_LEDGER.exists():
-        return {"candidates": total, "checked": 0, "by_status": {}, "last_checked": None}
+        return {
+            "candidates": total,
+            "checked": 0,
+            "by_status": {},
+            "last_checked": None,
+            "per_day": None,
+        }
     led = pl.read_csv(PRIVATE_LEDGER, infer_schema_length=0)
     by = {r["status"]: r["count"] for r in led["status"].value_counts().to_dicts()}
+    # Pace: companies checked per day over the last seven days with checks.
+    days = led["checked"].str.slice(0, 10).value_counts().sort("checked").tail(7)
+    per_day = days["count"].mean() if days.height else None
     return {
         "candidates": total,
         "checked": led.height,
         "by_status": by,
         "last_checked": led["checked"].max(),
+        "per_day": per_day,
     }
 
 

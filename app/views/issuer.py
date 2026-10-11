@@ -69,7 +69,7 @@ def fv(field: str, fmt) -> str:
 
 state = ui.band(card.score, bands["high"], bands["watch"])
 score_txt = "–" if card.score is None else f"{card.score:.0f}"
-gaps = len(card.flags)
+gaps = sum(c.applicable and not c.available for c in card.components)
 ui.hero(
     f"{TIER[co['tier']]} · {co['org_nr']}",
     ui.esc(co["name"]),
@@ -161,14 +161,19 @@ ui.render(
 
 
 def basis(c) -> str:
+    """One line on what drives a component, in plain words."""
     i = c.inputs
+    why = ui.esc((c.note[:1].lower() + c.note[1:]) if c.note else "no data")
+    muted = '<span style="color:var(--muted)">{}</span>'
+    if not c.applicable:
+        return muted.format(f"Does not apply: {why}")
     if not c.available:
-        return f'<span style="color:var(--muted)">Not scored: {ui.esc(c.note.lower() or "no data")}</span>'
+        return muted.format(f"Not scored: {why}")
     if c.key == "refinancing":
-        return f"Maturities are {i['ratio']:.1f}x cash and undrawn facilities"
+        return f"Debt due within 12 months is {i['ratio']:.1f}x cash and undrawn facilities"
     if c.key == "covenant":
         return (
-            f"{TEST.get(i['binding_test_stressed'], '')} covenant headroom "
+            f"{TEST.get(i['binding_test'], '')} covenant headroom "
             f"{ui.fmt_pct(i['min_headroom_stressed'], signed=True)} at +{i['stress_bp']}bp"
         )
     if c.key == "leverage":
@@ -181,7 +186,7 @@ def basis(c) -> str:
     if c.key == "events":
         evs = i["events"]
         if not evs:
-            return "No credit events"
+            return "No credit events in the last 12 months"
         top = evs[0]
         more = f", and {len(evs) - 1} more" if len(evs) > 1 else ""
         return f"{EVENT.get(top['type'], top['type'])}, {top['age_days']} days ago{more}"
@@ -189,7 +194,7 @@ def basis(c) -> str:
         return (
             f"Shares at {i['pnav']:.0%} of NAV"
             if "pnav" in i
-            else f"Down {ui.fmt_pct(i.get('drawdown_52w'))} on the year"
+            else f"Down {ui.fmt_pct(i.get('drawdown_52w'))} from the 52-week high"
         )
     return ""
 
@@ -204,6 +209,7 @@ rows = [
         "basis": basis(c),
     }
     for c in card.components
+    if c.applicable
 ]
 ui.table(
     rows,
@@ -328,7 +334,7 @@ refi, covc = card.component("refinancing"), card.component("covenant")
 facts_txt = []
 if refi.available:
     facts_txt.append(
-        f"Debt falling due over the next two years is {refi.inputs['ratio']:.1f} times "
+        f"Debt falling due within 12 months is {refi.inputs['ratio']:.1f} times "
         "available liquidity."
     )
 if covc.available:
@@ -437,11 +443,15 @@ with st.expander("Score calculation"):
     rows = [
         {
             "label": c.label,
-            "w": ui.fmt_pct(c.weight),
+            "w": ui.fmt_pct(c.weight) if c.applicable else "–",
             "ew": ui.fmt_pct(c.effective_weight) if c.available else "–",
             "score": f"{c.score:.0f}" if c.available else "–",
             "pts": f"{c.contribution:.1f}" if c.available else "–",
-            "note": ui.esc(c.note) if c.note else "",
+            "note": ui.esc(
+                c.note if c.applicable else f"Does not apply: {c.note[:1].lower()}{c.note[1:]}"
+            )
+            if c.note
+            else "",
         }
         for c in card.components
     ]
@@ -457,7 +467,10 @@ with st.expander("Score calculation"):
         ],
         foot={"label": "Total", "ew": "100%", "pts": score_txt},
     )
-    ui.source_line("Components without data get no weight; the others are scaled up pro rata.")
+    ui.source_line(
+        "Score = weighted average of the parts. Parts without data, or that do not apply, "
+        "are left out and the others count for more (Applied)."
+    )
 
 with st.expander("Covenants"):
     if card.covenants:

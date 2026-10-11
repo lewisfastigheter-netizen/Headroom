@@ -2,49 +2,46 @@
 # Edit, then reload the app. Weights within a score must sum to 1.0.
 
 motivated_seller:
+  # Five parts, one rule each. Each part turns one figure into 0-100 on a straight line:
+  # `zero` scores 0, `full` scores 100, anything beyond is clipped. The score is the
+  # weighted average of the parts.
   weights:
     refinancing: 0.30
-    covenant: 0.25
+    covenant: 0.25   # companies with bonds only
     leverage: 0.15
     events: 0.20
-    market: 0.10     # listed companies only; re-weighted away for others
+    market: 0.10     # listed companies only
 
-  # Below this share of the nominal weight, a company is not scored at all.
-  min_coverage: 0.50
+  # A part without data is left out and the others count for more. A part that does not
+  # apply (covenants without bonds, share price without a listing) is left out too, but is
+  # not a data gap. A company with data for less than this share of the weight that
+  # applies to it is not scored.
+  min_coverage: 0.55
 
-  # Each component maps a raw metric to 0-100 with a linear ramp between
-  # `zero` (score 0) and `full` (score 100). Values beyond the ends are clipped.
   refinancing:
-    # need = due within 12m + weight_12_24m * (due in months 13-24)
-    weight_12_24m: 0.6
-    # ratio = need / (cash + undrawn facilities), scored on a log scale because
-    # ratios run from below 1x to 100x for issuers with near-zero liquidity
-    scale: log
-    ratio_zero: 0.75
-    ratio_full: 10.0
+    # Debt due within 12 months / (cash + undrawn facilities). Log scale, because the
+    # ratio runs from near zero to 100x: every doubling of the ratio adds 30 points.
+    zero: 0.5     # 0.5x or less scores 0
+    full: 5.0     # 5x or more scores 100
 
   covenant:
-    # headroom = distance to threshold as a share of the threshold
-    # min-tests (ICR, equity ratio): (actual - threshold) / threshold
-    # max-tests (LTV): (threshold - actual) / threshold
-    # The tightest maintenance test is scored at base rates and again with ICR
-    # recomputed at base + stress_bp. The component is the average of the two,
-    # so an issuer already in breach scores above one that breaches only under stress.
+    # Headroom on the tightest maintenance covenant after interest rates rise by
+    # stress_bp (only ICR moves). Headroom = distance to the threshold as a share of it:
+    # (actual - threshold) / threshold for ICR and equity ratio, the reverse for LTV.
     stress_bp: 100
-    stress_weight: 0.5
-    headroom_zero: 0.40   # 40% headroom or more scores 0
-    headroom_full: 0.00   # at or through the covenant scores 100
+    zero: 0.40    # 40% headroom or more scores 0
+    full: 0.00    # at or through the covenant scores 100
 
   leverage:
-    ltv:            {zero: 0.40, full: 0.70}
-    icr:            {zero: 3.0,  full: 1.0}
-    net_debt_ebitda: {zero: 8.0, full: 20.0}
+    # Average of the two.
+    ltv: {zero: 0.40, full: 0.70}
+    icr: {zero: 3.0,  full: 1.0}
 
   events:
-    half_life_days: 180
+    # Points for each event in the last 12 months, added up, capped at 100.
+    window_days: 365
     cap: 100
-    # Points before decay. Several events add up, capped at `cap`.
-    severity:
+    points:
       written_procedure: 60
       waiver: 40
       interest_deferral: 70
@@ -55,14 +52,14 @@ motivated_seller:
       late_annual_report: 25
       disposal_below_book: 30
       rating_downgrade: 30
-      refinancing_completed: 0
       equity_raise: 15
-      interim_report: 0
       disposal: 5
 
   market:
-    pnav_discount: {zero: 0.0, full: 0.50}
-    drawdown_52w:  {zero: 0.0, full: 0.60}
+    # Discount of the share price to NAV per share. When NAV is not available,
+    # the fall from the 52-week high is used instead.
+    nav_discount: {zero: 0.0, full: 0.50}
+    drawdown_52w: {zero: 0.0, full: 0.60}
 
   bands:
     high: 60    # oxblood marker
@@ -113,61 +110,48 @@ private_universe:
 
 location:
   # Location scores for the Locations page only; they do not feed the company scores.
-  # Same pattern as motivated_seller: each component is a linear ramp from `zero`
-  # (score 0) to `full` (score 100), clipped; `scale: log` ramps on log10 of the value.
-  # Weights within a score sum to 1.0. Components without data are dropped and the
-  # rest re-weighted; below `min_coverage` of the weight a place is not scored.
+  # Each score has four parts. Each part turns one figure into 0-100 on a straight line:
+  # `zero` scores 0, `full` scores 100, anything beyond is clipped (`scale: log` draws the
+  # line on a log scale). The score is the weighted average of the parts. A part without
+  # data is left out and the others count for more; a place with data for less than
+  # `min_coverage` of the weight gets no score.
   min_coverage: 0.50
   bands:
     high: 65
     watch: 45
 
-  residential:            # municipalities and counties
+  residential:            # municipalities and counties: are people arriving faster than homes are built?
     weights:
-      growth_5y: 0.20          # population growth per year, last 5 years
-      housing_pressure: 0.20   # residents added per completed home, last 3 years
-      young_inflow: 0.15       # net domestic inflow of 20-34-year-olds per 1,000 residents, 3-year mean
-      bme: 0.15                # municipality's own housing-market assessment (Kolada U30446)
-      pipeline: 0.10           # homes started per 1,000 residents, last 4 quarters (fewer = less new supply)
-      income_rel: 0.10         # median income relative to Sweden
-      education: 0.10          # share of 25-65-year-olds with 3+ years of post-secondary education
-    growth_5y:        {zero: 0.000, full: 0.015}
-    housing_pressure: {zero: 0.0,   full: 2.0}
-    young_inflow:     {zero: -2.0,  full: 6.0}
-    bme:              {zero: 2.0,   full: 0.0}    # surplus (2) scores 0, shortage (0) scores 100
-    pipeline:         {zero: 5.0,   full: 1.0}
-    income_rel:       {zero: 0.85,  full: 1.15}
-    education:        {zero: 0.15,  full: 0.35}
+      growth_5y: 0.30          # population growth per year, last 5 years
+      housing_pressure: 0.30   # residents added per completed home, last 3 years
+      young_inflow: 0.20       # 20-34-year-olds moving in from the rest of Sweden, net per 1,000 residents
+      bme: 0.20                # the municipality's own view of its housing market (Kolada U30446)
+    growth_5y:        {zero: -0.01, full: 0.01}   # shrinking 1% a year scores 0, growing 1% scores 100
+    housing_pressure: {zero: 0.0,   full: 2.0}    # 2 or more new residents per new home scores 100
+    young_inflow:     {zero: -5.0,  full: 1.0}
+    bme:              {zero: 2.0,   full: 0.0}    # surplus (2) scores 0, balance (1) 50, shortage (0) 100
 
-  residential_regso:      # areas within cities
+  residential_regso:      # areas within cities: is the area growing, rented and improving?
     weights:
-      growth: 0.25             # per year over 5 years where the RegSO kept its borders, else 1 year
-      share_20_34: 0.15        # the renter cohort
-      rental_share: 0.15       # rental flats as a share of all dwellings
-      sei_improvement: 0.20    # fall in SCB's socio-economic index over 10 years (higher index = more challenges)
-      income_rel_kommun: 0.15  # mean net income relative to the municipality
-      kommun_context: 0.10     # the municipality's Residential score
-    growth:            {zero: 0.000, full: 0.020}
-    share_20_34:       {zero: 0.12,  full: 0.25}
+      growth: 0.30             # per year since 2020 where the area kept its borders, else last year
+      rental_share: 0.25       # rental flats as a share of all homes
+      sei_improvement: 0.25    # fall in SCB's socio-economic index over 10 years (lower index = fewer challenges)
+      kommun_context: 0.20     # the municipality's Residential score
+    growth:            {zero: -0.01, full: 0.01}
     rental_share:      {zero: 0.10,  full: 0.50}
     sei_improvement:   {zero: -0.5,  full: 3.0}   # percentage points
-    income_rel_kommun: {zero: 0.75,  full: 1.10}
     kommun_context:    {zero: 0,     full: 100}
 
-  logistics:              # municipalities and counties
+  logistics:              # municipalities and counties: are there people within reach and a logistics base to serve them?
     weights:
       catchment_100km: 0.30    # residents within 100 km, straight line
-      logistics_lq: 0.20       # transport and warehousing (SNI H) share of local jobs / Sweden's share
-      logistics_growth: 0.10   # growth per year in SNI H jobs at workplaces in the municipality
-      node_distance: 0.20      # nearest port, intermodal terminal or cargo airport, km
-      job_hub: 0.10            # in-commuters / out-commuters
-      industrial_cluster: 0.10 # employees in business areas (verksamhetsområden) per 1,000 residents
+      node_distance: 0.25      # nearest port, intermodal terminal or cargo airport, km
+      logistics_lq: 0.25       # transport and warehousing (SNI H) share of local jobs / Sweden's share
+      job_hub: 0.20            # people commuting in per person commuting out
     catchment_100km:    {zero: 300000, full: 3000000, scale: log}
-    logistics_lq:       {zero: 0.8,  full: 2.0}
-    logistics_growth:   {zero: 0.0,  full: 0.04}
-    node_distance:      {zero: 80.0, full: 10.0}
-    job_hub:            {zero: 0.7,  full: 1.3}
-    industrial_cluster: {zero: 50.0, full: 250.0}
+    node_distance:      {zero: 100.0, full: 10.0}
+    logistics_lq:       {zero: 0.5,   full: 1.5}
+    job_hub:            {zero: 0.5,   full: 1.5}
 
   # Statements in the start-page headline.
   pressure_shortage: 2.0     # residents per completed home above this suggests a shortage

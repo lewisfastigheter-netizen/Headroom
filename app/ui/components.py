@@ -189,6 +189,13 @@ def hero(
     )
 
 
+def page_head(title: str, lede: str = "", kicker: str = "") -> None:
+    """Page title as on Locations: a large name and one short reading under it."""
+    k = eyebrow(kicker) if kicker else ""
+    p = f'<p class="lede">{lede}</p>' if lede else ""
+    render(f'<div class="hr-place-head">{k}<h1>{esc(title)}</h1>{p}</div>')
+
+
 def section(n: int | str | None, title: str, desc: str = "") -> None:
     """Section heading. `n` is accepted for old call sites but no longer shown."""
     d = f'<p class="d">{desc}</p>' if desc else ""

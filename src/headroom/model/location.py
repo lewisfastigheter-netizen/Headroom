@@ -23,7 +23,7 @@ import polars as pl
 import yaml
 
 from headroom.config import CONFIG_DIR
-from headroom.model.scoring import ramp
+from headroom.model.scoring import ramp, weighted_average
 
 GEO_DIR = CONFIG_DIR / "geo"
 
@@ -430,34 +430,57 @@ def features(
 
 
 # --------------------------------------------------------------------------- scores
+#
+# Three scores, four parts each. Every part turns one figure into 0-100 on a straight
+# line between the `zero` and `full` values in config/weights.yaml, and the score is the
+# weighted average of the parts (see headroom.model.scoring.weighted_average).
 
-SCORE_KINDS = {
-    "residential": ("residential", ("lan", "kommun", "riket")),
+SCORES = {
+    # config block: (score name, levels it applies to)
+    "residential": ("residential", ("riket", "lan", "kommun")),
+    "logistics": ("logistics", ("riket", "lan", "kommun")),
     "residential_regso": ("residential", ("regso",)),
-    "logistics": ("logistics", ("lan", "kommun", "riket")),
 }
 
 COMPONENT_LABEL = {
+    # Residential, municipalities and counties
     "growth_5y": "Population growth, 5 years",
-    "housing_pressure": "Residents per new home",
-    "young_inflow": "Inflow of 20–34-year-olds",
-    "bme": "Housing-market assessment",
-    "pipeline": "Homes started (new supply)",
-    "income_rel": "Median income vs Sweden",
-    "education": "Higher education",
+    "housing_pressure": "New residents per new home",
+    "young_inflow": "20–34-year-olds moving in",
+    "bme": "Municipality's housing-market view",
+    # Residential, areas
     "growth": "Population growth",
-    "share_20_34": "Share aged 20–34",
     "rental_share": "Rental share",
     "sei_improvement": "Socio-economic improvement, 10 years",
-    "income_rel_kommun": "Income vs municipality",
-    "kommun_context": "Municipality score",
-    "catchment_100km": "Population within 100 km",
-    "logistics_lq": "Logistics jobs vs Sweden",
-    "logistics_growth": "Logistics job growth",
+    "kommun_context": "Municipality's Residential score",
+    # Logistics
+    "catchment_100km": "People within 100 km",
     "node_distance": "Nearest port, terminal or cargo airport",
-    "motorway_distance": "Nearest motorway junction",
-    "job_hub": "In- vs out-commuters",
-    "industrial_cluster": "Business-area jobs per 1,000",
+    "logistics_lq": "Logistics jobs vs Sweden",
+    "job_hub": "Commuters in per commuter out",
+}
+
+
+# What each part measures, in one line (Method page).
+COMPONENT_MEASURE = {
+    "growth_5y": "Population growth per year over the last 5 years",
+    "housing_pressure": "New residents per completed home over the last 3 years",
+    "young_inflow": (
+        "20–34-year-olds moving in from the rest of Sweden, net per 1,000 residents, 3-year mean"
+    ),
+    "bme": "The municipality's own view of its housing market (Kolada)",
+    "growth": (
+        "Population growth per year since 2020; over the last year where SCB changed the borders"
+    ),
+    "rental_share": "Rental flats as a share of all homes",
+    "sei_improvement": (
+        "Fall in SCB's socio-economic index over 10 years (lower index, fewer challenges)"
+    ),
+    "kommun_context": "The municipality's own Residential score",
+    "catchment_100km": "Residents within 100 km, straight line",
+    "node_distance": "Distance to the nearest port, intermodal terminal or cargo airport",
+    "logistics_lq": "Transport and warehousing share of local jobs, relative to Sweden's share",
+    "job_hub": "People commuting in per person commuting out",
 }
 
 
@@ -468,100 +491,63 @@ class ScoreResult:
     components: list[dict]
 
 
+def _number(x: Any) -> float | None:
+    if x is None or (isinstance(x, float) and math.isnan(x)):
+        return None
+    return float(x)
+
+
 def score_one(values: dict[str, Any], block: dict, min_coverage: float) -> ScoreResult:
+    """Score one place with one config block. Each part: value -> ramp -> weighted average."""
     comps = []
-    total_w = sum(block["weights"].values())
-    have_w = 0.0
-    acc = 0.0
     for key, w in block["weights"].items():
-        spec = block.get(key, {})
-        x = values.get(key)
-        if x is None or (isinstance(x, float) and math.isnan(x)):
-            comps.append(
-                {
-                    "key": key,
-                    "label": COMPONENT_LABEL.get(key, key),
-                    "weight": w,
-                    "value": None,
-                    "score": None,
-                }
-            )
-            continue
-        xv = float(x)
-        z, full = spec["zero"], spec["full"]
-        if spec.get("scale") == "log":
-            if xv <= 0:
-                comps.append(
-                    {
-                        "key": key,
-                        "label": COMPONENT_LABEL.get(key, key),
-                        "weight": w,
-                        "value": xv,
-                        "score": None,
-                    }
-                )
-                continue
-            xv, z, full = math.log10(xv), math.log10(z), math.log10(full)
-        s = ramp(xv, z, full)
-        have_w += w
-        acc += w * s
+        x = _number(values.get(key))
+        s = ramp(x, **block[key]) if x is not None else None
         comps.append(
             {
                 "key": key,
                 "label": COMPONENT_LABEL.get(key, key),
                 "weight": w,
-                "value": float(x),
+                "value": x,
                 "score": s,
             }
         )
-    coverage = have_w / total_w if total_w else 0.0
-    score = acc / have_w if have_w and coverage >= min_coverage else None
+    score, coverage = weighted_average([(c["weight"], c["score"]) for c in comps])
+    if coverage < min_coverage:
+        score = None
     return ScoreResult(score, coverage, comps)
 
 
 def score_all(feats: pl.DataFrame, cfg: dict) -> pl.DataFrame:
-    """Long table: code, level, score_kind, score, coverage, components_json."""
+    """Long table: code, level, score_kind, score, coverage, components_json.
+
+    Municipalities are scored before areas, because an area's score includes its
+    municipality's Residential score."""
     lc = cfg["location"]
     min_cov = lc.get("min_coverage", 0.5)
     rows = []
-    recs = {r["code"]: r for r in feats.iter_rows(named=True)}
-    res_k: dict[str, float | None] = {}
-    for kind, (label, levels) in SCORE_KINDS.items():
-        if kind == "residential_regso":
-            continue
-        block = lc[kind]
-        for code, r in recs.items():
+    residential: dict[str, float | None] = {}
+    for block_key, (kind, levels) in SCORES.items():
+        block = lc[block_key]
+        for r in feats.iter_rows(named=True):
             if r["level"] not in levels:
                 continue
-            sr = score_one(r, block, min_cov)
-            if label == "residential":
-                res_k[code] = sr.score
+            values = r
+            if r["level"] == "regso":
+                values = {**r, "kommun_context": residential.get(r["code"][:4])}
+            sr = score_one(values, block, min_cov)
+            if kind == "residential":
+                residential[r["code"]] = sr.score
             rows.append(
                 {
-                    "code": code,
+                    "code": r["code"],
                     "level": r["level"],
-                    "score_kind": label,
+                    "score_kind": kind,
                     "score": sr.score,
                     "coverage": sr.coverage,
                     "components_json": json.dumps(sr.components),
                 }
             )
-    block = lc["residential_regso"]
-    for code, r in recs.items():
-        if r["level"] != "regso":
-            continue
-        vals = {**r, "kommun_context": res_k.get(code[:4])}
-        sr = score_one(vals, block, min_cov)
-        rows.append(
-            {
-                "code": code,
-                "level": "regso",
-                "score_kind": "residential",
-                "score": sr.score,
-                "coverage": sr.coverage,
-                "components_json": json.dumps(sr.components),
-            }
-        )
     return pl.DataFrame(
         rows,
         schema={
@@ -578,10 +564,7 @@ def score_all(feats: pl.DataFrame, cfg: dict) -> pl.DataFrame:
 def weights_ok(cfg: dict) -> dict[str, float]:
     """Sum of weights per location score block (each should be 1.0)."""
     lc = cfg["location"]
-    return {
-        k: round(sum(lc[k]["weights"].values()), 6)
-        for k in ("residential", "residential_regso", "logistics")
-    }
+    return {k: round(sum(lc[k]["weights"].values()), 6) for k in SCORES}
 
 
 # --------------------------------------------------------------------------- comparisons

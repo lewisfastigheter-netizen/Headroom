@@ -143,7 +143,9 @@ if goto:
 
 nav.run()
 
-# Data notice at the foot of every page.
-as_of = max((data.meta.get("as_of") or {}).values(), default=None)
-st.write("")
-topline(as_of, data.fictional)
+# Data notice at the foot of every page except Locations, whose public statistics are
+# the same in live and demo mode and carry their own sources.
+if nav.url_path != "locations":
+    as_of = max((data.meta.get("as_of") or {}).values(), default=None)
+    st.write("")
+    topline(as_of, data.fictional)

@@ -1,13 +1,21 @@
 """Motivated-seller score, strategy-fit score and opportunity label.
 
-Design rules
-------------
-* Every component returns its inputs, its 0-100 sub-score and a note, so the UI
-  can show exactly how a score was built.
-* A component without data is marked unavailable. Its weight is redistributed
-  pro rata across the available components and the company is flagged. Nothing
-  is imputed. Where a component runs on partial inputs (for example cash
-  without undrawn facilities), the note says so.
+How a score is built (the same for companies and for places)
+------------------------------------------------------------
+1. Each part turns one figure into 0-100 on a straight line: the `zero` value in
+   config/weights.yaml scores 0, the `full` value scores 100, anything beyond is clipped.
+2. The score is the weighted average of the parts.
+3. A part without data is left out and the other parts count for more. Nothing is
+   imputed. A part that does not apply (market price for an unlisted company, covenants
+   for a company without bonds) is left out too, but is not a data gap.
+
+The motivated-seller score has five parts, one rule each:
+
+    refinancing  debt due within 12 months / (cash + undrawn facilities)
+    covenant     tightest covenant headroom after a rate rise
+    leverage     average of the LTV and ICR scores
+    events       points for credit events in the last 12 months
+    market       discount to NAV (52-week drawdown when NAV is not available)
 """
 
 from __future__ import annotations
@@ -26,19 +34,45 @@ from headroom.model.stress import shocked_icr
 COMPONENT_LABELS = {
     "refinancing": "Refinancing pressure",
     "covenant": "Covenant headroom",
-    "leverage": "Leverage and coverage",
-    "events": "Events",
-    "market": "Market",
+    "leverage": "Leverage",
+    "events": "Credit events",
+    "market": "Share price",
 }
 FIT_LABELS = {"segment": "Segment exposure", "region": "Growth regions", "size": "Deal size"}
 
 
-def ramp(x: float, zero: float, full: float) -> float:
-    """Linear 0-100 between `zero` and `full`, clipped. Works in either direction."""
+# --------------------------------------------------------------------------- the two rules
+
+
+def ramp(x: float, zero: float, full: float, scale: str | None = None) -> float:
+    """0-100 on a straight line from `zero` (0) to `full` (100), clipped.
+
+    Works in either direction (for ICR, a lower value is worse, so zero > full).
+    With scale="log" the line is drawn on log10 of the values."""
+    if scale == "log":
+        if x <= 0:
+            return 0.0 if full > zero else 100.0
+        x, zero, full = math.log10(x), math.log10(zero), math.log10(full)
     if full == zero:
         return 100.0 if x >= full else 0.0
     t = (x - zero) / (full - zero)
     return 100.0 * min(max(t, 0.0), 1.0)
+
+
+def weighted_average(parts: list[tuple[float, float | None]]) -> tuple[float | None, float]:
+    """(weight, score) pairs -> (score, coverage).
+
+    Parts with no score are left out and the rest count for more. Coverage is the share
+    of the total weight that had data."""
+    total = sum(w for w, _ in parts)
+    have = [(w, s) for w, s in parts if s is not None and w > 0]
+    have_w = sum(w for w, _ in have)
+    if not have_w:
+        return None, 0.0
+    return sum(w * s for w, s in have) / have_w, have_w / total if total else 0.0
+
+
+# --------------------------------------------------------------------------- data classes
 
 
 @dataclass
@@ -51,6 +85,7 @@ class Component:
     effective_weight: float = 0.0
     inputs: dict[str, Any] = field(default_factory=dict)
     note: str = ""
+    applicable: bool = True  # False: the part does not apply here, so it is not a data gap
 
     @property
     def contribution(self) -> float:
@@ -83,24 +118,29 @@ class ScoreCard:
     fit_components: list[Component]
     opportunity: str
     opportunity_rationale: str
-    coverage: float  # share of nominal weight with data
+    coverage: float  # share of the applicable weight with data
 
     def component(self, key: str) -> Component:
         return next(c for c in self.components if c.key == key)
 
 
 def _reweight(components: list[Component]) -> tuple[float | None, float]:
-    avail = [c for c in components if c.available and c.score is not None]
-    total = sum(c.weight for c in avail)
-    nominal = sum(c.weight for c in components)
+    """Weighted average of the components with data; sets each one's applied weight."""
+    used = [c for c in components if c.applicable]
+    score, coverage = weighted_average([(c.weight, c.score if c.available else None) for c in used])
+    have_w = sum(c.weight for c in used if c.available and c.score is not None)
     for c in components:
-        c.effective_weight = c.weight / total if (c.available and total) else 0.0
-    if not avail:
-        return None, 0.0
-    return sum(c.contribution for c in avail), total / nominal
+        ok = c.applicable and c.available and c.score is not None and have_w
+        c.effective_weight = c.weight / have_w if ok else 0.0
+    return score, coverage
+
+
+def _not_applicable(key: str, why: str) -> Component:
+    return Component(key, COMPONENT_LABELS[key], 0.0, False, note=why, applicable=False)
 
 
 def _headroom(test: str, actual: float | None, threshold: float) -> float | None:
+    """Distance to the covenant as a share of the threshold; negative means in breach."""
     if actual is None or threshold == 0:
         return None
     if test == "ltv":  # maximum test
@@ -111,43 +151,29 @@ def _headroom(test: str, actual: float | None, threshold: float) -> float | None
 # --------------------------------------------------------------------------- components
 
 
-def refinancing(
-    fin: dict | None, cfg: dict, bond_due: tuple[float, float] | None = None
-) -> Component:
-    """`bond_due` = (bonds due within 12m, within 24m) from FIRDS, used when the
-    reported maturity profile is missing. Bank loans are then not included."""
+def refinancing(fin: dict | None, cfg: dict, bond_due_12m: float | None = None) -> Component:
+    """Debt due within 12 months / (cash + undrawn facilities), on a log scale.
+
+    `bond_due_12m` is bonds due within 12 months from FIRDS, used when the report has no
+    maturity profile (bank loans are then missing, and the note says so)."""
     c = Component("refinancing", COMPONENT_LABELS["refinancing"], 0.0, False)
     notes = []
-    if fin and fin.get("debt_due_12m") is None and bond_due and fin.get("cash") is not None:
-        fin = {**fin, "debt_due_12m": bond_due[0], "debt_due_24m": bond_due[1]}
-        notes.append("bond maturities from FIRDS only; bank loans not reported")
-    if not fin or fin.get("debt_due_12m") is None or fin.get("cash") is None:
+    due = (fin or {}).get("debt_due_12m")
+    if due is None and bond_due_12m is not None:
+        due = bond_due_12m
+        notes.append("Bond maturities from FIRDS only; bank loans not reported")
+    if not fin or due is None or fin.get("cash") is None:
         c.note = "Debt maturity profile or cash not reported"
         return c
-    due12 = fin["debt_due_12m"]
-    due24 = fin.get("debt_due_24m")
-    if due24 is None:
-        need = due12
-        notes.append("12-month maturities only; 13-24 month bucket not reported")
-    else:
-        need = due12 + cfg["weight_12_24m"] * max(due24 - due12, 0.0)
     undrawn = fin.get("undrawn_facilities")
     if undrawn is None:
-        liquidity = fin["cash"]
         notes.append("undrawn facilities not reported; liquidity is cash only")
-    else:
-        liquidity = fin["cash"] + undrawn
-    ratio = need / liquidity if liquidity > 0 else math.inf
+    liquidity = fin["cash"] + (undrawn or 0.0)
+    ratio = due / liquidity if liquidity > 0 else math.inf
     c.available = True
-    if cfg.get("scale") == "log":
-        r = max(min(ratio, 1e6), 1e-6)
-        c.score = ramp(math.log(r), math.log(cfg["ratio_zero"]), math.log(cfg["ratio_full"]))
-    else:
-        c.score = ramp(min(ratio, 1e6), cfg["ratio_zero"], cfg["ratio_full"])
+    c.score = ramp(min(ratio, 1e6), cfg["zero"], cfg["full"], scale="log")
     c.inputs = {
-        "due_12m": due12,
-        "due_24m": due24,
-        "need": need,
+        "due_12m": due,
         "cash": fin["cash"],
         "undrawn": undrawn,
         "liquidity": liquidity,
@@ -159,6 +185,7 @@ def refinancing(
 
 
 def covenant(fin: dict | None, covs: list[dict], cfg: dict) -> tuple[Component, list[CovenantRow]]:
+    """Tightest covenant headroom after a rate rise of `stress_bp` (only ICR moves)."""
     c = Component("covenant", COMPONENT_LABELS["covenant"], 0.0, False)
     rows: list[CovenantRow] = []
     if not covs:
@@ -175,18 +202,16 @@ def covenant(fin: dict | None, covs: list[dict], cfg: dict) -> tuple[Component, 
         fin.get("fixed_share"),
         bp,
     )
+    metric = {"ltv": "ltv", "equity_ratio": "equity_ratio", "min_liquidity": "cash"}
     for cv in covs:
         test = cv["test"]
         if test == "icr":
             actual, stressed = fin.get("icr"), shock.icr
-        elif test == "ltv":
-            actual = stressed = fin.get("ltv")
-        elif test == "equity_ratio":
-            actual = stressed = fin.get("equity_ratio")
-        elif test == "min_liquidity":
-            actual = stressed = fin.get("cash")
         else:
-            actual = stressed = None
+            actual = fin.get(metric[test]) if test in metric else None
+            stressed = actual
+        base = _headroom(test, actual, cv["threshold"])
+        after = _headroom(test, stressed, cv["threshold"])
         rows.append(
             CovenantRow(
                 isin=cv["isin"],
@@ -195,42 +220,27 @@ def covenant(fin: dict | None, covs: list[dict], cfg: dict) -> tuple[Component, 
                 threshold=cv["threshold"],
                 actual=actual,
                 actual_stressed=stressed,
-                headroom=_headroom(test, actual, cv["threshold"]),
-                headroom_stressed=_headroom(test, stressed, cv["threshold"]),
+                headroom=base,
+                headroom_stressed=after if after is not None else base,
                 source_url=cv["source_url"],
                 page=cv.get("page"),
                 confidence=cv.get("confidence", 1.0),
             )
         )
     maint = [r for r in rows if r.kind == "maintenance"]
-    basis = maint or rows
-    tested = [r for r in basis if r.headroom is not None]
+    tested = [r for r in (maint or rows) if r.headroom is not None]
     if not tested:
         c.note = "Covenant tests found, but the tested metrics are not reported"
         return c, rows
-    base_row = min(tested, key=lambda r: r.headroom)
-    stress_row = min(
-        tested, key=lambda r: r.headroom_stressed if r.headroom_stressed is not None else r.headroom
-    )
-    base = base_row.headroom
-    stressed = (
-        stress_row.headroom_stressed
-        if stress_row.headroom_stressed is not None
-        else stress_row.headroom
-    )
-    sw = cfg.get("stress_weight", 0.5)
-    s_base = ramp(base, cfg["headroom_zero"], cfg["headroom_full"])
-    s_stress = ramp(stressed, cfg["headroom_zero"], cfg["headroom_full"])
+    tightest = min(tested, key=lambda r: r.headroom_stressed)
     c.available = True
-    c.score = (1 - sw) * s_base + sw * s_stress
+    c.score = ramp(tightest.headroom_stressed, cfg["zero"], cfg["full"])
     c.inputs = {
-        "min_headroom": base,
-        "min_headroom_stressed": stressed,
-        "binding_test": base_row.test,
-        "binding_isin": base_row.isin,
-        "binding_test_stressed": stress_row.test,
+        "min_headroom": min(r.headroom for r in tested),
+        "min_headroom_stressed": tightest.headroom_stressed,
+        "binding_test": tightest.test,
+        "binding_isin": tightest.isin,
         "stress_bp": bp,
-        "sub_scores": {"base": s_base, "stressed": s_stress},
         "shock_assumption": shock.assumption,
     }
     if not maint:
@@ -239,72 +249,56 @@ def covenant(fin: dict | None, covs: list[dict], cfg: dict) -> tuple[Component, 
 
 
 def leverage(fin: dict | None, cfg: dict) -> Component:
+    """Average of the LTV and ICR scores (one of them if the other is not reported)."""
     c = Component("leverage", COMPONENT_LABELS["leverage"], 0.0, False)
     if not fin:
         c.note = "No financials"
         return c
-    subs: dict[str, float] = {}
-    inputs: dict[str, Any] = {}
-    if fin.get("ltv") is not None:
-        subs["ltv"] = ramp(fin["ltv"], **cfg["ltv"])
-        inputs["ltv"] = fin["ltv"]
-    if fin.get("icr") is not None:
-        subs["icr"] = ramp(fin["icr"], **cfg["icr"])
-        inputs["icr"] = fin["icr"]
-    nd, eb = fin.get("net_debt"), fin.get("ebitda")
-    if nd is not None and eb:
-        nde = nd / eb if eb > 0 else 99.0
-        subs["net_debt_ebitda"] = ramp(nde, **cfg["net_debt_ebitda"])
-        inputs["net_debt_ebitda"] = nde
+    subs = {k: ramp(fin[k], **cfg[k]) for k in ("ltv", "icr") if fin.get(k) is not None}
     if not subs:
-        c.note = "LTV, ICR and net debt/EBITDA not reported"
+        c.note = "LTV and ICR not reported"
         return c
     c.available = True
     c.score = sum(subs.values()) / len(subs)
-    c.inputs = {**inputs, "sub_scores": subs}
-    missing = {"ltv", "icr", "net_debt_ebitda"} - subs.keys()
-    if missing:
-        c.note = "Average of available measures; missing: " + ", ".join(sorted(missing))
+    c.inputs = {**{k: fin[k] for k in subs}, "sub_scores": subs}
+    if len(subs) == 1:
+        missing = "ICR" if "ltv" in subs else "LTV"
+        c.note = f"{missing} not reported; scored on the other only"
     return c
 
 
 def events(evs: list[dict], ref: date, cfg: dict) -> Component:
+    """Points for each credit event in the last `window_days`, added up and capped."""
     c = Component("events", COMPONENT_LABELS["events"], 0.0, True)
-    half = cfg["half_life_days"]
-    sev = cfg["severity"]
-    total = 0.0
-    contrib = []
+    points = cfg["points"]
+    counted = []
     for e in evs:
-        pts = sev.get(e["type"], 0)
-        if pts == 0:
-            continue
+        pts = points.get(e["type"], 0)
         age = (ref - e["date"]).days
-        if age < 0:
-            continue
-        decayed = pts * 0.5 ** (age / half)
-        total += decayed
-        contrib.append(
-            {
-                "date": e["date"],
-                "type": e["type"],
-                "points": pts,
-                "age_days": age,
-                "decayed": decayed,
-                "title": e["title"],
-            }
-        )
+        if pts and 0 <= age <= cfg["window_days"]:
+            counted.append(
+                {
+                    "date": e["date"],
+                    "type": e["type"],
+                    "points": pts,
+                    "age_days": age,
+                    "title": e["title"],
+                }
+            )
+    total = sum(e["points"] for e in counted)
     c.score = min(total, cfg["cap"])
-    c.inputs = {"events": sorted(contrib, key=lambda x: -x["decayed"]), "raw_total": total}
-    if not contrib:
-        c.note = "No scored events in the monitored sources"
+    c.inputs = {
+        "events": sorted(counted, key=lambda x: (-x["points"], x["age_days"])),
+        "raw_total": total,
+    }
+    if not counted:
+        c.note = "No credit events in the monitored sources in the last 12 months"
     return c
 
 
-def market(ticker: str | None, prices: pl.DataFrame | None, ref: date, cfg: dict) -> Component:
+def market(prices: pl.DataFrame | None, ref: date, cfg: dict) -> Component:
+    """Discount to NAV; the fall from the 52-week high when NAV is not available."""
     c = Component("market", COMPONENT_LABELS["market"], 0.0, False)
-    if not ticker:
-        c.note = "Not listed"
-        return c
     if prices is None or prices.is_empty():
         c.note = "No price data"
         return c
@@ -313,25 +307,21 @@ def market(ticker: str | None, prices: pl.DataFrame | None, ref: date, cfg: dict
         c.note = "No price data before the reference date"
         return c
     last = p.row(-1, named=True)
-    year = p.filter(pl.col("date") >= ref - timedelta(days=365))
-    peak = year["close"].max()
-    subs, inputs = {}, {"close": last["close"], "close_date": last["date"]}
+    inputs: dict[str, Any] = {"close": last["close"], "close_date": last["date"]}
     if last.get("nav_per_share"):
         pnav = last["close"] / last["nav_per_share"]
         inputs.update(pnav=pnav, nav_per_share=last["nav_per_share"])
-        subs["pnav_discount"] = ramp(1 - pnav, **cfg["pnav_discount"])
-    if peak:
-        dd = 1 - last["close"] / peak
-        inputs["drawdown_52w"] = dd
-        subs["drawdown_52w"] = ramp(dd, **cfg["drawdown_52w"])
-    if not subs:
-        c.note = "Price data incomplete"
-        return c
+        c.score = ramp(1 - pnav, **cfg["nav_discount"])
+    else:
+        peak = p.filter(pl.col("date") >= ref - timedelta(days=365))["close"].max()
+        if not peak:
+            c.note = "Price data incomplete"
+            return c
+        inputs["drawdown_52w"] = 1 - last["close"] / peak
+        c.score = ramp(inputs["drawdown_52w"], **cfg["drawdown_52w"])
+        c.note = "NAV per share not available; fall from the 52-week high instead"
     c.available = True
-    c.score = sum(subs.values()) / len(subs)
-    c.inputs = {**inputs, "sub_scores": subs}
-    if "pnav_discount" not in subs:
-        c.note = "NAV per share not available; drawdown only"
+    c.inputs = inputs
     return c
 
 
@@ -469,76 +459,63 @@ def score_all(
     if events_covered is None:
         events_covered = tables["event"].height > 0
     ms = cfg["motivated_seller"]
-    companies = tables["company"].to_dicts()
+    min_cov = ms.get("min_coverage", 0.6)
     fins = tables["financials"].sort("period_end")
     latest = {r["org_nr"]: r for r in fins.filter(pl.col("period_end") <= ref).to_dicts()}
-    bonds = tables["bond"]
-    covs = tables["covenant"].join(bonds.select("isin", "org_nr", "maturity"), on="isin")
-    covs = covs.filter(pl.col("maturity") > ref)
+    live_b = tables["bond"].filter(pl.col("maturity") > ref)
+    covs = tables["covenant"].join(live_b.select("isin", "org_nr"), on="isin")
     events_df = tables["event"].filter(pl.col("date") <= ref)
     prices = tables["price"]
-    live_b = bonds.filter(pl.col("maturity") > ref)
     nom = "nominal_sek" if "nominal_sek" in live_b.columns else "nominal"
-    bond_due = {
-        r["org_nr"]: (r["d12"] or 0.0, r["d24"] or 0.0)
+    bond_due_12m = {
+        r["org_nr"]: r["due"] or 0.0
         for r in live_b.group_by("org_nr")
-        .agg(
-            pl.col(nom).filter(pl.col("maturity") <= ref + timedelta(days=365)).sum().alias("d12"),
-            pl.col(nom).filter(pl.col("maturity") <= ref + timedelta(days=730)).sum().alias("d24"),
-        )
+        .agg(pl.col(nom).filter(pl.col("maturity") <= ref + timedelta(days=365)).sum().alias("due"))
         .to_dicts()
     }
     out: dict[str, ScoreCard] = {}
-    for co in companies:
+    for co in tables["company"].to_dicts():
         org = co["org_nr"]
         fin = latest.get(org)
-        cv = covs.filter(pl.col("org_nr") == org).to_dicts()
         evs = events_df.filter(pl.col("org_nr") == org).to_dicts()
-        px = prices.filter(pl.col("ticker") == co["listed_ticker"]) if co["listed_ticker"] else None
-        comps = [
-            refinancing(fin, ms["refinancing"], bond_due.get(org)),
-            None,
-            leverage(fin, ms["leverage"]),
-            events(evs, ref, ms["events"]),
-            market(co["listed_ticker"], px, ref, ms["market"]),
-        ]
-        cov_comp, cov_rows = covenant(fin, cv, ms["covenant"])
-        comps[1] = cov_comp
-        if not events_covered:
-            comps[3] = Component(
-                "events",
-                COMPONENT_LABELS["events"],
-                0.0,
-                False,
-                note="Event sources not connected yet",
+        ticker = co["listed_ticker"]
+        has_bonds = org in bond_due_12m
+
+        refi = refinancing(fin, ms["refinancing"], bond_due_12m.get(org))
+        if has_bonds:
+            cov, cov_rows = covenant(
+                fin, covs.filter(pl.col("org_nr") == org).to_dicts(), ms["covenant"]
             )
+        else:
+            cov, cov_rows = _not_applicable("covenant", "No bonds outstanding"), []
+        lev = leverage(fin, ms["leverage"])
+        if events_covered:
+            ev = events(evs, ref, ms["events"])
+        else:
+            ev = Component("events", COMPONENT_LABELS["events"], 0.0, False)
+            ev.note = "Event sources not connected yet"
+        if ticker:
+            mkt = market(prices.filter(pl.col("ticker") == ticker), ref, ms["market"])
+        else:
+            mkt = _not_applicable("market", "Not listed")
+        comps = [refi, cov, lev, ev, mkt]
         for c in comps:
-            c.weight = ms["weights"][c.key]
-        if co["tier"] != "listed":
-            comps[4].weight = 0.0  # market pricing does not apply to unlisted equity
+            c.weight = ms["weights"][c.key] if c.applicable else 0.0
+
         score, coverage = _reweight(comps)
-        min_cov = ms.get("min_coverage", 0.5)
-        insufficient = score is not None and coverage < min_cov
-        if insufficient or score is None:
-            score = None
         flags = [
-            f"{c.label}: {c.note or 'no data'}"
-            for c in comps
-            if not c.available and c.key != "market"
+            f"{c.label}: {c.note or 'no data'}" for c in comps if c.applicable and not c.available
         ]
-        if co["tier"] != "listed":
-            pass  # market is not expected for unlisted companies; not a data gap
-        elif not comps[4].available:
-            flags.append(f"Market: {comps[4].note}")
-        if insufficient:
+        if score is not None and coverage < min_cov:
+            score = None
             flags.append(
                 f"Not scored: data covers {coverage:.0%} of the weight, "
                 f"below the {min_cov:.0%} minimum"
             )
         if fin and (fin.get("confidence") or 1) < cfg["extraction"]["min_confidence"]:
             flags.append("Some reported figures are unverified (low extraction confidence)")
+
         fit, fit_comps = strategy_fit(co, fin, cfg["strategy_fit"])
-        has_bonds = bonds.filter((pl.col("org_nr") == org) & (pl.col("maturity") > ref)).height > 0
         if score is None:
             label, why = (
                 "Not yet assessed",
