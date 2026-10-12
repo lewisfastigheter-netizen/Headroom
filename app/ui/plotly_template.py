@@ -1,4 +1,4 @@
-"""Plotly template: near-black and blue on white, no gridlines, a single baseline.
+"""Plotly template: plum-black and plum on warm paper, no gridlines, a single baseline.
 
 The two series colours separate well for colour-blind readers (deltaE above 30)
 and both clear 3:1 contrast on white. Multi-series charts still carry a legend
@@ -10,20 +10,20 @@ from __future__ import annotations
 import plotly.graph_objects as go
 import plotly.io as pio
 
-PAPER = "#FFFFFF"
-INK = "#212121"
-GRAPHITE = "#6A6A6A"
-MUTED = "#9B9B9B"
-RULE = "#E4E4E4"
-TINT = "#F4F4F4"
-BLUE = "#00839B"
-LIGHT_BLUE = "#8FCBD7"  # second series next to BLUE (lighter tint of the same hue)
-HIGH = "#E16E1D"
-WATCH = "#C2901A"
+PAPER = "#FCFAF7"
+INK = "#1F1A21"
+GRAPHITE = "#625A66"
+MUTED = "#9C949F"
+RULE = "#E4DED6"
+TINT = "#F3EFE9"
+ACCENT = "#7B3B6E"  # plum
+ACCENT_LIGHT = "#D3B0C6"  # second series next to ACCENT (lighter tint of the same hue)
+HIGH = "#D9571F"
+WATCH = "#B8891C"
 
-SANS = "Roboto, Helvetica Neue, Arial, sans-serif"
-DISPLAY = "Roboto, Helvetica Neue, Arial, sans-serif"
-MONO = "Roboto Mono, Menlo, monospace"
+SANS = "Familjen Grotesk, Helvetica Neue, Arial, sans-serif"
+DISPLAY = "Newsreader, Georgia, serif"
+MONO = "IBM Plex Mono, Menlo, monospace"
 
 CONFIG = {"displayModeBar": False, "responsive": True}
 
@@ -42,7 +42,7 @@ headroom = go.layout.Template(
         font=dict(family=SANS, size=12.5, color=INK),
         paper_bgcolor=PAPER,
         plot_bgcolor=PAPER,
-        colorway=[INK, BLUE, MUTED, GRAPHITE],
+        colorway=[INK, ACCENT, MUTED, GRAPHITE],
         margin=dict(l=4, r=12, t=36, b=8),
         xaxis={**_axis, "showline": True, "linecolor": INK, "linewidth": 1},  # the baseline
         yaxis={

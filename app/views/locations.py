@@ -31,16 +31,16 @@ from ui import components as ui
 from ui.data import get_data
 from ui.locdata import geojson, get_locations, index_for_session
 from ui.place_search import place_search
-from ui.plotly_template import BLUE, CONFIG, GRAPHITE, HIGH, INK, LIGHT_BLUE, MUTED, RULE
+from ui.plotly_template import ACCENT, ACCENT_LIGHT, CONFIG, GRAPHITE, HIGH, INK, MUTED, RULE
 from ui.source_tips import source_tips
 
 D = get_locations()
-BLUE_RAMP = [
-    [0.0, "#EEF6F8"],
-    [0.25, "#C2E3E9"],
-    [0.5, "#80C4D1"],
-    [0.75, "#349DB1"],
-    [1.0, "#006A7D"],
+RAMP = [
+    [0.0, "#F7F0F3"],
+    [0.25, "#E3CADA"],
+    [0.5, "#C094B1"],
+    [0.75, "#925C85"],
+    [1.0, "#4A2143"],
 ]
 BME = {0: "Shortage", 1: "Balance", 2: "Surplus"}
 NO_PERCENTILE = {"bme"}  # categorical
@@ -628,9 +628,9 @@ def pop_index_chart(level: str, code: str, name: str) -> None:
     if level in ("kommun", "regso"):
         k = code[:4]
         if level == "regso":
-            lines.append((k, D.name(k), BLUE, 1.6))
+            lines.append((k, D.name(k), ACCENT, 1.6))
         else:
-            lines.append((code[:2], D.name(code[:2]), BLUE, 1.6))
+            lines.append((code[:2], D.name(code[:2]), ACCENT, 1.6))
     elif level == "lan":
         pass
     lines.append(("00", "Sweden", MUTED, 1.6))
@@ -686,14 +686,14 @@ def construction_chart(code: str) -> None:
         x=years,
         y=[starts.get(y) for y in years],
         name="Started",
-        marker_color=LIGHT_BLUE,
+        marker_color=ACCENT_LIGHT,
         hovertemplate="Started %{x}: %{y:,.0f}<extra></extra>",
     )
     fig.add_bar(
         x=years,
         y=[comps.get(y) for y in years],
         name="Completed",
-        marker_color=BLUE,
+        marker_color=ACCENT,
         hovertemplate="Completed %{x}: %{y:,.0f}<extra></extra>",
     )
     fig.add_scatter(
@@ -978,7 +978,7 @@ def areas_section(level: str, code: str, name: str, highlight: str | None = None
     )
 
 
-BAND_COLOR = {"high": "#006A7D", "watch": "#4FB0C2", "low": "#A9B4B7"}
+BAND_COLOR = {"high": "#4A2143", "watch": "#A9779A", "low": "#B3ACA6"}
 # Badge text is drawn by the map, not the page: it needs a glyph font the CARTO tile server has.
 BADGE_FONT = "Open Sans Bold"
 
@@ -1062,7 +1062,7 @@ def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
         _outline(
             gj,
             [r["code"] for r in others],
-            "#006A7D",
+            "#4A2143",
             1.0,
             customdata=[[r["code"], hover(r)] for r in others],
             hovertemplate="%{customdata[1]}<extra></extra>",
@@ -1078,7 +1078,7 @@ def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
                 featureidkey="properties.code",
                 locations=[highlight],
                 z=[1],
-                colorscale=[[0, "rgba(225,110,29,0.14)"], [1, "rgba(225,110,29,0.14)"]],
+                colorscale=[[0, "rgba(217,87,31,0.14)"], [1, "rgba(217,87,31,0.14)"]],
                 showscale=False,
                 marker_line_color=HIGH,
                 marker_line_width=3.5,
@@ -1158,7 +1158,7 @@ def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
             y=0.025,
             xanchor="left",
             yanchor="bottom",
-            bgcolor="rgba(255,255,255,0.94)",
+            bgcolor="rgba(252,250,247,0.94)",
             borderwidth=0,
             font=dict(size=11.5, color=GRAPHITE),
             itemclick=False,
@@ -1232,8 +1232,8 @@ def county_map(lan: str) -> None:
             z=k["residential"].to_list(),
             zmin=0,
             zmax=100,
-            colorscale=BLUE_RAMP,
-            marker_line_color="#FFFFFF",
+            colorscale=RAMP,
+            marker_line_color="#FCFAF7",
             marker_line_width=0.6,
             customdata=k["name"].to_list(),
             hovertemplate="%{customdata}: %{z:.0f}<extra></extra>",

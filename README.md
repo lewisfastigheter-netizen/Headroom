@@ -124,7 +124,7 @@ Location scores (Locations page only; they do not touch the company scores), fou
 - **Hand-entered location sources** live in `config/geo` with source and date: Polisen's Lägesbild över utsatta områden 2025 (65 areas; the risk-area category was dropped in 2025; linked to RegSO by name, approximately), logistics nodes (ports, intermodal terminals and cargo airports with Wikidata/OpenStreetMap ids; not exhaustive) and logistics rankings. Distance to motorway junctions is not part of the Logistics score. Intelligent Logistik's ranking ended in 2024; Dagens Logistik's 2026 list ranks nine Nordic regions and is shown but not scored.
 - **Not used**: Svensk Mäklarstatistik (its licence forbids giving third parties access), and paid services such as Datscha, Valueguard and Pamind (possible additions).
 - **Place search** on Locations is a small Streamlit component (components v2, no iframe) so result rows can show the name large and level and parent muted; it searches in the browser over the place index. The header keeps streamlit_searchbox and searches companies and places; companies, counties and municipalities rank before postal towns, towns before areas. Source on hover is one small module (`app/ui/source_tips.py`) that places a box next to any figure with a `data-src` attribute, so it is never clipped by a scrolling table.
-- **Visual style**: large statements, hairline rules, white and light-grey bands, Roboto, one blue accent (#00839B), orange for breach and amber for watch.
+- **Visual style**: large statements, hairline rules, warm paper and stone bands, Newsreader for headings, Familjen Grotesk for text and IBM Plex Mono for dates, one plum accent (#7B3B6E) on an aubergine header (#3B1E3F), orange for breach and amber for watch.
 
 ## Layout
 

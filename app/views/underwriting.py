@@ -34,7 +34,7 @@ from headroom.model import underwriting as uw
 from ui import components as ui
 from ui.data import get_data
 from ui.locdata import get_locations
-from ui.plotly_template import BLUE, CONFIG, HIGH, MUTED
+from ui.plotly_template import ACCENT, CONFIG, HIGH, MUTED
 from ui.source_tips import source_tips
 
 d = get_data()
@@ -356,7 +356,7 @@ if segment in KT and D.available:
     ser = D.series(key, [lan, "00"]).filter(pl.col("period") >= "2010")
     if ser.height:
         fig = go.Figure()
-        for code, colour, name in ((lan, BLUE, lan_name), ("00", MUTED, "Sweden")):
+        for code, colour, name in ((lan, ACCENT, lan_name), ("00", MUTED, "Sweden")):
             s = ser.filter(pl.col("code") == code)
             fig.add_scatter(
                 x=s["period"].to_list(),
@@ -544,7 +544,7 @@ with right:
     fig = go.Figure()
     for key, name, colour in (
         ("tbill_3m", "3m T-bill", MUTED),
-        ("mb_5y", "5y mortgage bond", BLUE),
+        ("mb_5y", "5y mortgage bond", ACCENT),
         ("bank_nfc_floating", "Bank loans to companies, floating", HIGH),
     ):
         s = rates.filter(
@@ -570,7 +570,7 @@ if recent.height:
     with left:
         fig = go.Figure()
         for tier, colour, name in (
-            ("listed", BLUE, "Listed issuer"),
+            ("listed", ACCENT, "Listed issuer"),
             (None, HIGH, "Issuer without listed shares"),
         ):
             s = recent.filter(pl.col("tier") == "listed") if tier else bond_only

@@ -10,42 +10,43 @@ runOnSave = false
 gatherUsageStats = false
 
 [theme]
+# Aubergine on warm paper. Newsreader for headings, Familjen Grotesk for text, IBM Plex Mono for dates.
 base = "light"
-primaryColor = "#00839B"            # blue (accent)
-backgroundColor = "#FFFFFF"         # paper
-secondaryBackgroundColor = "#F4F4F4" # tint
-textColor = "#212121"               # ink
-linkColor = "#6A6A6A"               # graphite
+primaryColor = "#7B3B6E"            # plum (accent)
+backgroundColor = "#FCFAF7"         # paper
+secondaryBackgroundColor = "#F3EFE9" # stone
+textColor = "#1F1A21"               # ink
+linkColor = "#625A66"               # graphite
 linkUnderline = true
-borderColor = "#E4E4E4"             # hairline rule
+borderColor = "#E4DED6"             # hairline rule
 showWidgetBorder = true
 showSidebarBorder = true
 baseRadius = "none"
 buttonRadius = "none"
 baseFontSize = 15
 baseFontWeight = 400
-font = "Roboto:https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
-headingFont = "Roboto:https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
-codeFont = "'Roboto Mono':https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap"
+font = "'Familjen Grotesk':https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600&display=swap"
+headingFont = "Newsreader:https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
+codeFont = "'IBM Plex Mono':https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
 codeFontSize = "0.8rem"
-codeBackgroundColor = "#F4F4F4"
-codeTextColor = "#212121"
+codeBackgroundColor = "#F3EFE9"
+codeTextColor = "#1F1A21"
 headingFontWeights = [400, 400, 500, 500, 500, 500]
 headingFontSizes = ["2.6rem", "1.75rem", "1.25rem", "1rem", "0.9rem", "0.8rem"]
 metricValueFontSize = "2.25rem"
 metricValueFontWeight = 400
-chartCategoricalColors = ["#212121", "#00839B", "#9B9B9B", "#6A6A6A"]
-chartSequentialColors = ["#F4F4F4", "#DDEFF2", "#C2E3E9", "#A3D5DE", "#80C4D1", "#5AB1C2", "#349DB1", "#0F8CA3", "#00839B", "#006A7D"]
-dataframeHeaderBackgroundColor = "#FFFFFF"
-dataframeHeaderTextColor = "#6A6A6A"
-dataframeBorderColor = "#E4E4E4"
-redColor = "#E16E1D"
-orangeColor = "#C2901A"
-yellowColor = "#C2901A"
-greenColor = "#00839B"
-blueColor = "#6A6A6A"
-violetColor = "#6A6A6A"
-grayColor = "#9B9B9B"
+chartCategoricalColors = ["#1F1A21", "#7B3B6E", "#9C949F", "#625A66"]
+chartSequentialColors = ["#F7F0F3", "#EEDFE7", "#E3CADA", "#D3B0C6", "#C094B1", "#A9779A", "#925C85", "#7B3B6E", "#622D58", "#4A2143"]
+dataframeHeaderBackgroundColor = "#FCFAF7"
+dataframeHeaderTextColor = "#625A66"
+dataframeBorderColor = "#E4DED6"
+redColor = "#D9571F"
+orangeColor = "#B8891C"
+yellowColor = "#B8891C"
+greenColor = "#7B3B6E"
+blueColor = "#625A66"
+violetColor = "#625A66"
+grayColor = "#9C949F"
 
 [theme.sidebar]
-backgroundColor = "#F4F4F4"
+backgroundColor = "#F3EFE9"

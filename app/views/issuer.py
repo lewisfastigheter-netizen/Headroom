@@ -12,7 +12,7 @@ from headroom.model.stress import breakeven_bp, shocked_icr
 from ui import components as ui
 from ui.data import get_data
 from ui.labels import EVENT, SEGMENT, SEVERITY_STATE, TEST, TIER
-from ui.plotly_template import BLUE, CONFIG, HIGH, INK
+from ui.plotly_template import ACCENT, CONFIG, HIGH, INK
 
 d = get_data()
 ms = d.cfg["motivated_seller"]
@@ -274,7 +274,7 @@ with st.container(key="band_tint_shock"):
                 hovertemplate="+%{x}bp: %{y:.2f}x<extra></extra>",
             )
             for cv in icr_covs[:1]:
-                fig.add_hline(y=cv, line=dict(color=BLUE, width=1, dash="dot"))
+                fig.add_hline(y=cv, line=dict(color=ACCENT, width=1, dash="dot"))
                 fig.add_annotation(
                     x=xs[-1],
                     y=cv,
@@ -282,7 +282,7 @@ with st.container(key="band_tint_shock"):
                     showarrow=False,
                     xanchor="right",
                     yanchor="bottom",
-                    font=dict(size=12.5, color=BLUE),
+                    font=dict(size=12.5, color=ACCENT),
                 )
             fig.add_scatter(
                 x=[bp],
