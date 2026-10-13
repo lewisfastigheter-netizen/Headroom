@@ -16,6 +16,7 @@ import polars as pl
 import streamlit as st
 
 from headroom.config import weights as load_weights
+from headroom.model import geo as geo_ref
 from headroom.model import location as L
 from headroom.store.db import open_snapshot, snapshot_dir
 
@@ -87,14 +88,27 @@ def _empty() -> Locations:
     )
 
 
-@st.cache_data(show_spinner=False)
+# Source metadata repeats on every one of the ~630,000 indicator rows; as categoricals
+# it takes a few MB instead of ~60.
+_META_COLS = ("unit", "source", "source_table", "source_url", "as_of", "note")
+
+
+# cache_resource, not cache_data: cache_data pickles its result and unpickles a fresh copy
+# on every rerun, which for the indicator table (~160 MB pickled) cost a large part of each
+# page load. Polars frames are immutable, so one shared copy is safe. max_entries keeps
+# only the current snapshot in memory after a refresh.
+@st.cache_resource(show_spinner=False, max_entries=1)
 def _load(generated_at: str | None) -> tuple[dict, dict[str, pl.DataFrame]]:
     snap = open_snapshot("locations")
     t = {n: snap.table(n) for n in ("location", "location_indicator", "location_peer")}
+    ind = t["location_indicator"]
+    t["location_indicator"] = ind.with_columns(
+        pl.col(c).cast(pl.Categorical) for c in _META_COLS if c in ind.columns
+    )
     return snap.meta, t
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=False, max_entries=1)
 def _sources(generated_at: str | None, _ind: pl.DataFrame) -> dict:
     """(indicator, level) -> source, table, URL, as-of, unit and latest period."""
     cols = ("source", "source_table", "source_url", "as_of", "unit", "period")
@@ -104,10 +118,15 @@ def _sources(generated_at: str | None, _ind: pl.DataFrame) -> dict:
         .group_by("indicator", "level")
         .agg(pl.col(c).last() for c in cols)
     )
-    return {(r["indicator"], r["level"]): {c: r[c] for c in cols} for r in last.to_dicts()}
+    return {
+        (r["indicator"], r["level"]): {
+            c: (str(r[c]) if c in _META_COLS and r[c] is not None else r[c]) for c in cols
+        }
+        for r in last.to_dicts()
+    }
 
 
-@st.cache_data(show_spinner="Reading location statistics…")
+@st.cache_resource(show_spinner="Reading location statistics…", max_entries=2)
 def _derive(generated_at: str | None, weights_key: str, _loc: pl.DataFrame, _ind: pl.DataFrame):
     cfg = json.loads(weights_key)
     feats = L.features(_loc, _ind, L.load_utsatta())
@@ -129,8 +148,8 @@ def _derive(generated_at: str | None, weights_key: str, _loc: pl.DataFrame, _ind
 def get_locations() -> Locations:
     if not (LOC_DIR / "location.parquet").exists():
         return _empty()
-    meta_p = LOC_DIR / "meta.json"
-    gen = json.loads(meta_p.read_text("utf-8")).get("generated_at") if meta_p.exists() else None
+    gen = _generated_at()
+    gen = None if gen is _MISSING else gen
     meta, t = _load(gen)
     cfg = load_weights()
     feats, scores = _derive(
@@ -148,7 +167,7 @@ def get_locations() -> Locations:
     )
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_resource(show_spinner=False, max_entries=1)
 def place_index(generated_at: str | None) -> list[dict]:
     """Search index of places, built once per snapshot."""
     snap = open_snapshot("locations")
@@ -156,11 +175,26 @@ def place_index(generated_at: str | None) -> list[dict]:
 
 
 def index_for_session() -> list[dict]:
+    gen = _generated_at()
+    return place_index(gen) if gen is not _MISSING else []
+
+
+_MISSING = object()
+
+
+def _generated_at():
+    """generated_at from meta.json, read once per change of the file (not on every call)."""
     meta_p = LOC_DIR / "meta.json"
-    if not meta_p.exists():
-        return []
-    gen = json.loads(meta_p.read_text("utf-8")).get("generated_at")
-    return place_index(gen)
+    try:
+        mtime = meta_p.stat().st_mtime
+    except OSError:
+        return _MISSING
+    return _meta_gen(mtime)
+
+
+@lru_cache(maxsize=4)
+def _meta_gen(mtime: float) -> str | None:
+    return json.loads((LOC_DIR / "meta.json").read_text("utf-8")).get("generated_at")
 
 
 @lru_cache(maxsize=64)
@@ -168,3 +202,16 @@ def geojson(name: str) -> dict | None:
     """'kommun', 'lan' or 'regso/<kommun code>'."""
     p: Path = GEO / f"{name}.geojson"
     return json.loads(p.read_text("utf-8")) if p.exists() else None
+
+
+@lru_cache(maxsize=1)
+def kommun_maps() -> tuple[dict[str, str], dict[str, str]]:
+    """kommun name -> kommun code, county code -> county name (config/geo/kommuner.csv)."""
+    k = pl.read_csv(
+        geo_ref.GEO / "kommuner.csv",
+        schema_overrides={"kommun_code": pl.Utf8, "county_code": pl.Utf8},
+    )
+    return (
+        dict(zip(k["kommun"], k["kommun_code"], strict=True)),
+        dict(zip(k["county_code"], k["county"], strict=True)),
+    )

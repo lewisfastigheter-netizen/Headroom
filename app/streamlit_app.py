@@ -79,15 +79,17 @@ nav = st.navigation(pages, position="top")
 # at most eight suggestions; close matches only, allowing a typo or two
 # (see headroom.model.search).
 sc = data.scores
-company_items = tuple((n, o) for o, n in zip(sc["org_nr"], sc["name"], strict=True))
-company_places = tuple(
-    sorted({(ci, co) for ci, co in zip(sc["city"], sc["county"], strict=True) if ci and co})
-)
-company_counties = tuple(sorted(set(sc["county"].drop_nulls())))
 
 
-@st.cache_resource(show_spinner=False)
-def header_entries(companies: tuple, places: tuple, counties: tuple, places_version: int):
+# Keyed on a hash of the company columns it reads, not on the columns themselves: hashing
+# tuples of ~2,000 companies on every rerun cost more than building the entries.
+@st.cache_resource(show_spinner=False, max_entries=4)
+def header_entries(companies_key: int, places_version: int, _sc):
+    companies = tuple((n, o) for o, n in zip(_sc["org_nr"], _sc["name"], strict=True))
+    places = tuple(
+        sorted({(ci, co) for ci, co in zip(_sc["city"], _sc["county"], strict=True) if ci and co})
+    )
+    counties = tuple(sorted(set(_sc["county"].drop_nulls())))
     items: list[tuple[str, str, float, list[str]]] = [(n, f"org:{o}", 0, [n]) for n, o in companies]
     index = index_for_session()
     kommun_names = set()
@@ -116,7 +118,11 @@ def header_entries(companies: tuple, places: tuple, counties: tuple, places_vers
     return prepare(items)
 
 
-entries = header_entries(company_items, company_places, company_counties, len(index_for_session()))
+entries = header_entries(
+    int(sc.select("org_nr", "name", "city", "county").hash_rows().sum()),
+    len(index_for_session()),
+    sc,
+)
 
 with st.container(key="header_search"):
     goto = st_searchbox(

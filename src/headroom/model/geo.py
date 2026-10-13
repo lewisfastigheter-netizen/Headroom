@@ -79,6 +79,7 @@ def from_address(postort: str | None, postnummer: str | None) -> tuple[str | Non
     return county, city
 
 
+@lru_cache(maxsize=4096)
 def _place(region: str) -> tuple[str | None, str | None]:
     """A report's region label -> (county, municipality) when it names a Swedish place."""
     text = region.lower()

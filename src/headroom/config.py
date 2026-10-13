@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
@@ -53,7 +54,16 @@ def settings() -> Settings:
 
 
 def weights() -> dict[str, Any]:
-    """Read on every call so edits to weights.yaml apply on the next app rerun."""
+    """weights.yaml, re-read whenever the file changes, so edits apply on the next app rerun.
+
+    Parsing the YAML took ~30 ms and the app asked for it several times per page load, so
+    the parsed file is kept per modification time; callers get their own copy."""
+    path = CONFIG_DIR / "weights.yaml"
+    return copy.deepcopy(_weights(path.stat().st_mtime_ns))
+
+
+@lru_cache(maxsize=2)
+def _weights(mtime_ns: int) -> dict[str, Any]:
     with open(CONFIG_DIR / "weights.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
 

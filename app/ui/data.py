@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import date
+from functools import lru_cache
+from pathlib import Path
 
 import polars as pl
 import streamlit as st
@@ -14,7 +16,7 @@ from headroom.config import weights as load_weights
 from headroom.model import geo
 from headroom.model.scoring import ScoreCard, reference_date, score_all, score_frame
 from headroom.store import private
-from headroom.store.db import TABLES, open_snapshot
+from headroom.store.db import TABLES, open_snapshot, snapshot_dir
 
 
 @dataclass
@@ -45,7 +47,10 @@ class Data:
         return self.t["company"].filter(pl.col("org_nr") == org_nr).row(0, named=True)
 
 
-@st.cache_data(show_spinner=False)
+# cache_resource, not cache_data: cache_data unpickles a fresh copy of the result on every
+# rerun of every page. The frames are immutable and the views only read them, so one shared
+# copy is safe. max_entries: a new private_found.jsonl or snapshot replaces the old entry.
+@st.cache_resource(show_spinner=False, max_entries=2)
 def _load(
     mode: str, generated_at: str | None, private_mtime: float = 0.0
 ) -> tuple[dict, dict[str, pl.DataFrame]]:
@@ -79,8 +84,6 @@ def _place(company: pl.DataFrame) -> pl.DataFrame:
 
 
 def available_modes() -> list[str]:
-    from headroom.store.db import snapshot_dir
-
     modes = ["live"] if (snapshot_dir("live") / "bond.parquet").exists() else []
     return [*modes, "demo"]
 
@@ -90,20 +93,42 @@ def current_mode() -> str:
     return mode if mode in available_modes() else available_modes()[0]
 
 
+def _generated_at(mode: str) -> str | None:
+    """generated_at of a snapshot, from meta.json (no DuckDB connection per rerun)."""
+    p = snapshot_dir(mode) / "meta.json"
+    try:
+        mtime = p.stat().st_mtime
+    except OSError:
+        return None
+    return _meta_gen(str(p), mtime)
+
+
+@lru_cache(maxsize=8)
+def _meta_gen(path: str, mtime: float) -> str | None:
+    return json.loads(Path(path).read_text("utf-8")).get("generated_at")
+
+
 def get_data() -> Data:
     mode = current_mode()
-    probe = open_snapshot(mode)
     mtime = private.PRIVATE_FOUND.stat().st_mtime if private.PRIVATE_FOUND.exists() else 0.0
-    meta, t = _load(mode, probe.meta.get("generated_at"), mtime)
+    gen = _generated_at(mode)
+    meta, t = _load(mode, gen, mtime)
     ref = reference_date(meta)
     cfg = load_weights()
-    cards = _score(mode, meta.get("generated_at"), ref, json.dumps(cfg, sort_keys=True), t)
-    scores = score_frame(cards).join(t["company"], on="org_nr", how="left")
+    cards, scores = _score(
+        mode, meta.get("generated_at"), mtime, ref, json.dumps(cfg, sort_keys=True), t
+    )
     return Data(mode, meta, ref, t, cards, scores, cfg)
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_resource(show_spinner=False, max_entries=2)
 def _score(
-    mode: str, generated_at: str | None, ref: date, weights_key: str, _t: dict[str, pl.DataFrame]
-) -> dict[str, ScoreCard]:
-    return score_all(_t, ref)
+    mode: str,
+    generated_at: str | None,
+    private_mtime: float,
+    ref: date,
+    weights_key: str,
+    _t: dict[str, pl.DataFrame],
+) -> tuple[dict[str, ScoreCard], pl.DataFrame]:
+    cards = score_all(_t, ref)
+    return cards, score_frame(cards).join(_t["company"], on="org_nr", how="left")

@@ -29,10 +29,10 @@ from headroom.model import geo as geo_ref
 from headroom.model import location as L
 from ui import components as ui
 from ui.data import get_data
-from ui.locdata import geojson, get_locations, index_for_session
+from ui.locdata import geojson, get_locations, index_for_session, kommun_maps
 from ui.place_search import place_search
 from ui.plotly_template import ACCENT, ACCENT_LIGHT, CONFIG, GRAPHITE, HIGH, INK, MUTED, RULE
-from ui.source_tips import source_tips
+from ui.source_tips import source_tips, src_span
 
 D = get_locations()
 RAMP = [
@@ -99,6 +99,7 @@ def src_line(indicators: list[str], extra: str = "", level: str | None = None) -
     ui.source_line(text + ("" if text.endswith(".") else "."))
 
 
+@functools.cache  # per run: the page script, and so this cache, is rebuilt on every rerun
 def level_feats(level: str) -> pl.DataFrame:
     return D.feats.filter(pl.col("level") == level)
 
@@ -234,12 +235,12 @@ def tip(key: str, level: str, period: str | None = None, note: str = "") -> str:
 def sv(html: str, key: str, level: str, period=None, note: str = "") -> str:
     """Wrap a formatted figure so hovering it shows its source."""
     t = tip(key, level, str(period) if period else None, note)
-    return f'<span data-src="{ui.esc(t)}">{html}</span>' if t and html not in ("", "–") else html
+    return src_span(html, t) if t and html not in ("", "–") else html
 
 
 def score_cell(v: float | None) -> str:
     txt = score_txt(v)
-    return f'<span data-src="{ui.esc(SCORE_TIP)}">{txt}</span>' if v is not None else txt
+    return src_span(txt, SCORE_TIP) if v is not None else txt
 
 
 if not D.available:
@@ -303,7 +304,7 @@ def compare_rows(
     lan = D.feat(code[:2]) if level == "kommun" else {}
     peer_f = [D.feat(p) for p in peers]
     n_level = {"lan": "counties", "kommun": "municipalities", "regso": "areas"}.get(level, "")
-    pct_tip = ui.esc("Share of Sweden's " + n_level + " with a lower value")
+    pct_tip = "Share of Sweden's " + n_level + " with a lower value"
     rows = []
     for key, label, fmt, per_key in items:
         x = f.get(key)
@@ -326,7 +327,7 @@ def compare_rows(
                 )
                 if pv
                 else "–",
-                "pct": "–" if pr is None else f'<span data-src="{pct_tip}">{pr:.0f}</span>',
+                "pct": "–" if pr is None else src_span(f"{pr:.0f}", pct_tip),
             }
         )
     return rows
@@ -1022,11 +1023,22 @@ def core_codes(gj: dict, pop: dict[str, float], share: float = 0.6) -> set[str]:
     return out
 
 
+def _subset(gj: dict, codes) -> dict:
+    """Only the features a trace draws. Plotly sends a trace's whole GeoJSON to the browser,
+    so passing the full municipality to each of the map's layers sent it two or three times
+    (350 KB for Göteborg) and made MapLibre parse every polygon once per layer."""
+    keep = set(codes)
+    return {
+        "type": "FeatureCollection",
+        "features": [ft for ft in gj["features"] if ft["properties"]["code"] in keep],
+    }
+
+
 def _outline(gj: dict, codes: list[str], color: str, width: float, **kw) -> go.Choroplethmap:
     """Borders only: a transparent fill, so the map underneath stays readable. The fill
     still takes clicks and hover."""
     return go.Choroplethmap(
-        geojson=gj,
+        geojson=_subset(gj, codes),
         featureidkey="properties.code",
         locations=codes,
         z=[1] * len(codes),
@@ -1074,7 +1086,7 @@ def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
     if highlight:
         fig.add_trace(
             go.Choroplethmap(
-                geojson=gj,
+                geojson=_subset(gj, [highlight]),
                 featureidkey="properties.code",
                 locations=[highlight],
                 z=[1],
@@ -1275,12 +1287,7 @@ def companies_section(level: str, code: str, name: str) -> None:
         "Property companies here",
         "Companies with a large share of their portfolio here, and their motivated-seller score.",
     )
-    k = pl.read_csv(
-        geo_ref.GEO / "kommuner.csv",
-        schema_overrides={"kommun_code": pl.Utf8, "county_code": pl.Utf8},
-    )
-    kcode = dict(zip(k["kommun"], k["kommun_code"], strict=True))
-    lan_name = dict(zip(k["county_code"], k["county"], strict=True))
+    kcode, lan_name = kommun_maps()
     kommun = code[:4] if level in ("kommun", "regso") else None
     lan = code[:2]
     rows = []
@@ -1372,10 +1379,7 @@ def score_fact(label: str, v: float | None) -> tuple[str, str]:
     """A score as a cell of the facts row: '30/100', hover for how it is made."""
     if v is None:
         return label, "–"
-    return label, (
-        f'<span class="score" data-src="{ui.esc(SCORE_TIP)}">{v:.0f}</span>'
-        '<span class="of">/100</span>'
-    )
+    return label, (src_span(f"{v:.0f}", SCORE_TIP, "score") + '<span class="of">/100</span>')
 
 
 def place_facts(items: list[tuple[str, str]]) -> None:
@@ -1556,7 +1560,7 @@ def regso_headline(name: str, f: dict, k: dict) -> str:
     return " ".join(t for _, t in sorted(cands, key=lambda c: -c[0])[:3])
 
 
-REGSO_PCT_TIP = ui.esc("Share of Sweden's RegSO areas with a lower value")
+REGSO_PCT_TIP = "Share of Sweden's RegSO areas with a lower value"
 
 
 def regso_section(code: str, name: str, f: dict) -> None:
@@ -1621,7 +1625,7 @@ def regso_section(code: str, name: str, f: dict) -> None:
                 "v": sv(fmt(x), key, "regso", p),
                 "lan": sv(fmt(kf.get(key)), key, "kommun", kf.get(per) if per else None),
                 "nat": sv(fmt(NAT.get(key)), key, "riket", NAT.get(per) if per else None),
-                "pct": "–" if pr is None else f'<span data-src="{REGSO_PCT_TIP}">{pr:.0f}</span>',
+                "pct": "–" if pr is None else src_span(f"{pr:.0f}", REGSO_PCT_TIP),
             }
 
         rows = [

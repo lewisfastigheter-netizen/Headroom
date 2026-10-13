@@ -35,7 +35,7 @@ from ui import components as ui
 from ui.data import get_data
 from ui.locdata import get_locations
 from ui.plotly_template import ACCENT, CONFIG, HIGH, MUTED
-from ui.source_tips import source_tips
+from ui.source_tips import source_tips, src_span
 
 d = get_data()
 D = get_locations()
@@ -58,7 +58,7 @@ def src_link(row: dict) -> str:
 
 def sv(html: str, tip: str) -> str:
     """A figure that shows its source on hover."""
-    return f'<span data-src="{ui.esc(tip)}">{html}</span>' if tip and html != "–" else html
+    return src_span(html, tip) if tip and html != "–" else html
 
 
 def pct_txt(v: float | None, digits: int = 2) -> str:
