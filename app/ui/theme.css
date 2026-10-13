@@ -249,6 +249,9 @@ header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !import
   color: var(--ink); margin: 0; }
 .hr-facts.big { margin-top: 2.6rem; }
 .hr-facts.big .v { font-size: 22px; line-height: 1.3; }
+/* Labels that wrap to two lines must not push their figure down: figures sit on one baseline */
+.hr-facts.big > div { display: flex; flex-direction: column; }
+.hr-facts.big .v { margin-top: auto; }
 .hr-facts.big .v > span[style] { font-size: 13.5px; }
 .hr-facts.big .score { font-family: var(--display); font-size: 2.4rem; line-height: 1; color: var(--accent); }
 .hr-facts.big > div:nth-child(2) .score { color: var(--ink); }
