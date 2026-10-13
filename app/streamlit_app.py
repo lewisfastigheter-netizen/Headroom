@@ -53,7 +53,7 @@ SEARCH_STYLE = {
         "option": {
             "color": "#1F1A21",
             "backgroundColor": "#FCFAF7",
-            "highlightColor": "#F4E9EF",
+            "highlightColor": "#E8EFE4",
             "fontFamily": "Familjen Grotesk, Helvetica Neue, Arial, sans-serif",
             "fontSize": "14px",
         },

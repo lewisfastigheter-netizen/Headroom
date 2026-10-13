@@ -1,11 +1,11 @@
 /* Headroom: editorial layer on top of .streamlit/config.toml.
-   Aubergine header, plum accent, warm paper. Serif statements (Newsreader), grotesk labels
+   Forest-green header, olive accent, warm paper. Serif statements (Newsreader), grotesk labels
    (Familjen Grotesk), generous space, hairline structure.
    Radius 0, no shadows, weights 400/500. Mono only for dates and section numbers. */
 
 :root {
   --paper: #FCFAF7; --ink: #1F1A21; --graphite: #625A66; --muted: #9C949F;
-  --rule: #E4DED6; --tint: #F3EFE9; --brand: #3B1E3F; --accent: #7B3B6E; --accent-tint: #F4E9EF;
+  --rule: #E4DED6; --tint: #F3EFE9; --brand: #1B3303; --accent: #3E6A11; --accent-tint: #E8EFE4;
   --high: #D9571F; --watch: #B8891C;
   --display: 'Newsreader', Georgia, 'Times New Roman', serif;
   --sans: 'Familjen Grotesk', 'Helvetica Neue', Arial, sans-serif;
@@ -209,7 +209,7 @@ body:has(.st-key-header_search input:placeholder-shown:focus) [data-testid="stSe
   min-height: 2.3rem; font-size: 14px; }
 @media (max-width: 760px) { .st-key-header_search { position: static; width: 100%; } }
 
-/* ---------- aubergine header ---------- */
+/* ---------- forest-green header ---------- */
 header[data-testid="stHeader"] { background: var(--brand) !important; border-bottom: none !important; }
 header [data-testid="stHeaderLogo"], header [data-testid="stLogo"] { filter: brightness(0) invert(1); }
 header [data-testid="stTopNavLink"] span, header [data-testid="stTopNavLink"] p { color: rgba(255,255,255,.78) !important; }
@@ -224,14 +224,14 @@ header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !import
 /* searchbox component (iframe) in the header */
 .st-key-header_search iframe { color-scheme: normal; }
 
-/* Table header row in the brand aubergine, with more room between columns */
+/* Table header row in the brand forest green, with more room between columns */
 .hr-table thead th { background: var(--brand); color: #fff !important; border-bottom: none !important;
   padding: .8rem 1rem !important; vertical-align: bottom; }
 .hr-table td { padding-left: 1rem !important; padding-right: 1rem !important; }
 .hr-table th:first-child, .hr-table td:first-child { padding-left: .9rem !important; }
 .hr-table th:last-child, .hr-table td:last-child { padding-right: .9rem !important; }
 
-/* Full-bleed table header: ui.table(..., bleed=True) runs the aubergine row to both window edges.
+/* Full-bleed table header: ui.table(..., bleed=True) runs the brand row to both window edges.
    A border-image outset paints past the cell without adding scroll width; it needs separate borders. */
 .hr-table-wrap.bleed { overflow: visible; }
 .hr-table-wrap.bleed table.hr-table { border-collapse: separate; border-spacing: 0; }

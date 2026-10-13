@@ -36,11 +36,11 @@ from ui.source_tips import source_tips
 
 D = get_locations()
 RAMP = [
-    [0.0, "#F7F0F3"],
-    [0.25, "#E3CADA"],
-    [0.5, "#C094B1"],
-    [0.75, "#925C85"],
-    [1.0, "#4A2143"],
+    [0.0, "#F0F4ED"],
+    [0.25, "#C9D8BE"],
+    [0.5, "#92AE7F"],
+    [0.75, "#597D3D"],
+    [1.0, "#1F3B01"],
 ]
 BME = {0: "Shortage", 1: "Balance", 2: "Surplus"}
 NO_PERCENTILE = {"bme"}  # categorical
@@ -978,7 +978,7 @@ def areas_section(level: str, code: str, name: str, highlight: str | None = None
     )
 
 
-BAND_COLOR = {"high": "#4A2143", "watch": "#A9779A", "low": "#B3ACA6"}
+BAND_COLOR = {"high": "#1F3B01", "watch": "#74955D", "low": "#B3ACA6"}
 # Badge text is drawn by the map, not the page: it needs a glyph font the CARTO tile server has.
 BADGE_FONT = "Open Sans Bold"
 
@@ -1062,7 +1062,7 @@ def region_map(kommun: str, df: pl.DataFrame, highlight: str | None) -> None:
         _outline(
             gj,
             [r["code"] for r in others],
-            "#4A2143",
+            "#1F3B01",
             1.0,
             customdata=[[r["code"], hover(r)] for r in others],
             hovertemplate="%{customdata[1]}<extra></extra>",

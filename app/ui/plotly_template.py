@@ -1,4 +1,4 @@
-"""Plotly template: plum-black and plum on warm paper, no gridlines, a single baseline.
+"""Plotly template: ink and olive green on warm paper, no gridlines, a single baseline.
 
 The two series colours separate well for colour-blind readers (deltaE above 30)
 and both clear 3:1 contrast on white. Multi-series charts still carry a legend
@@ -16,8 +16,8 @@ GRAPHITE = "#625A66"
 MUTED = "#9C949F"
 RULE = "#E4DED6"
 TINT = "#F3EFE9"
-ACCENT = "#7B3B6E"  # plum
-ACCENT_LIGHT = "#D3B0C6"  # second series next to ACCENT (lighter tint of the same hue)
+ACCENT = "#3E6A11"  # olive green
+ACCENT_LIGHT = "#AEC4A0"  # second series next to ACCENT (lighter tint of the same hue)
 HIGH = "#D9571F"
 WATCH = "#B8891C"
 

@@ -10,9 +10,9 @@ runOnSave = false
 gatherUsageStats = false
 
 [theme]
-# Aubergine on warm paper. Newsreader for headings, Familjen Grotesk for text, IBM Plex Mono for dates.
+# Forest green on warm paper. Newsreader for headings, Familjen Grotesk for text, IBM Plex Mono for dates.
 base = "light"
-primaryColor = "#7B3B6E"            # plum (accent)
+primaryColor = "#3E6A11"            # olive green (accent)
 backgroundColor = "#FCFAF7"         # paper
 secondaryBackgroundColor = "#F3EFE9" # stone
 textColor = "#1F1A21"               # ink
@@ -35,15 +35,15 @@ headingFontWeights = [400, 400, 500, 500, 500, 500]
 headingFontSizes = ["2.6rem", "1.75rem", "1.25rem", "1rem", "0.9rem", "0.8rem"]
 metricValueFontSize = "2.25rem"
 metricValueFontWeight = 400
-chartCategoricalColors = ["#1F1A21", "#7B3B6E", "#9C949F", "#625A66"]
-chartSequentialColors = ["#F7F0F3", "#EEDFE7", "#E3CADA", "#D3B0C6", "#C094B1", "#A9779A", "#925C85", "#7B3B6E", "#622D58", "#4A2143"]
+chartCategoricalColors = ["#1F1A21", "#3E6A11", "#9C949F", "#625A66"]
+chartSequentialColors = ["#F0F4ED", "#DEE7D9", "#C9D8BE", "#AEC4A0", "#92AE7F", "#74955D", "#597D3D", "#3E6A11", "#2B4F01", "#1F3B01"]
 dataframeHeaderBackgroundColor = "#FCFAF7"
 dataframeHeaderTextColor = "#625A66"
 dataframeBorderColor = "#E4DED6"
 redColor = "#D9571F"
 orangeColor = "#B8891C"
 yellowColor = "#B8891C"
-greenColor = "#7B3B6E"
+greenColor = "#3E6A11"
 blueColor = "#625A66"
 violetColor = "#625A66"
 grayColor = "#9C949F"
