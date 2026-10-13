@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 import json
-import math
 
 import polars as pl
 import streamlit as st
@@ -103,48 +102,32 @@ if d.fictional:
 else:
     # The private-company scan: how far it has come and what it has found.
     scan = private.progress()
-    found = scan["by_status"].get("kept", 0)
-    left = max(scan["candidates"] - scan["checked"], 0)
-    pct = scan["checked"] / scan["candidates"] if scan["candidates"] else 0.0
-    tiers = {r["tier"]: r["count"] for r in df["tier"].value_counts().to_dicts()}
-    lede = [
-        f"Checked {ui.fmt_num(scan['checked'])} of {ui.fmt_num(scan['candidates'])} candidates "
-        f"({pct:.1%}) at Bolagsverket. Last checked {ui.fmt_date(scan['last_checked'], 'long')}."
+    checked_html = ui.fmt_num(scan["checked"])
+    if scan["candidates"]:
+        checked_html += f'<span class="of">of {ui.fmt_num(scan["candidates"])}</span>'
+    ui.page_head("Companies")
+    facts = [("Checked at Bolagsverket", checked_html)] + [
+        (label, ui.fmt_num(scan["by_status"].get(k, 0)))
+        for k, label in private.STATUS_LABEL.items()
+        if scan["by_status"].get(k) or k != "no_ixbrl"
     ]
-    if left and scan["per_day"]:
-        days = math.ceil(left / scan["per_day"])
-        lede.append(
-            f"At about {ui.fmt_num(round(scan['per_day'], -2))} a day, the rest takes "
-            f"{days} more day{'s' if days != 1 else ''}"
-            + (
-                f" and should find about {ui.fmt_num(round(found + found / scan['checked'] * left, -2))} "
-                "property companies in all."
-                if scan["checked"]
-                else "."
-            )
-        )
-    lede.append(
-        f"All {tiers.get('listed', 0)} listed companies and {tiers.get('bond', 0)} bond issuers "
-        "are in, ranked on a 0–100 seller score."
-    )
-    ui.page_head("Companies", ui.esc(" ".join(lede)))
-    ui.facts(
-        [
-            (label, ui.fmt_num(scan["by_status"].get(k, 0)))
-            for k, label in private.STATUS_LABEL.items()
-            if scan["by_status"].get(k) or k != "no_ixbrl"
-        ],
-        cls="big",
-    )
+    ui.facts(facts, cols=len(facts), cls="big")
 
 # --------------------------------------------------------------------------- filters
 
 ui.section(None, "Ranking")
-counties = (
-    pl.read_csv(geo.GEO / "kommuner.csv", schema_overrides={"kommun_code": pl.Utf8})
-    .sort("county_code")["county"]
-    .unique(maintain_order=True)
-    .to_list()
+
+
+def sv_key(s: str) -> str:
+    """Swedish alphabetical order: Å, Ä, Ö after Z (Python's default puts Ä before Å)."""
+    return s.casefold().translate(str.maketrans({"å": "{", "ä": "|", "ö": "}", "é": "e", "ü": "y"}))
+
+
+counties = sorted(
+    pl.read_csv(geo.GEO / "kommuner.csv", schema_overrides={"kommun_code": pl.Utf8})["county"]
+    .unique()
+    .to_list(),
+    key=sv_key,
 )
 
 # A county or city picked in the header search arrives as ?county=...&city=...
@@ -161,11 +144,7 @@ type_sel: list[str] = state.get("f_type") or []
 # Listed companies and bond issuers all report under IFRS, so the accounting filter is only
 # offered when private companies can be in the list.
 show_acc = not type_sel or "private" in type_sel
-# Segments come from listed companies' and bond issuers' reports; private annual reports
-# have no segment split.
-show_seg = not type_sel or any(t in ("listed", "bond") for t in type_sel)
 acc_sel: list[str] = (state.get("f_acc") or []) if show_acc else []
-seg_sel: list[str] = (state.get("f_seg") or []) if show_seg else []
 county = state.get("f_county", "All counties")
 city = state.get(f"city_{county}", "All cities")
 
@@ -181,8 +160,6 @@ def apply(frame: pl.DataFrame, skip: str = "") -> pl.DataFrame:
         frame = frame.filter(pl.col("tier").is_in(type_sel))
     if acc_sel and skip != "acc":
         frame = frame.filter(pl.col("accounting").is_in(acc_sel))
-    if seg_sel and skip != "seg":
-        frame = frame.filter(pl.col("main_segment").is_in(seg_sel))
     if county != "All counties" and skip not in ("county", "city"):
         frame = frame.filter(pl.col("county") == county)
     if city != "All cities" and skip != "city":
@@ -207,8 +184,7 @@ def grey_empty(key: str, options: list, have: set, offset: int = 0) -> None:
             )
 
 
-segments = list(SEGMENT)
-filters = ["type", *(["acc"] if show_acc else []), *(["seg"] if show_seg else []), "county", "city"]
+filters = ["type", *(["acc"] if show_acc else []), "county", "city"]
 cols = dict(zip(filters, st.columns(len(filters), gap="large"), strict=True))
 
 cols["type"].multiselect(
@@ -242,18 +218,9 @@ if show_acc:
                 f' .st-key-f_acc [data-tag][aria-label="{ACCOUNTING[k]}"] span[title]::after'
                 f' {{ content: "{tail}"; font-size: 14px; font-style: italic; }}'
             )
-if show_seg:
-    cols["seg"].multiselect(
-        "Segment",
-        segments,
-        format_func=lambda s: SEGMENT.get(s, s),
-        placeholder="All segments",
-        key="f_seg",
-    )
-    grey_empty("f_seg", segments, present(apply(df, "seg"), "main_segment"))
 cols["county"].selectbox("County", ["All counties", *counties], key="f_county")
 grey_empty("f_county", counties, present(apply(df, "county"), "county"), offset=1)
-city_options = sorted(present(df.filter(pl.col("county") == county), "city"))
+city_options = sorted(present(df.filter(pl.col("county") == county), "city"), key=sv_key)
 cols["city"].selectbox(
     "City", ["All cities", *city_options], disabled=county == "All counties", key=f"city_{county}"
 )
