@@ -105,13 +105,7 @@ else:
     scan = private.progress()
     by = scan["by_status"]
     checked = scan["checked"]
-    kept = by.get("kept", 0)
-    ui.page_head(
-        "Companies",
-        f"Headroom has checked {ui.fmt_num(checked)} Swedish companies at Bolagsverket. "
-        f"{ui.fmt_num(kept)} of them own SEK 20m or more of property and are ranked below, "
-        "together with the listed companies and bond issuers.",
-    )
+    ui.page_head("Companies")
     outcomes = [
         ("s3", "Not a property company", "Main SNI code is not 68, real estate", "not_real_estate"),
         (
@@ -124,14 +118,15 @@ else:
         (
             "s1",
             "Under SEK 20m of property",
-            "Property company, too little property",
+            "Disregarded as too small",
             "below_threshold",
         ),
-        ("in", "In Headroom", "SEK 20m or more of property", "kept"),
+        ("in", "In Headroom", "SEK 20m+ in property value", "kept"),
     ]
     cells = [
         '<div class="c total"><div class="l">Checked at Bolagsverket'
-        "<small>Companies whose name or business points to property</small></div>"
+        "<small>Swedish ABs registered at Bolagsverket with a property-related "
+        "name or business</small></div>"
         f'<div class="v">{ui.fmt_num(checked)}</div><div class="p">100%</div></div>'
     ]
     for sw, label, why, key in outcomes:
@@ -148,17 +143,13 @@ else:
         )
     pending = scan["candidates"] - checked if scan["candidates"] else 0
     foot = (
-        f"{ui.fmt_num(pending)} of {ui.fmt_num(scan['candidates'])} candidates still to check. "
+        f'<div class="hr-source">{ui.fmt_num(pending)} of {ui.fmt_num(scan["candidates"])} '
+        "candidates still to check.</div>"
         if pending > 0
         else ""
     )
     ui.render(
-        f'<div class="hr-scan" style="--cols:{len(cells) - 1}">'
-        + "".join(cells)
-        + "</div>"
-        + f'<div class="hr-source">{foot}Each company is checked in this order and counted at '
-        "the first step it fails, so the four outcomes add up to the total. Shares are of all "
-        "companies checked.</div>"
+        f'<div class="hr-scan" style="--cols:{len(cells) - 1}">' + "".join(cells) + "</div>" + foot
     )
 
 # --------------------------------------------------------------------------- filters
