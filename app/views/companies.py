@@ -100,8 +100,8 @@ if d.fictional:
         "sell. Method on the Method page.",
     )
 else:
-    # The private-company scan as a funnel: every company checked, what each step removes,
-    # and what is left, so the numbers read as one story rather than five loose figures.
+    # The private-company scan in one row: every company checked, then what became of them.
+    # The four outcomes add up to the total; each has a swatch, a reason and its share.
     scan = private.progress()
     by = scan["by_status"]
     checked = scan["checked"]
@@ -112,52 +112,39 @@ else:
         f"{ui.fmt_num(kept)} of them own SEK 20m or more of property and are ranked below, "
         "together with the listed companies and bond issuers.",
     )
-    readable = checked - sum(
-        by.get(k, 0) for k in ("not_real_estate", "no_digital_report", "no_ixbrl")
-    )
-    steps = [
-        ("total", "Checked at Bolagsverket", "", checked),
+    outcomes = [
+        ("s3", "Not a property company", "Main SNI code is not 68, real estate", "not_real_estate"),
         (
-            "out",
-            "Not a property company",
-            "main SNI code is not 68, real estate",
-            by.get("not_real_estate", 0),
-        ),
-        (
-            "out",
+            "s2",
             "No digitally filed annual report",
-            "filed on paper or as a scanned PDF, so the figures cannot be read",
-            by.get("no_digital_report", 0),
+            "Filed on paper or as a scanned PDF",
+            "no_digital_report",
         ),
+        ("s2", "Annual report not machine-readable", "Filed without tagged figures", "no_ixbrl"),
         (
-            "out",
-            "Annual report not machine-readable",
-            "filed digitally, but without tagged figures",
-            by.get("no_ixbrl", 0),
-        ),
-        ("total", "Property companies with readable accounts", "", readable),
-        (
-            "out",
+            "s1",
             "Under SEK 20m of property",
-            "below the SEK 20m threshold for the list",
-            by.get("below_threshold", 0),
+            "Property company, too little property",
+            "below_threshold",
         ),
-        ("kept", "In Headroom", "SEK 20m or more of property", kept),
+        ("in", "In Headroom", "SEK 20m or more of property", "kept"),
     ]
-    rows_html = []
-    for kind, label, why, n in steps:
-        if kind == "out" and not n:
+    cells = [
+        '<div class="c total"><div class="l">Checked at Bolagsverket'
+        "<small>Companies whose name or business points to property</small></div>"
+        f'<div class="v">{ui.fmt_num(checked)}</div><div class="p">100%</div></div>'
+    ]
+    for sw, label, why, key in outcomes:
+        n = by.get(key, 0)
+        if not n and key != "kept":
             continue
         share = n / checked if checked else 0
-        sign = "−" if kind == "out" else ""
-        tip = f"{ui.fmt_num(n)} companies, {share:.1%} of those checked"
-        rows_html.append(
-            f'<div class="r {kind}" title="{ui.esc(tip)}">'
-            f'<div class="k">{ui.esc(label)}'
-            + (f'<span class="why">{ui.esc(why)}</span>' if why else "")
-            + f'</div><div class="n">{sign}{ui.fmt_num(n)}</div>'
-            f'<div class="b"><i style="width:{max(share * 100, 0.4):.2f}%"></i></div>'
-            f'<div class="p">{share:.1%}</div></div>'
+        cells.append(
+            f'<div class="c {"in" if key == "kept" else ""}" '
+            f'title="{ui.esc(f"{label}: {n:,} companies, {share:.1%} of those checked")}">'
+            f'<div class="l"><span class="sw {sw}"></span>{ui.esc(label)}'
+            f"<small>{ui.esc(why)}</small></div>"
+            f'<div class="v">{ui.fmt_num(n)}</div><div class="p">{share:.1%}</div></div>'
         )
     pending = scan["candidates"] - checked if scan["candidates"] else 0
     foot = (
@@ -166,11 +153,12 @@ else:
         else ""
     )
     ui.render(
-        '<div class="hr-funnel">'
-        + "".join(rows_html)
+        f'<div class="hr-scan" style="--cols:{len(cells) - 1}">'
+        + "".join(cells)
         + "</div>"
-        + f'<div class="hr-source">{foot}Each company is checked in this order; a company '
-        "leaves at the first step it fails. Shares are of all companies checked.</div>"
+        + f'<div class="hr-source">{foot}Each company is checked in this order and counted at '
+        "the first step it fails, so the four outcomes add up to the total. Shares are of all "
+        "companies checked.</div>"
     )
 
 # --------------------------------------------------------------------------- filters
