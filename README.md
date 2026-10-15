@@ -1,6 +1,6 @@
 # Headroom
 
-A Nordic property credit monitor. Headroom finds motivated sellers among Swedish property companies, listed and unlisted, from public data: leverage, refinancing pressure, bond covenants and credit events.
+A Nordic property credit monitor. Headroom finds motivated sellers among Swedish property companies, listed and unlisted, from public data, ranked mainly on leverage (loan-to-value and interest cover).
 
 > Personal research project. Not affiliated with any investment firm. Not investment advice.
 > The app also ships a **fictional demo dataset**, labelled as such on every page.
@@ -14,7 +14,7 @@ In July 2026 Holmström Fastigheter Holding AB (publ) started a written procedur
 1. ESMA FIRDS lists the bond (SE0015797667) and its issuer LEI. GLEIF turns the LEI into org. nr 559286-6809.
 2. MFN's company search links that org. number to the issuer's newswire feed.
 3. The written procedure, the bondholder approval and the later agent decisions are classified as credit events.
-4. The score (100/100) labels the opportunity a **bondholder-led wind-down**, and every line on the company page links to its source.
+4. The company page shows the score, the events and the bond terms, and every line links to its source.
 
 ![Company page](docs/screenshots/live_issuer.png)
 
@@ -36,7 +36,7 @@ How Sweden's 21 counties (län), 290 municipalities (kommuner) and 3,363 areas (
 
 Value-add returns are made on entry price. The best entry prices come from sellers who must sell: an issuer whose bond falls due before its banks will refinance, whose interest cover is about to breach a covenant, or whose bondholders have already voted for a wind-down. These sellers rarely run a broad auction, so the deals are found off-market by whoever spots the pressure first.
 
-That pressure is visible in public data before it becomes a sale. Bonds force unlisted companies to publish reports and bondholder notices; ESMA, GLEIF and Bolagsverket tie those filings to a company and its group. Headroom joins these sources on the organisation number and turns them into a ranked list of companies with a reason, a likely transaction type and a source for every figure. It is a sourcing tool, not a valuation tool: it says where to call, and why now.
+That pressure is visible in public data before it becomes a sale. Bonds force unlisted companies to publish reports and bondholder notices; ESMA, GLEIF and Bolagsverket tie those filings to a company and its group. Headroom joins these sources on the organisation number and turns them into a ranked list of companies with a reason and a source for every figure. It is a sourcing tool, not a valuation tool: it says where to call, and why now.
 
 ## Status
 
@@ -95,7 +95,7 @@ On Windows with the repository inside OneDrive, keep the virtual environment out
 
 Every score follows two rules (`model/scoring.py`: `ramp` and `weighted_average`). Each part turns one figure into 0–100 on a straight line between the value that scores 0 and the value that scores 100, clipped. The score is the weighted average of the parts; a part without data is left out and the others count for more. Nothing is imputed.
 
-Motivated-seller score, five parts, one rule each: **refinancing pressure** 30% (debt due within 12 months ÷ cash and undrawn facilities, log scale; FIRDS bond maturities when the report has no maturity profile), **covenant headroom** 25% (tightest maintenance covenant after a 100bp rate rise), **leverage** 15% (average of the LTV and ICR scores), **credit events** 20% (points for events in the last 12 months) and **share price** 10% (discount to NAV, or the fall from the 52-week high). Covenants apply only to companies with bonds and the share price only to listed companies; for the others they are left out without being flagged as missing. Below 55% of the applicable weight a company is not scored. Strategy fit measures exposure to residential, light industrial and logistics property, to Nordic growth regions, and to a target deal size. All weights and thresholds are in `config/weights.yaml` and on the Method page.
+Motivated-seller score, three parts, mainly leverage: **loan-to-value** 45% (net debt ÷ property value; 40% scores 0, 70% scores 100), **interest cover** 40% (EBIT ÷ net interest; 3.0x scores 0, 1.0x scores 100) and **property value** 15% (full score for SEK 50–250m, fading to zero at SEK 20m and SEK 1,000m). Reported LTV above 150% or ICR below −20x is treated as misread and not scored. Below 55% of the weight a company is not scored, so property value alone is not enough. Bond covenants, maturities and credit events are collected and shown on the company pages but do not feed the score. All weights and thresholds are in `config/weights.yaml` and on the Method page.
 
 Location scores (Locations page only; they do not touch the company scores), four parts each: **Residential** for municipalities and counties (5-year growth 30%, new residents per completed home 30%, 20–34-year-olds moving in 20%, the municipality's housing-market assessment 20%), **Residential** for RegSO areas (growth 30%, rental share 25%, socio-economic improvement over ten years 25%, the municipality's score 20%) and **Logistics** for municipalities and counties (people within 100 km 30%, nearest port/terminal/cargo airport 25%, logistics jobs vs Sweden 25%, commuters in per commuter out 20%). No score below 50% coverage. Thresholds are round numbers set so that a typical municipality scores near 50 on each part.
 
@@ -107,7 +107,6 @@ Location scores (Locations page only; they do not touch the company scores), fou
 
 ## Decisions
 
-- **Fit score is named "Strategy fit"**, not after any firm.
 - **Demo data is unmistakably fictional**: Greek-letter names, org numbers `DEMO-NNN`, ISINs `SEDEMO…`, sources `demo://`.
 - **Snapshots are Parquet** queried through in-memory DuckDB; the weekly job commits plain files.
 - **Field-level provenance**: source URL, page, confidence and method (extracted or derived) for every figure; below 0.80 confidence a value shows as unverified.
@@ -117,7 +116,7 @@ Location scores (Locations page only; they do not touch the company scores), fou
 - **Issue date is the first trading date** in FIRDS; **secured** comes from the CFI code.
 - **MFN robots.txt** disallows its RSS/JSON feeds, so the HTML pages and company search are used instead. **Post- och Inrikes Tidningar** and Bolagsverket's website block automated access and are not scraped.
 - **Models**: `claude-sonnet-5-5` for reports and memos, `claude-haiku-5-5` for event classification; change in `.env`.
-- **Opportunity type is rule-based** and transparent (`model/scoring.py`); the LLM extracts and drafts, it does not score.
+- **Scoring is rule-based** and transparent (`model/scoring.py`); the LLM extracts and drafts, it does not score.
 - **Locations sources.** SCB tables were checked against the API in October 2026; where the brief's table did not hold the level needed, another was used: TAB6574 for population (5-year age bands, so 20–34 can be built; TAB7046 has 10-year bands), TAB3204/TAB3785 for jobs at the workplace by industry per municipality (TAB5458 only covers counties and FA regions), TAB6534 for education. SNI 46 (wholesale) is not published per municipality, so logistics is SNI H and light industry SNI B+C and F. Rents per municipality exist only for the 20 largest municipalities (TAB4603) and new-build rent premiums only for the three metro regions and two size groups (TAB6417). Vacant flats (TAB3214) are national only, so the housing-market assessment stands in for vacancy risk. Industrial assessed values have no floor area, so they are per taxation unit.
 - **RegSO versions.** Statistics from 2024 use RegSO 2025, earlier years RegSO 2020. Some tables return 0 rather than '..' outside a version's years, so rows are dropped by version and year, never by value. SCB's change file (`config/geo/regso_changes.csv`, 2026-03-25) lists 288 of 3,363 areas whose borders changed; their series break in 2024 and are flagged. Name changes and extensions into territorial water keep the series.
 - **Straight lines, not drive times.** Catchments and distances are straight lines from a population-weighted centre on SCB's 1 km grid. The app says so next to each figure.

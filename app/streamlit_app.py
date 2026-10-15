@@ -36,10 +36,12 @@ pages = [
     st.Page("views/issuer.py", title="Company", url_path="issuer", visibility="hidden"),
 ]
 company_page = pages[-1]
+# The search box sits in the forest-green header (#1B3303) on a slightly lighter green.
+SEARCH_BG = "#2E4A16"
 SEARCH_STYLE = {
     "searchbox": {
         "control": {
-            "backgroundColor": "#FCFAF7",
+            "backgroundColor": SEARCH_BG,
             "border": "none",
             "borderRadius": 2,
             "boxShadow": "none",
@@ -47,9 +49,9 @@ SEARCH_STYLE = {
             "fontFamily": "Familjen Grotesk, Helvetica Neue, Arial, sans-serif",
             "fontSize": "14px",
         },
-        "input": {"color": "#1F1A21"},
-        "placeholder": {"color": "#625A66"},
-        "singleValue": {"color": "#1F1A21"},
+        "input": {"color": "#FFFFFF"},
+        "placeholder": {"color": "rgba(255,255,255,0.72)"},
+        "singleValue": {"color": "#FFFFFF"},
         "option": {
             "color": "#1F1A21",
             "backgroundColor": "#FCFAF7",
@@ -62,7 +64,7 @@ SEARCH_STYLE = {
     "clear": {
         "width": 12,
         "height": 12,
-        "stroke": "#625A66",
+        "stroke": "rgba(255,255,255,0.8)",
         "icon": "cross",
         "clearable": "always",
     },
@@ -70,6 +72,29 @@ SEARCH_STYLE = {
 companies_page = pages[0]
 locations_page = pages[1]
 nav = st.navigation(pages, position="top")
+
+# Clicking Companies or Locations in the menu always opens that page's start: no place
+# selected, no filters set. Streamlit's own menu link keeps the query string and session
+# state when the page is already open (a municipality on Locations stays open), so the
+# click is turned into a fresh load of the page's plain URL instead.
+with st.container(key="nav_reset"):
+    st.html(
+        """<script>
+if (!window.__hrNavReset) {
+  window.__hrNavReset = true;
+  document.addEventListener("click", function (e) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var sel = 'a[data-testid="stTopNavLink"], a[data-testid="stTopNavDropdownLink"]';
+    var a = e.target.closest && e.target.closest(sel);
+    if (!a || !a.href) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.assign(a.href.split("?")[0]);
+  }, true);
+}
+</script>""",
+        unsafe_allow_javascript=True,
+    )
 
 
 # Search in the top-right corner, over companies and places. A company opens its page.

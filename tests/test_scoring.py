@@ -1,5 +1,3 @@
-from datetime import date
-
 import polars as pl
 import pytest
 
@@ -62,55 +60,48 @@ def cards():
 def test_all_scores_in_range(cards):
     for c in cards.values():
         assert c.score is None or 0 <= c.score <= 100
-        assert c.fit is None or 0 <= c.fit <= 100
 
 
-def test_covenant_and_market_do_not_apply_without_bonds_or_shares(cards):
-    tables = build()
-    private = tables["company"].filter(pl.col("tier") == "private")["org_nr"]
-    for org in private:
-        card = cards[org]
-        for key in ("covenant", "market"):
-            c = card.component(key)
-            assert not c.applicable and c.effective_weight == 0
-        # not applicable is not a data gap
-        assert not any(f.startswith(("Covenant", "Share price")) for f in card.flags)
+def test_score_is_ltv_icr_and_size_only(cards):
+    for c in cards.values():
+        assert [x.key for x in c.components] == ["ltv", "icr", "size"]
 
 
-def test_wind_down_case_is_caught(cards):
-    # The demo issuer modelled on a bondholder-led wind-down must rank as such.
-    card = cards["DEMO-009"]
-    assert card.opportunity == "Bondholder-led wind-down"
-    assert card.score >= 75
-
-
-def test_healthy_issuer_scores_low(cards):
+def test_stretched_issuer_scores_high_and_healthy_low(cards):
+    assert cards["DEMO-009"].score >= 75  # LTV 72%, ICR 1.0x
     assert cards["DEMO-005"].score < 40
 
 
-def test_events_count_only_the_last_12_months():
+def test_size_band_gives_full_points_inside_and_fades_outside():
     from headroom.config import weights
-    from headroom.model.scoring import events
+    from headroom.model.scoring import size
 
-    cfg = weights()["motivated_seller"]["events"]
-    ev = [
-        {"date": date(2026, 1, 1), "type": "waiver", "title": "x"},
-        {"date": date(2026, 6, 1), "type": "written_procedure", "title": "y"},
-    ]
-    both = events(ev, date(2026, 12, 1), cfg).score
-    one = events(ev, date(2027, 3, 1), cfg).score  # the waiver is now over a year old
-    pts = cfg["points"]
-    assert both == min(pts["waiver"] + pts["written_procedure"], cfg["cap"])
-    assert one == pts["written_procedure"]
+    cfg = weights()["motivated_seller"]["size_sek_m"]
+    inside = size({"property_value": (cfg["band_low"] + cfg["band_high"]) / 2}, {}, cfg)
+    assert inside.score == 100
+    assert size({"property_value": cfg["outer_high"] * 2}, {}, cfg).score == 0
+    assert size({"property_value": cfg["outer_low"] / 2}, {}, cfg).score == 0
+    mid_high = (cfg["band_high"] + cfg["outer_high"]) / 2
+    assert size({"property_value": mid_high}, {}, cfg).score == pytest.approx(50)
 
 
-def test_refinancing_ratio_is_12_month_debt_over_liquidity():
+def test_size_alone_is_not_enough_to_score():
+    tables = build()
+    org = tables["company"]["org_nr"][0]
+    fin = (
+        tables["financials"]
+        .filter(pl.col("org_nr") == org)
+        .with_columns(pl.lit(None, pl.Float64).alias("ltv"), pl.lit(None, pl.Float64).alias("icr"))
+    )
+    tables["financials"] = pl.concat([tables["financials"].filter(pl.col("org_nr") != org), fin])
+    card = score_all(tables, REFERENCE_DATE)[org]
+    assert card.score is None
+    assert any(f.startswith("Not scored") for f in card.flags)
+
+
+def test_leverage_outweighs_size():
     from headroom.config import weights
-    from headroom.model.scoring import refinancing
 
-    cfg = weights()["motivated_seller"]["refinancing"]
-    c = refinancing({"debt_due_12m": 200.0, "cash": 50.0, "undrawn_facilities": 50.0}, cfg)
-    assert c.inputs["ratio"] == pytest.approx(2.0)
-    assert c.score == pytest.approx(ramp(2.0, cfg["zero"], cfg["full"], scale="log"))
-    no_undrawn = refinancing({"debt_due_12m": 100.0, "cash": 100.0}, cfg)
-    assert "undrawn" in no_undrawn.note.lower()
+    w = weights()["motivated_seller"]["weights"]
+    assert w["ltv"] + w["icr"] >= 0.8
+    assert sum(w.values()) == pytest.approx(1.0)

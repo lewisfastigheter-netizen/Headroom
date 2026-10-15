@@ -15,8 +15,6 @@ from ui.data import get_data
 d = get_data()
 cfg = d.cfg
 ms = cfg["motivated_seller"]
-fit = cfg["strategy_fit"]
-opp = cfg["opportunity"]
 lc = cfg.get("location", {})
 
 # Columns shared by every score table, so they all read the same way.
@@ -38,62 +36,24 @@ def part(name: str, weight: float, measure: str, zero: str, full: str) -> dict:
     return {"part": name, "w": f"{weight:.0%}", "measure": measure, "zero": zero, "full": full}
 
 
+GITHUB = "https://github.com/lewisfastigheter-netizen/Headroom"
+
 ui.page_head(
     "Method",
-    "How Headroom is built, and where it can be wrong. Headroom is a personal research project, "
-    "not affiliated with any investment firm and not investment advice.",
+    "Headroom looks for Swedish property owners who may have to sell. It collects public data "
+    "on every property company it can find, joins it on the organisation number, and ranks "
+    "the companies on how stretched their balance sheets are.",
 )
-
-# --------------------------------------------------------------------------- sources
-
-ui.section(
-    None,
-    "Sources",
-    "All requests identify the project, respect robots.txt and terms of use, and are rate-limited "
-    "and cached. Only company data is collected, never data on private individuals.",
-)
-SOURCES = [
-    ("ESMA FIRDS", "Bonds: ISIN, issuer, nominal, maturity, coupon; listed shares", "Connected"),
-    ("GLEIF", "Issuer LEI to legal name and organisation number", "Connected"),
-    (
-        "Sveriges Riksbank",
-        "Policy rate, SWESTR, government and mortgage bond yields, FX",
-        "Connected",
-    ),
-    (
-        "MFN and Cision",
-        "Press releases, written procedures, waivers, disposals, report PDFs",
-        "Connected",
-    ),
-    (
-        "Company reports",
-        "LTV, ICR, rates, hedging, maturities, NAV, read by an LLM with page and confidence",
-        "Connected",
-    ),
-    ("Yahoo Finance", "Weekly share prices for listed companies", "Connected"),
-    (
-        "Bolagsverket",
-        "Private companies: SNI codes and digitally filed annual reports",
-        "Connected",
-    ),
-    (
-        "SCB",
-        "Locations: population, housing, income, jobs, commuting, borders, 1 km grid",
-        "Connected",
-    ),
-    ("Kolada", "Locations: housing-market assessment, similar municipalities", "Connected"),
-    (
-        "Polisen, OpenStreetMap, Wikidata",
-        "Locations: vulnerable areas; ports, terminals, cargo airports",
-        "Saved files",
-    ),
-    ("Svensk Mäklarstatistik", "Flat prices by area", "Not used: licence forbids it"),
-    ("Post- och Inrikes Tidningar", "Insolvency notices", "Not used: blocks automated access"),
-]
-
-ui.table(
-    [{"s": a, "u": b, "st": c} for a, b, c in SOURCES],
-    [ui.Col("s", "Source"), ui.Col("u", "Used for"), ui.Col("st", "Status", "dim")],
+ui.render(
+    '<div class="hr-prose" style="margin-top:1.6rem"><p>'
+    "Built by William Lewis in Python. A data pipeline reads Bolagsverket's company register "
+    "and machine-readable (iXBRL) annual reports, ESMA's bond register, newswire releases and "
+    "SCB's statistics; key figures in PDF reports are read by a language model and stored with "
+    "their page and a confidence score. Polars and DuckDB hold the data, scheduled GitHub "
+    "Actions keep it current (the private-company scan runs four times a day), and the app is "
+    f'written in Streamlit. The code is on <a href="{GITHUB}" target="_blank">GitHub</a>.'
+    "</p><p>A personal research project, not affiliated with any investment firm and not "
+    "investment advice. Below: how the scores are built, and where they can be wrong.</p></div>"
 )
 
 # --------------------------------------------------------------------------- companies
@@ -161,145 +121,47 @@ ui.section(
 
 # --------------------------------------------------------------------------- seller score
 
-w, r, c = ms["weights"], ms["refinancing"], ms["covenant"]
-lv, ev, mk = ms["leverage"], ms["events"], ms["market"]
+w, sz = ms["weights"], ms["size_sek_m"]
 ui.section(
     None,
     "Motivated-seller score",
-    "How likely is this owner to have to sell? Five parts, one rule each. Covenants count only for "
-    "companies with bonds and the share price only for listed companies; for the others they are "
-    f"left out without counting as a gap. With data for less than {ms['min_coverage']:.0%} of the "
-    "weight that applies, a company is not scored.",
+    "How likely is this owner to have to sell? The score rests mainly on leverage: loan-to-value "
+    "and interest cover, as reported in the latest accounts. A smaller part gives more points to "
+    f"companies with SEK {sz['band_low']:,}–{sz['band_high']:,}m of property, the deal size "
+    "Headroom is aimed at. With data for less "
+    f"than {ms['min_coverage']:.0%} of the weight a company is not scored, so property value alone "
+    "is not enough.",
 )
 sub("Parts")
 ui.table(
     [
         part(
-            "Refinancing pressure",
-            w["refinancing"],
-            "Debt due within 12 months ÷ (cash + undrawn facilities); log scale, each doubling "
-            "adds about 30 points",
-            f"{r['zero']}x",
-            f"{r['full']}x",
+            "Loan-to-value",
+            w["ltv"],
+            "Net debt ÷ property value (fair value where reported, otherwise book value)",
+            f"{ms['ltv']['zero']:.0%} or less",
+            f"{ms['ltv']['full']:.0%} or more",
         ),
         part(
-            "Covenant headroom",
-            w["covenant"],
-            f"Headroom on the tightest maintenance covenant if rates rise {c['stress_bp']}bp "
-            "(companies with bonds)",
-            f"{c['zero']:.0%} headroom",
-            "At the covenant",
+            "Interest cover",
+            w["icr"],
+            "EBIT ÷ net interest expense",
+            f"{ms['icr']['zero']:g}x or more",
+            f"{ms['icr']['full']:g}x or less",
         ),
         part(
-            "Leverage",
-            w["leverage"],
-            "Average of the LTV and ICR scores",
-            f"LTV {lv['ltv']['zero']:.0%}, ICR {lv['icr']['zero']:g}x",
-            f"LTV {lv['ltv']['full']:.0%}, ICR {lv['icr']['full']:g}x",
-        ),
-        part(
-            "Credit events",
-            w["events"],
-            "Points for each event in the last 12 months, added up (next table)",
-            "No events",
-            f"{ev['cap']} points",
-        ),
-        part(
-            "Share price",
-            w["market"],
-            "Discount to NAV per share; the fall from the 52-week high where NAV is not "
-            "published (listed companies)",
-            "At NAV",
-            f"{mk['nav_discount']['full']:.0%} below NAV",
-        ),
-    ],
-    SCORE_COLS,
-)
-sub("Points per credit event")
-ui.table(
-    [
-        {"t": k.replace("_", " ").capitalize(), "p": str(v)}
-        for k, v in sorted(ev["points"].items(), key=lambda kv: -kv[1])
-        if v
-    ],
-    [ui.Col("t", "Event"), ui.Col("p", "Points", "num")],
-)
-
-# --------------------------------------------------------------------------- fit
-
-fw, size = fit["weights"], fit["size_sek_m"]
-ui.section(
-    None,
-    "Strategy fit and opportunity type",
-    "Strategy fit is a separate 0–100 score for a value-add mandate in residential, light industrial "
-    "and logistics property; it does not change the seller score. The opportunity type is a label "
-    "from the first rule that matches, top to bottom.",
-)
-sub("Strategy fit")
-ui.table(
-    [
-        part(
-            "Segment exposure",
-            fw["segment"],
-            "Share of property value in "
-            + ", ".join(s.replace("_", " ") for s in fit["target_segments"]),
-            "0%",
-            "100%",
-        ),
-        part(
-            "Growth regions",
-            fw["region"],
-            "Share of property value in " + ", ".join(fit["growth_regions"]),
-            "0%",
-            "100%",
-        ),
-        part(
-            "Deal size",
-            fw["size"],
             "Property value",
-            f"Below SEK {size['outer_low']:,}m or above {size['outer_high']:,}m",
-            f"SEK {size['band_low']:,}m–{size['band_high']:,}m",
+            w["size"],
+            "Full score inside the band, a straight fade to zero at the outer bounds",
+            f"Below SEK {sz['outer_low']:,}m or above {sz['outer_high']:,}m",
+            f"SEK {sz['band_low']:,}–{sz['band_high']:,}m",
         ),
     ],
     SCORE_COLS,
 )
-sub("Opportunity type")
-ui.table(
-    [
-        {
-            "l": "Bondholder-led wind-down",
-            "r": f"Bond terms reopened (written procedure or interest deferral) and a seller score "
-            f"of {opp['wind_down_score']} or more",
-        },
-        {
-            "l": "Portfolio or single-asset sale",
-            "r": "Reconstruction, bankruptcy or liquidation in the group; portfolio when property "
-            f"is worth SEK {opp['large_portfolio_sek_m']:,}m or more",
-        },
-        {"l": "Sale-leaseback", "r": "Owner-occupier outside real estate (SNI code not 68)"},
-        {
-            "l": "Recapitalisation",
-            "r": f"LTV of {opp['recap_ltv']:.0%} or more and a covenant score of 60 or more",
-        },
-        {"l": "JV", "r": "Listed, shares below 70% of NAV and a strategy fit of 50 or more"},
-        {
-            "l": "Portfolio sale",
-            "r": f"Otherwise, when property is worth SEK {opp['large_portfolio_sek_m']:,}m or more",
-        },
-        {"l": "Single-asset sale", "r": "Otherwise"},
-    ],
-    [ui.Col("l", "Label"), ui.Col("r", "When")],
-)
-
-# --------------------------------------------------------------------------- rate shock
-
-ui.section(
-    None,
-    "Rate shock",
-    "Shocked ICR = EBITDA ÷ (net interest + floating debt × rate rise). Floating debt is gross debt "
-    "times one minus the reported fixed or hedged share; if no share is reported, all debt is "
-    "treated as floating and the company page says so. EBITDA is held constant and fixed-rate debt "
-    "is not repriced as it matures, so the shock understates pressure where fixed-rate debt is due soon.",
+ui.source_line(
+    "Bond covenants, maturities and credit events are still collected and shown on each company "
+    "page, but do not change the score."
 )
 
 # --------------------------------------------------------------------------- locations
@@ -379,9 +241,9 @@ LIMITS = [
         "on book value BOOK, as it overstates leverage.",
     ),
     (
-        "Covenant definitions",
-        "Bonds define ICR and LTV differently. Reported KPIs are a proxy for the defined test, and only "
-        "bond covenants are public; bank covenants are usually tighter.",
+        "Leverage only",
+        "The score reads the balance sheet only. Debt maturities, covenants and credit events also "
+        "drive sales; they are shown on the company pages but not scored.",
     ),
     (
         "Extraction",
@@ -390,8 +252,9 @@ LIMITS = [
     ),
     (
         "Private companies",
-        "Annual reports arrive late, and there are no covenants or share prices, so their scores rest "
-        "on fewer parts and older data.",
+        "Annual reports arrive up to seven months after the year end, so their scores rest on older "
+        "data. Companies that file their annual report on paper or as a scanned PDF cannot be read "
+        "and are not in the list.",
     ),
     (
         "Events",
@@ -423,3 +286,55 @@ if src:
         "EUR and NOK amounts are converted at the Riksbank mid rate of the snapshot date. "
         f"Snapshot generated {meta.get('generated_at', '–')}."
     )
+
+# --------------------------------------------------------------------------- sources
+
+ui.section(
+    None,
+    "Sources",
+    "All requests identify the project, respect robots.txt and terms of use, and are rate-limited "
+    "and cached. Only company data is collected, never data on private individuals.",
+)
+SOURCES = [
+    ("ESMA FIRDS", "Bonds: ISIN, issuer, nominal, maturity, coupon; listed shares", "Connected"),
+    ("GLEIF", "Issuer LEI to legal name and organisation number", "Connected"),
+    (
+        "Sveriges Riksbank",
+        "Policy rate, SWESTR, government and mortgage bond yields, FX",
+        "Connected",
+    ),
+    (
+        "MFN and Cision",
+        "Press releases, written procedures, waivers, disposals, report PDFs",
+        "Connected",
+    ),
+    (
+        "Company reports",
+        "LTV, ICR, rates, hedging, maturities, NAV, read by an LLM with page and confidence",
+        "Connected",
+    ),
+    ("Yahoo Finance", "Weekly share prices for listed companies", "Connected"),
+    (
+        "Bolagsverket",
+        "Private companies: SNI codes and digitally filed annual reports",
+        "Connected",
+    ),
+    (
+        "SCB",
+        "Locations: population, housing, income, jobs, commuting, borders, 1 km grid",
+        "Connected",
+    ),
+    ("Kolada", "Locations: housing-market assessment, similar municipalities", "Connected"),
+    (
+        "Polisen, OpenStreetMap, Wikidata",
+        "Locations: vulnerable areas; ports, terminals, cargo airports",
+        "Saved files",
+    ),
+    ("Svensk Mäklarstatistik", "Flat prices by area", "Not used: licence forbids it"),
+    ("Post- och Inrikes Tidningar", "Insolvency notices", "Not used: blocks automated access"),
+]
+
+ui.table(
+    [{"s": a, "u": b, "st": c} for a, b, c in SOURCES],
+    [ui.Col("s", "Source"), ui.Col("u", "Used for"), ui.Col("st", "Status", "dim")],
+)

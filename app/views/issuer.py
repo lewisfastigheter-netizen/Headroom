@@ -8,17 +8,16 @@ import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
 
-from headroom.model.stress import breakeven_bp, shocked_icr
 from ui import components as ui
 from ui.data import get_data
 from ui.labels import EVENT, SEGMENT, SEVERITY_STATE, TEST, TIER
-from ui.plotly_template import ACCENT, CONFIG, HIGH, INK
+from ui.plotly_template import CONFIG, INK
 
 d = get_data()
 ms = d.cfg["motivated_seller"]
 bands = ms["bands"]
 min_conf = d.cfg["extraction"]["min_confidence"]
-stress_bp = ms["covenant"]["stress_bp"]
+size_band = ms["size_sek_m"]
 
 ranked = d.scores.sort("score", descending=True, nulls_last=True)
 orgs = ranked["org_nr"].to_list()
@@ -69,26 +68,48 @@ def fv(field: str, fmt) -> str:
 
 state = ui.band(card.score, bands["high"], bands["watch"])
 score_txt = "–" if card.score is None else f"{card.score:.0f}"
-gaps = sum(c.applicable and not c.available for c in card.components)
+gaps = sum(not c.available for c in card.components)
+
+
+def reading() -> str:
+    """One plain sentence on what drives the score."""
+    lev = []
+    ltv, icr, sz = (card.component(k) for k in ("ltv", "icr", "size"))
+    if ltv.available:
+        lev.append(f"LTV of {ui.fmt_pct(ltv.inputs['ltv'])}")
+    if icr.available:
+        lev.append(f"interest cover of {ui.fmt_x(icr.inputs['icr'], 1)}")
+    band_txt = f"SEK {size_band['band_low']:,}–{size_band['band_high']:,}m"
+    parts = []
+    if lev:
+        parts.append(" and ".join(lev))
+    if sz.available:
+        v = sz.inputs["property_value"]
+        where = (
+            "inside"
+            if size_band["band_low"] <= v <= size_band["band_high"]
+            else "below"
+            if v < size_band["band_low"]
+            else "above"
+        )
+        parts.append(f"property worth {ui.fmt_sek_m(v)}, {where} the {band_txt} target band")
+    if not parts:
+        return "No LTV, interest cover or property value reported yet."
+    txt = "; ".join(parts)
+    return txt[:1].upper() + txt[1:] + "."
+
+
 ui.hero(
     f"{TIER[co['tier']]} · {co['org_nr']}",
     ui.esc(co["name"]),
-    f'<span style="font-family:var(--display);font-size:1.6rem;color:var(--ink);line-height:1.3">'
-    f"{ui.esc(card.opportunity)}.</span><br>{ui.esc(card.opportunity_rationale)}",
+    ui.esc(reading()),
     [
         ui.Stat(
             score_txt,
             "/100" if card.score is not None else "",
             "Motivated-seller score"
-            + (f", {gaps} component{'s' if gaps != 1 else ''} without data" if gaps else ""),
+            + (f", {gaps} part{'s' if gaps != 1 else ''} without data" if gaps else ""),
             state=state if card.score is not None else None,
-        ),
-        ui.Stat(
-            "–" if card.fit is None else f"{card.fit:.0f}",
-            "/100" if card.fit is not None else "",
-            "Strategy fit"
-            + ("" if card.fit is not None else ": segment and region split not yet known"),
-            ink=True,
         ),
     ],
 )
@@ -161,40 +182,19 @@ ui.render(
 
 
 def basis(c) -> str:
-    """One line on what drives a component, in plain words."""
+    """One line on what drives a part, in plain words."""
     i = c.inputs
-    why = ui.esc((c.note[:1].lower() + c.note[1:]) if c.note else "no data")
-    muted = '<span style="color:var(--muted)">{}</span>'
-    if not c.applicable:
-        return muted.format(f"Does not apply: {why}")
     if not c.available:
-        return muted.format(f"Not scored: {why}")
-    if c.key == "refinancing":
-        return f"Debt due within 12 months is {i['ratio']:.1f}x cash and undrawn facilities"
-    if c.key == "covenant":
+        why = ui.esc((c.note[:1].lower() + c.note[1:]) if c.note else "no data")
+        return f'<span style="color:var(--muted)">Not scored: {why}</span>'
+    if c.key == "ltv":
+        return f"LTV {ui.fmt_pct(i['ltv'])}"
+    if c.key == "icr":
+        return f"Interest cover {ui.fmt_x(i['icr'], 1)}"
+    if c.key == "size":
         return (
-            f"{TEST.get(i['binding_test'], '')} covenant headroom "
-            f"{ui.fmt_pct(i['min_headroom_stressed'], signed=True)} at +{i['stress_bp']}bp"
-        )
-    if c.key == "leverage":
-        parts = []
-        if "ltv" in i:
-            parts.append(f"LTV {ui.fmt_pct(i['ltv'])}")
-        if "icr" in i:
-            parts.append(f"ICR {ui.fmt_x(i['icr'], 1)}")
-        return ", ".join(parts)
-    if c.key == "events":
-        evs = i["events"]
-        if not evs:
-            return "No credit events in the last 12 months"
-        top = evs[0]
-        more = f", and {len(evs) - 1} more" if len(evs) > 1 else ""
-        return f"{EVENT.get(top['type'], top['type'])}, {top['age_days']} days ago{more}"
-    if c.key == "market":
-        return (
-            f"Shares at {i['pnav']:.0%} of NAV"
-            if "pnav" in i
-            else f"Down {ui.fmt_pct(i.get('drawdown_52w'))} from the 52-week high"
+            f"Property value {ui.fmt_sek_m(i['property_value'])}; target band "
+            f"SEK {size_band['band_low']:,}–{size_band['band_high']:,}m"
         )
     return ""
 
@@ -209,110 +209,21 @@ rows = [
         "basis": basis(c),
     }
     for c in card.components
-    if c.applicable
 ]
 ui.table(
     rows,
     [
-        ui.Col("label", "Component"),
+        ui.Col("label", "Part"),
         ui.Col("score", "Score", "num", raw_html=True),
         ui.Col("basis", "Driver", "html"),
     ],
 )
 
-# --------------------------------------------------------------------------- 02 rate shock
-
-with st.container(key="band_tint_shock"):
-    ui.section(2, "Rate shock")
-    if fin and fin.get("ebitda") and fin.get("interest_expense"):
-        args = (fin["ebitda"], fin["interest_expense"], fin["gross_debt"], fin.get("fixed_share"))
-        icr_covs = sorted(
-            {r.threshold for r in card.covenants if r.test == "icr" and r.kind == "maintenance"}
-        )
-        lcol, _, rcol = st.columns([7, 0.5, 4.5])
-        with rcol:
-            bp = st.slider(
-                "Rise in STIBOR, bp",
-                0,
-                d.cfg["rate_shock"]["max_bp"],
-                stress_bp,
-                step=d.cfg["rate_shock"]["step_bp"],
-            )
-            res = shocked_icr(*args, bp)
-            breach = bool(icr_covs) and res.icr is not None and res.icr < icr_covs[0]
-            be = breakeven_bp(*args, icr_covs[0]) if icr_covs else None
-            cov_txt = f"Covenant {icr_covs[0]:.2f}x" if icr_covs else "No ICR covenant on file"
-            ui.render(
-                ui.stats_html(
-                    [
-                        ui.Stat(
-                            "–" if res.icr is None else f"{res.icr:.2f}",
-                            "x",
-                            f"Interest cover at +{bp}bp. {cov_txt}",
-                            ink=True,
-                            state="high" if breach else None,
-                        ),
-                        ui.Stat(
-                            "–" if be is None else f"{be:,.0f}",
-                            "" if be is None else "bp",
-                            "Already below the covenant at today's rates"
-                            if be == 0
-                            else "Rise that takes cover down to the covenant",
-                        ),
-                    ]
-                )
-            )
-        with lcol:
-            xs = list(range(0, d.cfg["rate_shock"]["max_bp"] + 1, 5))
-            ys = [shocked_icr(*args, x).icr for x in xs]
-            fig = go.Figure()
-            fig.add_scatter(
-                x=xs,
-                y=ys,
-                mode="lines",
-                line=dict(color=INK, width=2),
-                hovertemplate="+%{x}bp: %{y:.2f}x<extra></extra>",
-            )
-            for cv in icr_covs[:1]:
-                fig.add_hline(y=cv, line=dict(color=ACCENT, width=1, dash="dot"))
-                fig.add_annotation(
-                    x=xs[-1],
-                    y=cv,
-                    text=f"Covenant {cv:.2f}x",
-                    showarrow=False,
-                    xanchor="right",
-                    yanchor="bottom",
-                    font=dict(size=12.5, color=ACCENT),
-                )
-            fig.add_scatter(
-                x=[bp],
-                y=[res.icr],
-                mode="markers",
-                hoverinfo="skip",
-                marker=dict(symbol="square", size=10, color=HIGH if breach else INK),
-            )
-            fig.update_layout(
-                height=320,
-                showlegend=False,
-                hovermode="closest",
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                xaxis=dict(ticksuffix="bp"),
-                yaxis=dict(ticksuffix="x", rangemode="tozero"),
-            )
-            st.plotly_chart(fig, config=CONFIG, width="stretch")
-        ui.source_line(
-            f"{res.assumption}. EBITDA held constant. Report dated "
-            f"{ui.fmt_date(fin['period_end'])}. {d.source_label('financials')}."
-        )
-    else:
-        ui.note("EBITDA or interest expense not reported, so the rate shock cannot be computed.")
-
-# --------------------------------------------------------------------------- 03 events
+# --------------------------------------------------------------------------- 02 events
 
 notable = events.filter(pl.col("type") != "interim_report").head(3)
 if notable.height:
-    ui.section(3, "Recent events")
+    ui.section(2, "Recent events")
     ui.news(
         [
             {
@@ -327,27 +238,9 @@ if notable.height:
         ]
     )
 
-# --------------------------------------------------------------------------- 04 view
+# --------------------------------------------------------------------------- 03 memo
 
-ui.section(4 if notable.height else 3, "Investment view")
-refi, covc = card.component("refinancing"), card.component("covenant")
-facts_txt = []
-if refi.available:
-    facts_txt.append(
-        f"Debt falling due within 12 months is {refi.inputs['ratio']:.1f} times "
-        "available liquidity."
-    )
-if covc.available:
-    facts_txt.append(
-        f"Covenant headroom is {ui.fmt_pct(covc.inputs['min_headroom'])} today and "
-        f"{ui.fmt_pct(covc.inputs['min_headroom_stressed'])} if rates rise "
-        f"{covc.inputs['stress_bp']}bp."
-    )
-ui.render(
-    f'<div class="hr-view"><p>{ui.esc(card.opportunity_rationale)}</p>'
-    + (f"<p>{ui.esc(' '.join(facts_txt))}</p>" if facts_txt else "")
-    + "</div>"
-)
+ui.section(3 if notable.height else 2, "Draft memo")
 
 
 def memo_facts() -> list:
@@ -363,11 +256,7 @@ def memo_facts() -> list:
 
     add(f"{co['name']} (org. nr {co['org_nr']}) is a {TIER[co['tier']].lower()}.", co["source_url"])
     if card.score is not None:
-        add(
-            f"Motivated-seller score {card.score:.0f}/100; opportunity type assessed as "
-            f"{card.opportunity}: {card.opportunity_rationale}",
-            "Headroom scoring model",
-        )
+        add(f"Motivated-seller score {card.score:.0f}/100. {reading()}", "Headroom scoring model")
     for c in card.components:
         if c.available:
             add(f"{c.label} sub-score {c.score:.0f}/100. {basis(c)}", "Headroom scoring model")
@@ -396,7 +285,7 @@ def memo_facts() -> list:
         if r.kind == "maintenance" and r.headroom is not None:
             add(
                 f"{TEST.get(r.test, r.test)} maintenance covenant {r.threshold}: headroom "
-                f"{ui.fmt_pct(r.headroom, 1)}, {ui.fmt_pct(r.headroom_stressed, 1)} at +{stress_bp}bp.",
+                f"{ui.fmt_pct(r.headroom, 1)}.",
                 r.source_url,
             )
     for e in notable.head(6).to_dicts():
@@ -429,8 +318,8 @@ if st.session_state.get(f"memo_{org}"):
             mime="text/markdown",
         )
 ui.source_line(
-    "Rule-based summary above; the draft memo is written by an LLM from cited facts only and "
-    "is labelled draft. Not investment advice."
+    "The draft memo is written by an LLM from the cited facts on this page only and is "
+    "labelled draft. Not investment advice."
     + (" Memos are off in demo mode." if d.fictional else "")
 )
 
@@ -443,22 +332,18 @@ with st.expander("Score calculation"):
     rows = [
         {
             "label": c.label,
-            "w": ui.fmt_pct(c.weight) if c.applicable else "–",
+            "w": ui.fmt_pct(c.weight),
             "ew": ui.fmt_pct(c.effective_weight) if c.available else "–",
             "score": f"{c.score:.0f}" if c.available else "–",
             "pts": f"{c.contribution:.1f}" if c.available else "–",
-            "note": ui.esc(
-                c.note if c.applicable else f"Does not apply: {c.note[:1].lower()}{c.note[1:]}"
-            )
-            if c.note
-            else "",
+            "note": ui.esc(c.note),
         }
         for c in card.components
     ]
     ui.table(
         rows,
         [
-            ui.Col("label", "Component"),
+            ui.Col("label", "Part"),
             ui.Col("w", "Weight", "num"),
             ui.Col("ew", "Applied", "num"),
             ui.Col("score", "Score", "num"),
@@ -468,8 +353,8 @@ with st.expander("Score calculation"):
         foot={"label": "Total", "ew": "100%", "pts": score_txt},
     )
     ui.source_line(
-        "Score = weighted average of the parts. Parts without data, or that do not apply, "
-        "are left out and the others count for more (Applied)."
+        "Score = weighted average of the parts. Parts without data are left out and the "
+        "others count for more (Applied)."
     )
 
 with st.expander("Covenants"):
@@ -483,7 +368,7 @@ with st.expander("Covenants"):
                     ui.fmt_pct(v) if pct else ui.fmt_x(v, 2) if test == "icr" else ui.fmt_sek_m(v)
                 )
 
-            hs = r.headroom_stressed
+            hs = r.headroom
             mk = (
                 "high"
                 if hs is not None and hs < 0
@@ -497,8 +382,7 @@ with st.expander("Covenants"):
                     + ui.unverified(f(r.threshold), r.confidence, min_conf),
                     "kind": r.kind.capitalize(),
                     "act": f(r.actual),
-                    "hr": ui.fmt_pct(r.headroom, 1, signed=True),
-                    "hrs": f"{ui.marker(mk)}{ui.fmt_pct(hs, 1, signed=True)}",
+                    "hr": f"{ui.marker(mk)}{ui.fmt_pct(hs, 1, signed=True)}",
                     "src": ui.source_link(
                         r.source_url, f"{r.isin}, p. {r.page}" if r.page else r.isin
                     ),
@@ -510,12 +394,14 @@ with st.expander("Covenants"):
                 ui.Col("test", "Test", "html"),
                 ui.Col("kind", "Kind"),
                 ui.Col("act", "Actual", "num"),
-                ui.Col("hr", "Headroom", "num"),
-                ui.Col("hrs", f"At +{stress_bp}bp", "num", raw_html=True),
+                ui.Col("hr", "Headroom", "num", raw_html=True),
                 ui.Col("src", "Source", "html"),
             ],
         )
-        ui.source_line("Reported ICR is a proxy for the covenant definition, which can differ.")
+        ui.source_line(
+            "Reported ICR is a proxy for the covenant definition, which can differ. Covenants "
+            "are shown for reference and do not feed the score."
+        )
     else:
         ui.note("No bond covenants on file.")
 

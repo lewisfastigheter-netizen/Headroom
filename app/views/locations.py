@@ -1332,9 +1332,6 @@ def companies_section(level: str, code: str, name: str) -> None:
                     + score_txt(r.get("score")),
                     "name": f'<a href="issuer?org={r["org_nr"]}" target="_self">{ui.esc(r["name"])}</a><span class="sub">{ui.esc(r.get("city") or "")}</span>',
                     "basis": r["_basis"],
-                    "opp": ui.esc(d.cards[r["org_nr"]].opportunity)
-                    if r["org_nr"] in d.cards
-                    else "",
                 }
                 for r in rows[:25]
             ],
@@ -1342,12 +1339,12 @@ def companies_section(level: str, code: str, name: str) -> None:
                 ui.Col("score", "Seller score", "big", raw_html=True),
                 ui.Col("name", "Company", "name", raw_html=True),
                 ui.Col("basis", "Why here"),
-                ui.Col("opp", "Likely transaction"),
             ],
         )
     county = lan_name.get(lan, "")
     city = D.name(kommun) if kommun else None
-    href = f"companies?county={quote(county)}" + (f"&city={quote(city)}" if city else "")
+    # Companies is the default page, served at the app root (there is no /companies URL).
+    href = f"./?county={quote(county)}" + (f"&city={quote(city)}" if city else "")
     ui.render(f'<p class="hr-note"><a href="{href}" target="_self">See in Companies</a></p>')
     ui.source_line(
         f"Portfolio split from company reports; city and county as on the Companies page. {d.source_label('company')}."

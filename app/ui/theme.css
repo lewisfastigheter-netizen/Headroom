@@ -308,3 +308,32 @@ header [data-testid="stTopNavLink"][aria-current="page"] p { color: #fff !import
   border-radius: 2px; box-shadow: 0 6px 18px rgba(0,0,0,.18); pointer-events: none; }
 .st-key-hr_source_tips { display: none; }
 
+
+/* ---------- Companies: the private-company scan as a funnel ---------- */
+.hr-funnel { margin: 2.6rem 0 .6rem 0; border-top: 1px solid var(--ink); max-width: 64rem; }
+.hr-funnel .r { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem minmax(8rem, 16rem) 3.5rem;
+  column-gap: 1.25rem; align-items: center; padding: .7rem 0; border-bottom: 1px solid var(--rule); cursor: default; }
+.hr-funnel .k { font-size: 15px; color: var(--ink); line-height: 1.35; }
+.hr-funnel .k .m { color: var(--muted); margin-right: .45rem; }
+.hr-funnel .k .why { display: block; font-size: 12.5px; color: var(--muted); margin-top: .1rem; }
+.hr-funnel .r.out .k { padding-left: 1.4rem; color: var(--graphite); }
+.hr-funnel .r.out .k .why { padding-left: .95rem; }
+.hr-funnel .n { text-align: right; font-size: 17px; color: var(--ink); white-space: nowrap; }
+.hr-funnel .r.out .n { color: var(--graphite); font-size: 15px; }
+.hr-funnel .b { height: 8px; background: var(--tint); }
+.hr-funnel .b > i { display: block; height: 100%; background: var(--ink); border-radius: 0 2px 2px 0; }
+.hr-funnel .r.out .b > i { background: var(--muted); }
+.hr-funnel .r.kept .b > i { background: var(--accent); }
+.hr-funnel .p { text-align: right; font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+.hr-funnel .r.total .k, .hr-funnel .r.kept .k { font-weight: 500; }
+.hr-funnel .r.kept { border-bottom: 1px solid var(--ink); }
+.hr-funnel .r.kept .k, .hr-funnel .r.kept .n { color: var(--accent); }
+.hr-funnel .r.kept .n { font-family: var(--display); font-size: 1.9rem; line-height: 1; }
+.hr-funnel .r:hover { background: var(--tint); }
+@media (max-width: 760px) {
+  .hr-funnel .r { grid-template-columns: minmax(0, 1fr) auto; row-gap: .4rem; }
+  .hr-funnel .b { grid-column: 1 / -1; } .hr-funnel .p { display: none; }
+}
+
+/* the menu-reset script (streamlit_app.py) takes no space */
+.st-key-nav_reset { display: none !important; }

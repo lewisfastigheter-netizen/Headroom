@@ -2,98 +2,38 @@
 # Edit, then reload the app. Weights within a score must sum to 1.0.
 
 motivated_seller:
-  # Five parts, one rule each. Each part turns one figure into 0-100 on a straight line:
-  # `zero` scores 0, `full` scores 100, anything beyond is clipped. The score is the
-  # weighted average of the parts.
+  # How likely is the owner to have to sell? Mainly leverage (LTV and interest cover), with a
+  # small part for property value: owners of SEK 50-250m portfolios score a little higher.
+  # Each part turns one figure into 0-100 on a straight line: `zero` scores 0, `full` scores
+  # 100, anything beyond is clipped. The score is the weighted average of the parts.
   weights:
-    refinancing: 0.30
-    covenant: 0.25   # companies with bonds only
-    leverage: 0.15
-    events: 0.20
-    market: 0.10     # listed companies only
+    ltv: 0.45
+    icr: 0.40
+    size: 0.15
 
-  # A part without data is left out and the others count for more. A part that does not
-  # apply (covenants without bonds, share price without a listing) is left out too, but is
-  # not a data gap. A company with data for less than this share of the weight that
-  # applies to it is not scored.
+  # A part without data is left out and the others count for more. A company with data for
+  # less than this share of the weight is not scored (so property value alone is not enough:
+  # LTV or ICR is needed).
   min_coverage: 0.55
 
-  refinancing:
-    # Debt due within 12 months / (cash + undrawn facilities). Log scale, because the
-    # ratio runs from near zero to 100x: every doubling of the ratio adds 30 points.
-    zero: 0.5     # 0.5x or less scores 0
-    full: 5.0     # 5x or more scores 100
+  ltv: {zero: 0.40, full: 0.70}   # net debt / property value: 40% or less scores 0, 70% or more 100
+  icr: {zero: 3.0,  full: 1.0}    # EBIT / net interest: 3.0x or more scores 0, 1.0x or less 100
 
-  covenant:
-    # Headroom on the tightest maintenance covenant after interest rates rise by
-    # stress_bp (only ICR moves). Headroom = distance to the threshold as a share of it:
-    # (actual - threshold) / threshold for ICR and equity ratio, the reverse for LTV.
-    stress_bp: 100
-    zero: 0.40    # 40% headroom or more scores 0
-    full: 0.00    # at or through the covenant scores 100
-
-  leverage:
-    # Average of the two.
-    ltv: {zero: 0.40, full: 0.70}
-    icr: {zero: 3.0,  full: 1.0}
-
-  events:
-    # Points for each event in the last 12 months, added up, capped at 100.
-    window_days: 365
-    cap: 100
-    points:
-      written_procedure: 60
-      waiver: 40
-      interest_deferral: 70
-      reconstruction: 90
-      bankruptcy_in_group: 80
-      liquidation: 80
-      going_concern: 60
-      late_annual_report: 25
-      disposal_below_book: 30
-      rating_downgrade: 30
-      equity_raise: 15
-      disposal: 5
-
-  market:
-    # Discount of the share price to NAV per share. When NAV is not available,
-    # the fall from the 52-week high is used instead.
-    nav_discount: {zero: 0.0, full: 0.50}
-    drawdown_52w: {zero: 0.0, full: 0.60}
+  size_sek_m:
+    # Property value, SEK m. Full score inside the band, straight fade to zero at the outer
+    # bounds.
+    outer_low: 20
+    band_low: 50
+    band_high: 250
+    outer_high: 1000
 
   bands:
     high: 60    # oxblood marker
     watch: 40   # ochre marker
 
-strategy_fit:
-  # A value-add mandate in Nordic residential, light industrial and logistics.
-  weights:
-    segment: 0.50
-    region: 0.30
-    size: 0.20
-  target_segments: [residential, light_industrial, logistics]
-  growth_regions: [Stockholm, Gothenburg, Malmö, Uppsala, Linköping, Örebro, Västerås, Helsinki, Oslo, Copenhagen]
-  # Deal size, by property value in SEK m. Full score inside the band,
-  # linear fade to zero at the outer bounds.
-  size_sek_m:
-    outer_low: 200
-    band_low: 1000
-    band_high: 15000
-    outer_high: 40000
-
-opportunity:
-  # Thresholds used by the rule-based opportunity-type label.
-  large_portfolio_sek_m: 3000
-  wind_down_score: 75
-  recap_ltv: 0.60
-
 extraction:
   # Extracted fields below this confidence are shown as unverified.
   min_confidence: 0.80
-
-rate_shock:
-  max_bp: 300
-  step_bp: 25
 
 private_universe:
   # Private ABs from Bolagsverket's bulk file, kept if their latest annual report

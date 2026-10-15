@@ -100,18 +100,78 @@ if d.fictional:
         "sell. Method on the Method page.",
     )
 else:
-    # The private-company scan: how far it has come and what it has found.
+    # The private-company scan as a funnel: every company checked, what each step removes,
+    # and what is left, so the numbers read as one story rather than five loose figures.
     scan = private.progress()
-    checked_html = ui.fmt_num(scan["checked"])
-    if scan["candidates"]:
-        checked_html += f'<span class="of">of {ui.fmt_num(scan["candidates"])}</span>'
-    ui.page_head("Companies")
-    facts = [("Checked at Bolagsverket", checked_html)] + [
-        (label, ui.fmt_num(scan["by_status"].get(k, 0)))
-        for k, label in private.STATUS_LABEL.items()
-        if scan["by_status"].get(k) or k != "no_ixbrl"
+    by = scan["by_status"]
+    checked = scan["checked"]
+    kept = by.get("kept", 0)
+    ui.page_head(
+        "Companies",
+        f"Headroom has checked {ui.fmt_num(checked)} Swedish companies at Bolagsverket. "
+        f"{ui.fmt_num(kept)} of them own SEK 20m or more of property and are ranked below, "
+        "together with the listed companies and bond issuers.",
+    )
+    readable = checked - sum(
+        by.get(k, 0) for k in ("not_real_estate", "no_digital_report", "no_ixbrl")
+    )
+    steps = [
+        ("total", "Checked at Bolagsverket", "", checked),
+        (
+            "out",
+            "Not a property company",
+            "main SNI code is not 68, real estate",
+            by.get("not_real_estate", 0),
+        ),
+        (
+            "out",
+            "No digitally filed annual report",
+            "filed on paper or as a scanned PDF, so the figures cannot be read",
+            by.get("no_digital_report", 0),
+        ),
+        (
+            "out",
+            "Annual report not machine-readable",
+            "filed digitally, but without tagged figures",
+            by.get("no_ixbrl", 0),
+        ),
+        ("total", "Property companies with readable accounts", "", readable),
+        (
+            "out",
+            "Under SEK 20m of property",
+            "below the SEK 20m threshold for the list",
+            by.get("below_threshold", 0),
+        ),
+        ("kept", "In Headroom", "SEK 20m or more of property", kept),
     ]
-    ui.facts(facts, cols=len(facts), cls="big")
+    rows_html = []
+    for kind, label, why, n in steps:
+        if kind == "out" and not n:
+            continue
+        share = n / checked if checked else 0
+        sign = "−" if kind == "out" else ""
+        tip = f"{ui.fmt_num(n)} companies, {share:.1%} of those checked"
+        rows_html.append(
+            f'<div class="r {kind}" title="{ui.esc(tip)}">'
+            f'<div class="k">{ui.esc(label)}'
+            + (f'<span class="why">{ui.esc(why)}</span>' if why else "")
+            + f'</div><div class="n">{sign}{ui.fmt_num(n)}</div>'
+            f'<div class="b"><i style="width:{max(share * 100, 0.4):.2f}%"></i></div>'
+            f'<div class="p">{share:.1%}</div></div>'
+        )
+    pending = scan["candidates"] - checked if scan["candidates"] else 0
+    foot = (
+        f"{ui.fmt_num(pending)} of {ui.fmt_num(scan['candidates'])} candidates still to check. "
+        if pending > 0
+        else ""
+    )
+    ui.render(
+        '<div class="hr-funnel">'
+        + "".join(rows_html)
+        + "</div>"
+        + f'<div class="hr-source">{foot}Each company is checked in this order; a company '
+        "leaves at the first step it fails. Shares are of all companies checked.</div>"
+    )
 
 # --------------------------------------------------------------------------- filters
 
@@ -243,7 +303,10 @@ nb = (
     .group_by("org_nr")
     .agg(pl.col("maturity").min().alias("next_maturity"))
 )
-f = f.join(nb, on="org_nr", how="left").sort("score", descending=True, nulls_last=True)
+# Ties (many companies reach 100) are broken by the higher LTV, then the lower ICR.
+f = f.join(nb, on="org_nr", how="left").sort(
+    ["score", "ltv", "icr"], descending=[True, True, False], nulls_last=True
+)
 
 # --------------------------------------------------------------------------- table
 
